@@ -2509,6 +2509,90 @@
               </div>
             </div>
 
+            <!-- CAMERA SELFIE GURU SECTION -->
+            <div id="selfieCameraSection" class="mb-6 p-4 rounded-3xl bg-blue-950/40 border border-white/10">
+              <h4 class="font-black text-[10px] uppercase italic text-blue-200 tracking-wider mb-3 flex items-center gap-2">
+                <span>📸</span> FOTO SELFIE GURU
+              </h4>
+              
+              <div class="relative overflow-hidden rounded-2xl bg-blue-900/40 mb-3 border border-white/5">
+                <!-- Video Element -->
+                <video
+                  id="videoAbsen"
+                  autoplay
+                  playsinline
+                  class="w-full h-48 object-cover rounded-2xl hidden"
+                ></video>
+                
+                <!-- Canvas Element -->
+                <canvas id="canvasAbsen" class="hidden"></canvas>
+                
+                <!-- Image Preview Element -->
+                <img
+                  id="previewSelfie"
+                  alt="Preview Selfie"
+                  class="w-full h-48 object-cover rounded-2xl hidden border-2 border-green-500 shadow-lg animate-fadeIn"
+                />
+                
+                <!-- Placeholder when camera is inactive -->
+                <div
+                  id="cameraPlaceholder"
+                  class="w-full h-48 flex flex-col items-center justify-center text-center p-4"
+                >
+                  <span class="text-4xl mb-2 animate-bounce">📸</span>
+                  <span class="text-[9px] font-black uppercase text-blue-200 tracking-widest block">Kamera Belum Aktif</span>
+                  <span class="text-[7px] text-gray-400 block mt-1">Gunakan tombol di bawah untuk mengaktifkan kamera depan</span>
+                </div>
+                
+                <!-- Camera Error UI -->
+                <div
+                  id="cameraErrorUI"
+                  class="hidden w-full h-48 flex flex-col items-center justify-center text-center p-4 text-red-200 bg-red-950/40 border border-red-500/30 rounded-2xl"
+                >
+                  <span class="text-3xl mb-1">⚠️</span>
+                  <p class="text-[8px] font-bold uppercase tracking-wide">Gagal Mengakses Kamera</p>
+                  <p class="text-[7px] text-red-300 mt-1 mb-2 leading-relaxed">
+                    Pastikan izin kamera diaktifkan atau unggah file foto secara manual.
+                  </p>
+                  <label class="bg-blue-900 hover:bg-blue-800 text-white font-black py-2 px-4 rounded-xl text-[8px] uppercase cursor-pointer shadow-md transition">
+                    📁 Pilih File Foto
+                    <input
+                      type="file"
+                      id="fileSelfieFallback"
+                      accept="image/*"
+                      class="hidden"
+                      onchange="handleFileFallback(this)"
+                    />
+                  </label>
+                </div>
+              </div>
+              
+              <!-- Control Buttons -->
+              <div class="flex gap-2">
+                <button
+                  id="btnStartCam"
+                  onclick="startCamera()"
+                  class="w-full bg-white hover:bg-blue-50 text-blue-900 font-black py-3 rounded-xl text-[9px] uppercase shadow-lg transition active:scale-95 flex items-center justify-center gap-2 border-b-4 border-slate-300"
+                >
+                  <span>🎬</span> AKTIFKAN KAMERA
+                </button>
+                <button
+                  id="btnAmbilFoto"
+                  onclick="takeSnapshot()"
+                  class="hidden w-full bg-green-500 hover:bg-green-400 text-blue-900 font-black py-3 rounded-xl text-[9px] uppercase shadow-lg transition active:scale-95 flex items-center justify-center gap-2 border-b-4 border-green-700"
+                >
+                  <span>📸</span> AMBIL FOTO
+                </button>
+                <button
+                  id="btnResetSelfie"
+                  onclick="resetSelfie()"
+                  class="hidden w-full bg-yellow-500 hover:bg-yellow-400 text-blue-900 font-black py-3 rounded-xl text-[9px] uppercase shadow-lg transition active:scale-95 flex items-center justify-center gap-2 border-b-4 border-yellow-700"
+                >
+                  <span>🔄</span> ULANGI FOTO
+                </button>
+              </div>
+            </div>
+
             <!-- INFO JAM KERJA -->
             <div
               class="bg-blue-900/30 p-4 rounded-2xl border border-white/5 mb-6 text-center"
@@ -7659,6 +7743,14 @@
           if (mainDash) mainDash.classList.add("hidden");
           if (pageLand) pageLand.classList.remove("hidden");
           if (modalLog) modalLog.classList.add("hidden");
+
+          try {
+            if (typeof resetSelfie === "function") {
+              resetSelfie();
+            }
+          } catch (e) {
+            console.error("Gagal reset selfie saat logout:", e);
+          }
 
           switchTab("home");
           closeNav();
@@ -14216,6 +14308,38 @@
           videoStream.getTracks().forEach((t) => t.stop());
           videoStream = null;
         }
+
+        const btnAbsen = document.getElementById("btnAmbilFoto");
+        if (btnAbsen) btnAbsen.classList.add("hidden");
+        const btnReset = document.getElementById("btnResetSelfie");
+        if (btnReset) btnReset.classList.remove("hidden");
+
+        checkReadyToSubmit();
+      }
+
+      function resetSelfie() {
+        selfieData = null;
+        if (videoStream) {
+          videoStream.getTracks().forEach((t) => t.stop());
+          videoStream = null;
+        }
+        const v = document.getElementById("videoAbsen");
+        if (v) v.classList.add("hidden");
+        const preview = document.getElementById("previewSelfie");
+        if (preview) {
+          preview.src = "";
+          preview.classList.add("hidden");
+        }
+        const placeholder = document.getElementById("cameraPlaceholder");
+        if (placeholder) placeholder.classList.remove("hidden");
+        const btnStart = document.getElementById("btnStartCam");
+        if (btnStart) btnStart.classList.remove("hidden");
+        const btnAbsen = document.getElementById("btnAmbilFoto");
+        if (btnAbsen) btnAbsen.classList.add("hidden");
+        const btnReset = document.getElementById("btnResetSelfie");
+        if (btnReset) btnReset.classList.add("hidden");
+        const errorUI = document.getElementById("cameraErrorUI");
+        if (errorUI) errorUI.classList.add("hidden");
         checkReadyToSubmit();
       }
       function checkReadyToSubmit() {
@@ -14302,10 +14426,40 @@
           }
         }
 
-        if (userCoords && isAtSchool && timeIsReady) {
+        // Handle camera button activation state based on timeIsReady
+        const btnStartCam = document.getElementById("btnStartCam");
+        if (btnStartCam) {
+          if (timeIsReady) {
+            btnStartCam.disabled = false;
+            btnStartCam.classList.remove("opacity-50", "cursor-not-allowed");
+            btnStartCam.title = "";
+          } else {
+            btnStartCam.disabled = true;
+            btnStartCam.classList.add("opacity-50", "cursor-not-allowed");
+            btnStartCam.title = "Belum masuk waktu absensi";
+            
+            // Auto stop camera if running and it becomes not ready
+            if (videoStream) {
+              videoStream.getTracks().forEach((t) => t.stop());
+              videoStream = null;
+            }
+            const v = document.getElementById("videoAbsen");
+            if (v) v.classList.add("hidden");
+            const placeholder = document.getElementById("cameraPlaceholder");
+            if (placeholder) placeholder.classList.remove("hidden");
+            const btnAbsen = document.getElementById("btnAmbilFoto");
+            if (btnAbsen) btnAbsen.classList.add("hidden");
+            const btnReset = document.getElementById("btnResetSelfie");
+            if (btnReset) btnReset.classList.add("hidden");
+          }
+        }
+
+        const isSelfieOk = (!activeUser || activeUser.role !== "Guru") || selfieData;
+
+        if (userCoords && isAtSchool && timeIsReady && isSelfieOk) {
           btn.disabled = false;
           btn.classList.remove("opacity-50", "cursor-not-allowed");
-          msg.innerText = "Sempurna! Lokasi & Waktu Terverifikasi.";
+          msg.innerText = "Sempurna! Lokasi, Waktu & Foto Terverifikasi.";
           msg.className =
             "text-center text-[10px] font-black text-green-300 italic uppercase mt-4 animate-pulse";
         } else {
@@ -14325,6 +14479,10 @@
             msg.innerText = "⏳ " + timeError;
             msg.className =
               "text-center text-[10px] font-black text-orange-400 italic uppercase mt-4";
+          } else if (!isSelfieOk) {
+            msg.innerText = "📸 Silakan ambil foto selfie terlebih dahulu!";
+            msg.className =
+              "text-center text-[10px] font-black text-yellow-400 italic uppercase mt-4 animate-pulse";
           }
         }
       }
