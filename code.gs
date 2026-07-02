@@ -8,7 +8,7 @@ var FOLDER_FOTO_ID = "1Hz5DoxAD3Tg4lwordmYfXpPUCkwDl7kK";
 function getSpreadsheet() {
   var ss = null;
   try {
-    if (SS_ID && SS_ID !== "YOUR_SPREADSHEET_ID_HERE" && SS_ID !== "") {
+    if (SS_ID && SS_ID !== "1HhnC4unsjpSV_9oadCSGB_xSadJYfs9Bx2obp2fpp9o" && SS_ID !== "") {
       ss = SpreadsheetApp.openById(SS_ID);
     }
   } catch (e) {
