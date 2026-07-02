@@ -686,7 +686,9 @@
                 >
               </div>
               <div
-                class="p-6 bg-slate-50/50 hover:bg-slate-50 rounded-2xl border border-slate-100 flex flex-col items-center transition-all duration-300 group shadow-sm hover:shadow-md"
+                id="btnStatusSistem"
+                onclick="openGASConfigModal()"
+                class="p-6 bg-slate-50/50 hover:bg-slate-50 rounded-2xl border border-slate-100 flex flex-col items-center cursor-pointer transition-all duration-300 group shadow-sm hover:shadow-md active:scale-95"
               >
                 <div
                   class="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition duration-300"
@@ -695,6 +697,7 @@
                 </div>
                 <span class="font-bold text-slate-800 mb-1">Status Sistem</span>
                 <span
+                  id="textStatusSistem"
                   class="text-[11px] text-green-600 font-semibold flex items-center gap-1.5"
                 >
                   <span
@@ -5658,6 +5661,96 @@
     </div>
 
     <div
+      id="modalGASConfig"
+      class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[300] hidden flex items-center justify-center p-4 overflow-y-auto"
+    >
+      <div
+        class="bg-white max-w-lg w-full rounded-[2rem] shadow-2xl overflow-hidden p-8 border-t-8 border-emerald-600 animate-zoomIn my-auto"
+      >
+        <h3 class="font-black text-xl text-emerald-900 uppercase italic mb-2 text-center">
+          Koneksi Google Sheets (GAS)
+        </h3>
+        <p class="text-[10px] text-slate-500 mb-6 text-center">
+          Hubungkan aplikasi SIMS Anda yang dihosting di Vercel dengan database Google Sheets Anda secara langsung.
+        </p>
+
+        <!-- Pilihan Mode -->
+        <div class="mb-6">
+          <label class="block text-[10px] font-bold text-slate-700 uppercase mb-2">Mode Database</label>
+          <div class="grid grid-cols-2 gap-3">
+            <button
+              id="btnModeSimulasi"
+              type="button"
+              onclick="setDatabaseMode('simulasi')"
+              class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-50/20 text-slate-700 transition cursor-pointer active:scale-95 text-center"
+            >
+              <span class="text-2xl mb-1">💻</span>
+              <span class="font-bold text-[10px] uppercase block">Simulasi Offline</span>
+              <span class="text-[8px] text-slate-500 block leading-tight mt-1">Menggunakan database lokal demo</span>
+            </button>
+            <button
+              id="btnModeLive"
+              type="button"
+              onclick="setDatabaseMode('live')"
+              class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-slate-200 bg-white text-slate-700 transition cursor-pointer active:scale-95 text-center"
+            >
+              <span class="text-2xl mb-1">🔌</span>
+              <span class="font-bold text-[10px] uppercase block">Live Google Sheets</span>
+              <span class="text-[8px] text-slate-500 block leading-tight mt-1">Menggunakan Google Sheets asli</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Input URL -->
+        <div id="gasUrlInputContainer" class="mb-6 hidden">
+          <label class="block text-[10px] font-bold text-slate-700 uppercase mb-2">URL Web App Google Apps Script</label>
+          <input
+            id="gasWebAppUrl"
+            type="url"
+            placeholder="https://script.google.com/macros/s/.../exec"
+            class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3 text-xs focus:border-emerald-500 focus:outline-none transition font-mono"
+          />
+          <p class="text-[9px] text-emerald-600 mt-1 font-semibold leading-relaxed">
+            * Pastikan URL berakhiran <strong>/exec</strong> dan dideploy dengan akses "Anyone".
+          </p>
+        </div>
+
+        <!-- Cara Deployment -->
+        <div class="bg-slate-50 rounded-2xl p-5 mb-6 text-left border border-slate-100 max-h-60 overflow-y-auto">
+          <h4 class="font-bold text-[10px] text-slate-800 uppercase mb-2 flex items-center gap-1">
+            <span>📖</span> Cara Menghubungkan Google Sheets:
+          </h4>
+          <ol class="list-decimal list-inside text-[9px] text-slate-600 space-y-2 leading-relaxed">
+            <li>Buka Google Spreadsheet Anda.</li>
+            <li>Pilih menu <strong>Extensions &gt; Apps Script</strong>.</li>
+            <li>Salin seluruh kode dari file <code>code.gs</code> di project ini ke editor Apps Script Anda.</li>
+            <li>Klik ikon <strong>Save (💾)</strong>, lalu klik tombol <strong>Deploy &gt; New deployment</strong> di kanan atas.</li>
+            <li>Pilih tipe: <strong>Web app</strong>.</li>
+            <li>Atur <strong>Execute as:</strong> <span class="text-emerald-700 font-bold">Me (email Anda)</span>.</li>
+            <li>Atur <strong>Who has access:</strong> <span class="text-emerald-700 font-bold">Anyone</span>.</li>
+            <li>Klik <strong>Deploy</strong>, lalu salin <strong>Web app URL</strong> yang berakhiran <code>/exec</code>.</li>
+            <li>Pilih mode <strong>Live Google Sheets</strong> di atas, paste URL di kolom input, lalu klik <strong>Simpan Koneksi</strong>.</li>
+          </ol>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <button
+            onclick="saveGASConfig()"
+            class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-xl shadow-lg uppercase text-[10px] transition cursor-pointer"
+          >
+            Simpan Koneksi
+          </button>
+          <button
+            onclick="document.getElementById('modalGASConfig').classList.add('hidden')"
+            class="w-full text-slate-400 font-bold py-2 uppercase text-[9px] tracking-widest hover:text-slate-600 transition cursor-pointer"
+          >
+            Batal
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
       id="modalQR"
       class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[300] hidden flex items-center justify-center p-4"
     >
@@ -5705,9 +5798,11 @@
       // High-fidelity Simulation Engine for Google Apps Script mock
       // Only load simulation if NOT running in Google Apps Script hosting environment as a Web App (.google.com or .googleusercontent.com)
       const isGoogleEnv =
-        typeof google !== "undefined" &&
-        typeof google.script !== "undefined" &&
-        typeof google.script.run !== "undefined";
+        (typeof google !== "undefined" &&
+         typeof google.script !== "undefined" &&
+         typeof google.script.run !== "undefined") ||
+        window.location.hostname.includes("google.com") ||
+        window.location.hostname.includes("googleusercontent.com");
 
       function getDownloadUrl(url) {
         if (!url) return "";
@@ -6527,6 +6622,116 @@
             }, 20);
             return this;
           }
+          getDaftarJadwal(userNama, role) {
+            setTimeout(() => {
+              const schedules = [
+                { row: 2, hari: "Senin", jam: "1-2", kelas: "XII-PPLG-1", mapel: "Pemrograman Web", guru: "DEDE.IKAH66", ruang: "Lab Komputer 1" },
+                { row: 3, hari: "Senin", jam: "3-4", kelas: "XII-PPLG-2", mapel: "Pemrograman Web", guru: "DEDE.IKAH66", ruang: "Lab Komputer 2" },
+                { row: 4, hari: "Selasa", jam: "1-2", kelas: "XI-PPLG-1", mapel: "Pemrograman Objek", guru: "DEDE.IKAH66", ruang: "Lab Komputer 1" },
+                { row: 5, hari: "Rabu", jam: "5-6", kelas: "XII-TKJ-1", mapel: "Jaringan Komputer", guru: "Budi Santoso, M.T", ruang: "Lab Jaringan" }
+              ];
+              const roleLow = (role || "").toString().toLowerCase().trim();
+              if (roleLow === "guru") {
+                const normUser = (userNama || "").toString().toUpperCase().trim();
+                const filtered = schedules.filter(s => {
+                  const normGuru = (s.guru || "").toString().toUpperCase().trim();
+                  return normGuru === normUser || normGuru.includes(normUser) || normUser.includes(normGuru);
+                });
+                if (this._successHandler) this._successHandler(filtered);
+              } else {
+                if (this._successHandler) this._successHandler(schedules);
+              }
+            }, 20);
+            return this;
+          }
+          getSekolahBinaan(pengawasEmail) {
+            setTimeout(() => {
+              const list = [
+                { row: 2, timestamp: "2026-07-01", pengawas: pengawasEmail || "pengawas@gmail.com", nama: "SMKN 4 GARUT", npsn: "20202004", alamat: "JL. RAYA KARANGPAWITAN, GARUT" },
+                { row: 3, timestamp: "2026-07-01", pengawas: pengawasEmail || "pengawas@gmail.com", nama: "SMKN 1 GARUT", npsn: "20202001", alamat: "JL. PEMBANGUNAN NO. 1, GARUT" }
+              ];
+              if (this._successHandler) this._successHandler(list);
+            }, 20);
+            return this;
+          }
+          getRekapPenugasanGuru(sekolah) {
+            setTimeout(() => {
+              const list = [
+                { nama: "DEDE.IKAH66", email: "dedeikah@gmail.com", sekolah: "SMKN 4 GARUT", mapel: "Pemrograman Web", kelasMengajar: ["XII-PPLG-1", "XII-PPLG-2", "XI-PPLG-1"], totalJam: 6 },
+                { nama: "Budi Santoso, M.T", email: "budi@gmail.com", sekolah: "SMKN 4 GARUT", mapel: "Jaringan Komputer", kelasMengajar: ["XII-TKJ-1"], totalJam: 2 }
+              ];
+              if (this._successHandler) this._successHandler(list);
+            }, 20);
+            return this;
+          }
+          getJadwalKelas(namaKelas) {
+            setTimeout(() => {
+              const schedules = [
+                { row: 2, hari: "Senin", jamKe: "1-2", kelas: "XII-PPLG-1", mapel: "Pemrograman Web", guru: "DEDE.IKAH66" },
+                { row: 3, hari: "Senin", jamKe: "3-4", kelas: "XII-PPLG-2", mapel: "Pemrograman Web", guru: "DEDE.IKAH66" },
+                { row: 4, hari: "Selasa", jamKe: "1-2", kelas: "XI-PPLG-1", mapel: "Pemrograman Objek", guru: "DEDE.IKAH66" },
+                { row: 5, hari: "Rabu", jamKe: "5-6", kelas: "XII-TKJ-1", mapel: "Jaringan Komputer", guru: "Budi Santoso, M.T" }
+              ];
+              const normClass = (namaKelas || "").toString().toUpperCase().trim();
+              const filtered = schedules.filter(s => (s.kelas || "").toUpperCase().trim() === normClass);
+              if (this._successHandler) this._successHandler(filtered);
+            }, 20);
+            return this;
+          }
+          getRekapAbsenGuru(bulan, sekolah) {
+            setTimeout(() => {
+              if (this._successHandler) this._successHandler([]);
+            }, 20);
+            return this;
+          }
+          simpanSekolahBinaan(obj) {
+            setTimeout(() => {
+              if (this._successHandler) this._successHandler("Sekolah binaan berhasil disimpan!");
+            }, 20);
+            return this;
+          }
+          hapusSekolahBinaan(row) {
+            setTimeout(() => {
+              if (this._successHandler) this._successHandler("Sekolah binaan berhasil dihapus!");
+            }, 20);
+            return this;
+          }
+          simpanFeedbackAktivitasKepsek(row, text) {
+            setTimeout(() => {
+              if (this._successHandler) this._successHandler("Feedback Aktivitas Kepala Sekolah disimpan!");
+            }, 20);
+            return this;
+          }
+          simpanFeedbackLaporanKepsek(row, text) {
+            setTimeout(() => {
+              if (this._successHandler) this._successHandler("Feedback Laporan Kepala Sekolah disimpan!");
+            }, 20);
+            return this;
+          }
+          simpanJadwalKelas(obj) {
+            setTimeout(() => {
+              if (this._successHandler) this._successHandler("Jadwal kelas berhasil disimpan!");
+            }, 20);
+            return this;
+          }
+          hapusJadwal(row) {
+            setTimeout(() => {
+              if (this._successHandler) this._successHandler("Jadwal kelas berhasil dihapus!");
+            }, 20);
+            return this;
+          }
+          simpanJadwalGuru(obj) {
+            setTimeout(() => {
+              if (this._successHandler) this._successHandler("Jadwal guru berhasil disimpan!");
+            }, 20);
+            return this;
+          }
+          hapusJadwalGuru(row) {
+            setTimeout(() => {
+              if (this._successHandler) this._successHandler("Jadwal guru berhasil dihapus!");
+            }, 20);
+            return this;
+          }
         }
         GoogleScriptRunSimulation.prototype.simpanKelas = function (data) {
           setTimeout(() => {
@@ -6638,39 +6843,118 @@
         window.google = {
           script: {
             get run() {
-              const instance = new GoogleScriptRunSimulation();
-              return new Proxy(instance, {
-                get(target, prop) {
-                  if (prop in target) {
-                    const value = target[prop];
-                    if (typeof value === "function") {
-                      return value.bind(target);
-                    }
-                    return value;
-                  }
-                  // Catch-all mock method
-                  return function (...args) {
-                    console.warn(
-                      `Simulated call to unmapped method: ${prop}`,
-                      args,
-                    );
-                    setTimeout(() => {
-                      if (target._successHandler) {
-                        if (
-                          prop.startsWith("simpan") ||
-                          prop.startsWith("update") ||
-                          prop.startsWith("hapus")
-                        ) {
-                          target._successHandler("Sukses");
-                        } else {
-                          target._successHandler([]);
-                        }
+              const mode = localStorage.getItem("gas_db_mode") || "simulasi";
+              const webAppUrl = localStorage.getItem("gas_web_app_url") || "";
+              
+              if (mode === "live" && webAppUrl) {
+                const createLiveProxy = (successHandler, failureHandler) => {
+                  return new Proxy({}, {
+                    get(target, propKey) {
+                      if (propKey === "withSuccessHandler") {
+                        return function (handler) {
+                          return createLiveProxy(handler, failureHandler);
+                        };
                       }
-                    }, 20);
-                    return target;
-                  };
-                },
-              });
+                      if (propKey === "withFailureHandler") {
+                        return function (handler) {
+                          return createLiveProxy(successHandler, handler);
+                        };
+                      }
+                      
+                      return function (...args) {
+                        fetch(webAppUrl, {
+                          method: "POST",
+                          mode: "cors",
+                          headers: {
+                            "Content-Type": "text/plain;charset=utf-8"
+                          },
+                          body: JSON.stringify({
+                            functionName: propKey,
+                            arguments: args
+                          })
+                        })
+                        .then((response) => {
+                          if (!response.ok) {
+                            throw new Error("HTTP error! Status: " + response.status);
+                          }
+                          return response.json();
+                        })
+                        .then((data) => {
+                          if (data && data.status === "error") {
+                            console.error("GAS live error:", data.message);
+                            if (failureHandler) {
+                              failureHandler(new Error(data.message));
+                            } else {
+                              Swal.fire({
+                                icon: "error",
+                                title: "Gagal Sinkronisasi",
+                                text: "Google Sheets Error: " + data.message,
+                                confirmButtonColor: "#10b981",
+                              });
+                            }
+                          } else {
+                            if (successHandler) {
+                              successHandler(data ? data.result : null);
+                            }
+                          }
+                        })
+                        .catch((error) => {
+                          console.error("GAS fetch connection error:", error);
+                          if (failureHandler) {
+                            failureHandler(error);
+                          } else {
+                            Swal.fire({
+                              icon: "error",
+                              title: "Koneksi Gagal",
+                              text: "Gagal terhubung ke Google Apps Script. Pastikan URL Web App benar dan dideploy sebagai 'Anyone'.",
+                              confirmButtonColor: "#10b981",
+                            });
+                          }
+                        });
+                      };
+                    }
+                  });
+                };
+                return createLiveProxy();
+              } else {
+                const instance = new GoogleScriptRunSimulation();
+                const proxyInstance = new Proxy(instance, {
+                  get(target, prop) {
+                    if (prop in target) {
+                      const value = target[prop];
+                      if (typeof value === "function") {
+                        return function (...args) {
+                          const res = value.apply(target, args);
+                          return res === target ? proxyInstance : res;
+                        };
+                      }
+                      return value;
+                    }
+                    // Catch-all mock method
+                    return function (...args) {
+                      console.warn(
+                        `Simulated call to unmapped method: ${prop}`,
+                        args,
+                      );
+                      setTimeout(() => {
+                        if (target._successHandler) {
+                          if (
+                            prop.startsWith("simpan") ||
+                            prop.startsWith("update") ||
+                            prop.startsWith("hapus")
+                          ) {
+                            target._successHandler("Sukses");
+                          } else {
+                            target._successHandler([]);
+                          }
+                        }
+                      }, 20);
+                      return proxyInstance;
+                    };
+                  },
+                });
+                return proxyInstance;
+              }
             },
           },
         };
@@ -6960,7 +7244,7 @@
         document.getElementById("modalLogin").classList.add("hidden");
         document.getElementById("mainDashboard").classList.remove("hidden");
         document.getElementById("dispNama").innerText = activeUser.nama;
-        if (activeUser.role === "Pengawas") {
+        if (activeUser.role === "Pengawas" || activeUser.role === "Admin" || activeUser.role === "Administrator") {
           document.getElementById("dispRole").innerText = activeUser.role;
         } else if (activeUser.sekolah && activeUser.sekolah !== "-") {
           document.getElementById("dispRole").innerText =
@@ -10056,6 +10340,161 @@
             .getDaftarUserManagement();
         }
       }
+
+      // Google Apps Script Connection Helper Functions
+      let currentGasConfigMode = "simulasi";
+
+      function openGASConfigModal() {
+        const modal = document.getElementById("modalGASConfig");
+        if (!modal) return;
+
+        const savedMode = localStorage.getItem("gas_db_mode") || "simulasi";
+        const savedUrl = localStorage.getItem("gas_web_app_url") || "";
+
+        const inputUrl = document.getElementById("gasWebAppUrl");
+        if (inputUrl) {
+          inputUrl.value = savedUrl;
+        }
+        setDatabaseMode(savedMode);
+
+        modal.classList.remove("hidden");
+      }
+
+      function setDatabaseMode(mode) {
+        currentGasConfigMode = mode;
+        const btnSimulasi = document.getElementById("btnModeSimulasi");
+        const btnLive = document.getElementById("btnModeLive");
+        const urlContainer = document.getElementById("gasUrlInputContainer");
+
+        if (!btnSimulasi || !btnLive || !urlContainer) return;
+
+        if (mode === "live") {
+          // Live button active
+          btnLive.className = "flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-50/20 text-slate-700 transition cursor-pointer active:scale-95 text-center";
+          // Simulasi button inactive
+          btnSimulasi.className = "flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-slate-200 bg-white text-slate-700 transition cursor-pointer active:scale-95 text-center";
+          // Show URL input
+          urlContainer.classList.remove("hidden");
+        } else {
+          // Simulasi button active
+          btnSimulasi.className = "flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-50/20 text-slate-700 transition cursor-pointer active:scale-95 text-center";
+          // Live button inactive
+          btnLive.className = "flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-slate-200 bg-white text-slate-700 transition cursor-pointer active:scale-95 text-center";
+          // Hide URL input
+          urlContainer.classList.add("hidden");
+        }
+      }
+
+      function saveGASConfig() {
+        const urlInputEl = document.getElementById("gasWebAppUrl");
+        const urlInput = urlInputEl ? urlInputEl.value.trim() : "";
+        
+        if (currentGasConfigMode === "live") {
+          if (!urlInput) {
+            Swal.fire({
+              icon: "warning",
+              title: "URL Diperlukan",
+              text: "Silakan masukkan URL Web App Google Apps Script Anda.",
+              confirmButtonColor: "#10b981",
+            });
+            return;
+          }
+          if (!urlInput.startsWith("https://script.google.com/macros/s/") || !urlInput.endsWith("/exec")) {
+            Swal.fire({
+              icon: "warning",
+              title: "Format URL Salah",
+              text: "URL harus berformat 'https://script.google.com/macros/s/.../exec'",
+              confirmButtonColor: "#10b981",
+            });
+            return;
+          }
+          
+          // Test the connection
+          Swal.fire({
+            title: "Menguji Koneksi...",
+            text: "Menghubungi Google Apps Script...",
+            allowOutsideClick: false,
+            didOpen: () => {
+              Swal.showLoading();
+            }
+          });
+
+          fetch(urlInput + "?ping=1")
+            .then(res => res.json())
+            .then(data => {
+              if (data && data.status === "success") {
+                localStorage.setItem("gas_db_mode", "live");
+                localStorage.setItem("gas_web_app_url", urlInput);
+                
+                updateStatusSistemUI();
+                const modal = document.getElementById("modalGASConfig");
+                if (modal) modal.classList.add("hidden");
+                
+                Swal.fire({
+                  icon: "success",
+                  title: "Koneksi Berhasil!",
+                  text: "Aplikasi berhasil terhubung ke Google Sheets Anda.",
+                  confirmButtonColor: "#10b981",
+                }).then(() => {
+                  window.location.reload();
+                });
+              } else {
+                throw new Error("Respon tidak valid");
+              }
+            })
+            .catch(err => {
+              console.error(err);
+              Swal.fire({
+                icon: "error",
+                title: "Koneksi Gagal",
+                text: "Gagal memverifikasi URL. Pastikan Anda telah mengklik 'Deploy' -> 'New deployment' -> akses 'Anyone' di editor Google Apps Script.",
+                confirmButtonColor: "#10b981",
+              });
+            });
+        } else {
+          // Simulasi
+          localStorage.setItem("gas_db_mode", "simulasi");
+          updateStatusSistemUI();
+          const modal = document.getElementById("modalGASConfig");
+          if (modal) modal.classList.add("hidden");
+          
+          Swal.fire({
+            icon: "success",
+            title: "Mode Simulasi Aktif",
+            text: "Aplikasi sekarang menggunakan database demo lokal offline.",
+            confirmButtonColor: "#10b981",
+          }).then(() => {
+            window.location.reload();
+          });
+        }
+      }
+
+      function updateStatusSistemUI() {
+        const textStatus = document.getElementById("textStatusSistem");
+        if (!textStatus) return;
+
+        const mode = localStorage.getItem("gas_db_mode") || "simulasi";
+        const webAppUrl = localStorage.getItem("gas_web_app_url") || "";
+
+        if (mode === "live" && webAppUrl) {
+          textStatus.className = "text-[11px] text-emerald-600 font-semibold flex items-center gap-1.5";
+          textStatus.innerHTML = `
+            <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-ping"></span>
+            Terkoneksi Sheets
+          `;
+        } else {
+          textStatus.className = "text-[11px] text-amber-500 font-semibold flex items-center gap-1.5";
+          textStatus.innerHTML = `
+            <span class="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>
+            Mode Demo (Simulasi)
+          `;
+        }
+      }
+
+      // Automatically update status on load
+      window.addEventListener("load", () => {
+        updateStatusSistemUI();
+      });
 
       function switchTab(id) {
         if (id === "home") {
