@@ -8,7 +8,7 @@ var FOLDER_FOTO_ID = "1Hz5DoxAD3Tg4lwordmYfXpPUCkwDl7kK";
 function getSpreadsheet() {
   var ss = null;
   try {
-    if (SS_ID && SS_ID !== "1HhnC4unsjpSV_9oadCSGB_xSadJYfs9Bx2obp2fpp9o" && SS_ID !== "") {
+    if (SS_ID && SS_ID !== "YOUR_SPREADSHEET_ID_HERE" && SS_ID !== "") {
       ss = SpreadsheetApp.openById(SS_ID);
     }
   } catch (e) {
@@ -204,11 +204,46 @@ function bootstrapDatabase(ss) {
   }
 }
 
-function doGet() {
+function doGet(e) {
+  if (e && e.parameter && e.parameter.ping) {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "success",
+      message: "Koneksi ke Google Apps Script Berhasil!",
+      timestamp: new Date().toISOString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
   return HtmlService.createTemplateFromFile('index')
       .evaluate()
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
       .setTitle("SIMS KCD XI");
+}
+
+function doPost(e) {
+  try {
+    var requestData = JSON.parse(e.postData.contents);
+    var functionName = requestData.functionName;
+    var args = requestData.arguments || [];
+    
+    // Check if function exists in the global scope
+    if (typeof this[functionName] === "function") {
+      var result = this[functionName].apply(null, args);
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        result: result
+      })).setMimeType(ContentService.MimeType.JSON);
+    } else {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "error",
+        message: "Fungsi '" + functionName + "' tidak ditemukan di Google Apps Script."
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "error",
+      message: err.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
 }
 
 /* --- SISTEM LOGIN --- */
