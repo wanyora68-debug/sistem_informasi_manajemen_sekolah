@@ -5798,6 +5798,36 @@
     </div>
 
     <script>
+      // =========================================================================
+      // CONFIGURATION GLOBAL UNTUK AUTOMATIC CONNECTION GOOGLE SHEETS (GAS)
+      // =========================================================================
+      // Masukkan URL Web App Google Apps Script Anda di bawah ini agar semua pengguna/browser 
+      // otomatis langsung terhubung ke Google Sheet asli saat memuat aplikasi atau login!
+      // Jika dikosongkan (""), aplikasi akan default menggunakan mode Simulasi Offline sampai dikonfigurasi.
+      const DEFAULT_GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzczf5lb9Ghafo9hppu6wDJTjExM8da0fR7aRxCPgX2tVEO-x577dryoCVklTGjRC2jIw/exec";
+
+      // Helper to retrieve the current Web App URL with a default fallback
+      window.getGASWebAppUrl = function() {
+        const saved = localStorage.getItem("gas_web_app_url");
+        if (saved && saved.trim() !== "") return saved.trim();
+        if (typeof DEFAULT_GAS_WEB_APP_URL !== "undefined" && DEFAULT_GAS_WEB_APP_URL && DEFAULT_GAS_WEB_APP_URL.trim() !== "https://script.google.com/macros/s/AKfycbzczf5lb9Ghafo9hppu6wDJTjExM8da0fR7aRxCPgX2tVEO-x577dryoCVklTGjRC2jIw/exec") {
+          return DEFAULT_GAS_WEB_APP_URL.trim();
+        }
+        return "";
+      };
+
+      // Helper to retrieve the current database mode with automatic live default if URL is available
+      window.getGASDbMode = function() {
+        const url = window.getGASWebAppUrl();
+        if (!url) return "simulasi";
+        const savedMode = localStorage.getItem("gas_db_mode");
+        // Jika URL terisi dan mode belum dipilih secara eksplisit oleh user, langsung default ke live
+        if (!savedMode || savedMode === "live") {
+          return "live";
+        }
+        return savedMode; // bisa "simulasi" jika dinonaktifkan manual oleh user
+      };
+
       // High-fidelity Simulation Engine for Google Apps Script mock
       // Only load simulation if NOT running in Google Apps Script hosting environment as a Web App (.google.com or .googleusercontent.com)
       const isGoogleEnv =
@@ -6846,11 +6876,8 @@
         window.google = {
           script: {
             get run() {
-              const webAppUrl = localStorage.getItem("gas_web_app_url") || "";
-              let mode = localStorage.getItem("gas_db_mode") || "simulasi";
-              if (webAppUrl && mode !== "simulasi") {
-                mode = "live";
-              }
+              const webAppUrl = window.getGASWebAppUrl();
+              const mode = window.getGASDbMode();
               
               if (mode === "live" && webAppUrl) {
                 const createLiveProxy = (successHandler, failureHandler) => {
@@ -10354,8 +10381,8 @@
         const modal = document.getElementById("modalGASConfig");
         if (!modal) return;
 
-        const savedMode = localStorage.getItem("gas_db_mode") || "simulasi";
-        const savedUrl = localStorage.getItem("gas_web_app_url") || "";
+        const savedMode = window.getGASDbMode();
+        const savedUrl = window.getGASWebAppUrl();
 
         const inputUrl = document.getElementById("gasWebAppUrl");
         if (inputUrl) {
@@ -10479,16 +10506,8 @@
         const textStatus = document.getElementById("textStatusSistem");
         if (!textStatus) return;
 
-        const webAppUrl = localStorage.getItem("gas_web_app_url") || "";
-        let mode = localStorage.getItem("gas_db_mode");
-        
-        // If webAppUrl is present and mode is not set or not explicitly simulasi, force live mode
-        if (webAppUrl && mode !== "simulasi") {
-          mode = "live";
-          localStorage.setItem("gas_db_mode", "live");
-        } else if (!mode) {
-          mode = "simulasi";
-        }
+        const webAppUrl = window.getGASWebAppUrl();
+        const mode = window.getGASDbMode();
 
         if (mode === "live" && webAppUrl) {
           textStatus.className = "text-[11px] text-emerald-600 font-semibold flex items-center gap-1.5";
