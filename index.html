@@ -5662,10 +5662,10 @@
 
     <div
       id="modalGASConfig"
-      class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[300] hidden flex items-start justify-center p-4 overflow-y-auto"
+      class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[300] hidden flex items-center justify-center p-4 overflow-y-auto"
     >
       <div
-        class="bg-white max-w-lg w-full rounded-[2rem] shadow-2xl overflow-hidden p-6 border-t-8 border-emerald-600 animate-zoomIn my-8"
+        class="bg-white max-w-lg w-full rounded-[2rem] shadow-2xl p-6 border-t-8 border-emerald-600 animate-zoomIn my-8 max-h-[90vh] overflow-y-auto"
       >
         <h3 class="font-black text-xl text-emerald-900 uppercase italic mb-2 text-center">
           Koneksi Google Sheets (GAS)
@@ -5806,11 +5806,26 @@
       // Jika dikosongkan (""), aplikasi akan default menggunakan mode Simulasi Offline sampai dikonfigurasi.
       const DEFAULT_GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzczf5lb9Ghafo9hppu6wDJTjExM8da0fR7aRxCPgX2tVEO-x577dryoCVklTGjRC2jIw/exec";
 
+      // Otomatis atur local storage ke Google Sheet asli agar user langsung terhubung secara otomatis
+      (function() {
+        try {
+          const savedUrl = localStorage.getItem("gas_web_app_url");
+          const savedMode = localStorage.getItem("gas_db_mode");
+          if (savedUrl !== DEFAULT_GAS_WEB_APP_URL || savedMode !== "live") {
+            localStorage.setItem("gas_web_app_url", DEFAULT_GAS_WEB_APP_URL);
+            localStorage.setItem("gas_db_mode", "live");
+            console.log("Automatically connected to live Google Sheets database.");
+          }
+        } catch (e) {
+          console.error("Failed to auto-set GAS configuration:", e);
+        }
+      })();
+
       // Helper to retrieve the current Web App URL with a default fallback
       window.getGASWebAppUrl = function() {
         const saved = localStorage.getItem("gas_web_app_url");
         if (saved && saved.trim() !== "") return saved.trim();
-        if (typeof DEFAULT_GAS_WEB_APP_URL !== "undefined" && DEFAULT_GAS_WEB_APP_URL && DEFAULT_GAS_WEB_APP_URL.trim() !== "https://script.google.com/macros/s/AKfycbzczf5lb9Ghafo9hppu6wDJTjExM8da0fR7aRxCPgX2tVEO-x577dryoCVklTGjRC2jIw/exec") {
+        if (typeof DEFAULT_GAS_WEB_APP_URL !== "undefined" && DEFAULT_GAS_WEB_APP_URL && DEFAULT_GAS_WEB_APP_URL.trim() !== "") {
           return DEFAULT_GAS_WEB_APP_URL.trim();
         }
         return "";
