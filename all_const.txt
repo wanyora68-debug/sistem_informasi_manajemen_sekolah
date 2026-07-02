@@ -1,0 +1,195 @@
+883:       const savedCoords = localStorage.getItem('sims_school_coords');
+892:       const params = new URLSearchParams(window.location.search);
+893:       const mode = params.get('mode');
+894:       const token = params.get('token');
+917:       const savedUser = localStorage.getItem('sims_user');
+923:             const prefillQR = localStorage.getItem('sims_qr_prefill');
+948:       const bioMsg = document.getElementById('bioStatusMsg');
+949:       const bioBtn = document.getElementById('btnRegBio');
+963:          const errUI = document.getElementById('cameraErrorUI');
+979:          const match = list.find(s => s.nama.toString().toLowerCase().trim() === activeUser.sekolah.toLowerCase().trim());
+981:             const normalizeTime = (str) => {
+983:                const match = str.toString().trim().match(/^(\d{1,2}):(\d{2})(:(\d{2}))?$/);
+985:                   const h = match[1].padStart(2, '0');
+986:                   const m = match[2];
+1002:             const txtPusat = document.getElementById('txtPusat');
+1010:       const targetTab = localStorage.getItem('sims_target_tab');
+1045:      const modal = document.getElementById('modalLogin');
+1046:      const title = document.getElementById('titleLogin');
+1062:       const btn = document.getElementById('btnReg');
+1063:       const data = {
+1079:      const e = document.getElementById('lEmail').value; const p = document.getElementById('lPass').value; const btn = document.getElementById('btnLogin');
+1094:          const activeBtn = document.querySelector('.menu-item-active');
+1102:       const newWindow = window.open('', '_blank');
+1113:                const a = document.createElement('a');
+1127:          const sec = document.getElementById('sec-' + t); 
+1128:          const btn = document.getElementById('tab-' + t); 
+1139:      const targetSec = document.getElementById('sec-' + id);
+1142:      const targetBtn = document.getElementById('tab-' + id);
+1179:       const lat = parseFloat(document.getElementById('setLat').value);
+1180:       const lng = parseFloat(document.getElementById('setLng').value);
+1181:       const jamMasuk = document.getElementById('setJamMasuk').value;
+1182:       const jamPulang = document.getElementById('setJamPulang').value;
+1186:       const btn = event.target;
+1200:       const bln = document.getElementById('lapBulan').value;
+1201:       const area = document.getElementById('lapPrintArea');
+1202:       const preview = document.getElementById('previewLaporan');
+1216:       const area = document.getElementById('lapPrintArea');
+1217:       const bulanNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+1218:       const namaBulan = bulanNames[filterBulan];
+1220:       const filteredJurnal = jurnals.filter(j => new Date(j.tgl).getMonth() == filterBulan);
+1221:       const filteredAkt = aktivitass.filter(a => new Date(a.tgl).getMonth() == filterBulan);
+1288:       const table = document.getElementById('tableUsersBody');
+1312:       const u = currentUsers[idx];
+1330:       const container = document.getElementById('listAktivitasContainer');
+1339:       const container = document.getElementById('listAktivitasContainer');
+1340:       const filter = document.getElementById('filterBulan').value;
+1343:       const filtered = allAktivitas.filter(a => {
+1345:          const bulan = new Date(a.tgl).getMonth();
+1381:       const btn = document.getElementById('btnSaveAkt');
+1382:       const obj = {
+1395:       const stF = document.getElementById('aST').files[0];
+1396:       const f1F = document.getElementById('aF1').files[0];
+1397:       const f2F = document.getElementById('aF2').files[0];
+1399:       const serialize = (file, cb) => { if(file) { const r = new FileReader(); r.onload = (e) => cb(e.target.result); r.readAsDataURL(file); } else cb(null); };
+1419:       const txt = prompt("Masukkan masukan/feedback Anda:");
+1425:       const f = document.getElementById('formAktivitasWrapper');
+1430:       const container = document.getElementById('qrCodeOutput');
+1431:       const sekolah = activeUser.sekolah || "SEKOLAH_KCD_XI";
+1440:          const token = "ABSENSI_SIMS_" + sekolah.replace(/\s+/g, '_').toUpperCase();
+1441:          const qrLink = url + "?mode=qr_absen&token=" + token;
+1466:       const obj = {
+1482:       const sel = document.getElementById(targetId);
+1498:       const reader = document.getElementById('reader');
+1499:       const placeholder = document.getElementById('cameraPlaceholder');
+1509:       const config = { fps: 15, qrbox: { width: 250, height: 250 } };
+1528:       const file = input.files[0];
+1531:       const scanner = new Html5Qrcode("reader"); // temporary instance for file scanning
+1555:       const v = document.getElementById('videoAbsen');
+1556:       const btnStart = document.getElementById('btnStartCam');
+1557:       const btnAbsen = document.getElementById('btnAmbilFoto');
+1558:       const errorUI = document.getElementById('cameraErrorUI');
+1559:       const placeholder = document.getElementById('cameraPlaceholder');
+1568:       const constraints = { 
+1602:       const errorUI = document.getElementById('cameraErrorUI');
+1603:       const placeholder = document.getElementById('cameraPlaceholder');
+1608:       const errorMsgDiv = errorUI.querySelector('p');
+1615:       const file = input.files[0];
+1617:       const reader = new FileReader();
+1620:          const p = document.getElementById('previewSelfie');
+1633:       const statusGPS = document.getElementById('statusGPS');
+1667:       const statusGPS = document.getElementById('statusGPS');
+1668:       const txtRadius = document.getElementById('txtRadiusStatus');
+1671:       const dist = calculateDistance(userCoords.lat, userCoords.lng, SCHOOL_COORDS.lat, SCHOOL_COORDS.lng); 
+1702:       const R = 6371e3; // metres
+1703:       const φ1 = lat1 * Math.PI/180;
+1704:       const φ2 = lat2 * Math.PI/180;
+1705:       const Δφ = (lat2-lat1) * Math.PI/180;
+1706:       const Δλ = (lon2-lon1) * Math.PI/180;
+1707:       const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+1710:       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+1715:       const v = document.getElementById('videoAbsen');
+1716:       const c = document.getElementById('canvasAbsen');
+1717:       const p = document.getElementById('previewSelfie');
+1736:       const now = new Date();
+1737:       const btn = document.getElementById('btnKirimAbsen');
+1738:       const msg = document.getElementById('msgAbsen');
+1741:       const tipeVal = document.getElementById('tipeAbsen').value;
+1742:       const isMasuk = tipeVal.includes("Masuk");
+1744:       const normalizeTime = (str) => {
+1746:          const match = str.toString().trim().match(/^(\d{1,2}):(\d{2})(:(\d{2}))?$/);
+1748:             const h = match[1].padStart(2, '0');
+1749:             const m = match[2];
+1755:       const jamMasukStr = normalizeTime(SCHOOL_COORDS.jamMasuk) || "07:00";
+1756:       const jamPulangStr = normalizeTime(SCHOOL_COORDS.jamPulang) || "15:00";
+1771:       const nowMinutes = now.getHours() * 60 + now.getMinutes();
+1778:          const parts = jamMasukStr.split(':');
+1779:          const checkInTargetMinutes = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+1780:          const checkInStartMinutes = checkInTargetMinutes - 180; // 3 jam sebelumnya
+1790:          const parts = jamPulangStr.split(':');
+1791:          const checkOutTargetMinutes = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+1824:       const btn = document.getElementById('btnKirimAbsen');
+1825:       const tipe = document.getElementById('tipeAbsen').value;
+1826:       const isMasuk = tipe.includes("Masuk");
+1836:       const bioOverlay = document.createElement('div');
+1864:       const icon = bioOverlay.querySelector('#bioIcon');
+1865:       const title = bioOverlay.querySelector('#bioTitle');
+1866:       const desc = bioOverlay.querySelector('#bioDesc');
+1867:       const scanner = bioOverlay.querySelector('#bioScanner');
+1886:             const challenge = new Uint8Array(32);
+1889:             const options = {
+1899:             const assertion = await navigator.credentials.get(options);
+1911:                   const payload = {
+1926:                      const mainArea = document.getElementById('sec-absensi-guru');
+1927:                      const now = new Date();
+1928:                      const timeStr = now.getHours().toString().padStart(2, '0') + ":" + 
+1971:       const kls = document.getElementById('selKelasAbsen').value;
+1972:       const table = document.getElementById('siswaAbsenTable');
+1973:       const container = document.getElementById('listAbsenSiswa');
+1974:       const dateDisplay = document.getElementById('absenSiswaDateDisplay');
+1975:       const selHari = document.getElementById('selHariAbsen');
+1976:       const selTgl = document.getElementById('selTglAbsen');
+1984:       const today = new Date();
+1985:       const opts = { weekday: 'long' };
+1999:          const filteredList = list.filter(s => s.kelas && s.kelas.toString().toUpperCase() === kls.toUpperCase());
+2043:       const btn = document.getElementById('btnSaveAbsenSiswa');
+2044:       const kls = document.getElementById('selKelasAbsen').value;
+2045:       const mapel = document.getElementById('mapelAbsen').value;
+2046:       const hari = document.getElementById('selHariAbsen').value;
+2047:       const tgl = document.getElementById('selTglAbsen').value;
+2051:       const abs = {};
+2053:          const radios = document.getElementsByName('abs-'+i);
+2055:          for(const r of radios) {
+2084:       const btn = document.getElementById('btnJurnal');
+2085:       const obj = {
+2100:       const reader1 = new FileReader(), reader2 = new FileReader();
+2101:       const f1 = document.getElementById('jFoto1').files[0], f2 = document.getElementById('jFoto2').files[0];
+2103:       const finalize = () => {
+2121:       const kls = document.getElementById('selKelasNilai').value;
+2122:       const body = document.getElementById('tableNilaiBody');
+2123:       const container = document.getElementById('containerDaftarNilai');
+2138:       const btn = document.getElementById('btnSaveNilai');
+2139:       const tipe = document.getElementById('tipeNilai').value;
+2140:       const mapel = document.getElementById('mapelNilai').value;
+2141:       const kls = document.getElementById('selKelasNilai').value;
+2143:       const dataNilai = currentSiswaList.map((s, i) => ({ nama: s.nama, skor: document.getElementById('nil-'+i).value }));
+2153:       const w = document.getElementById('wrapperTugasManual');
+2159:       const btn = document.getElementById('btnTugasTab');
+2165:       const obj = { guru: activeUser.nama, tugas: tugas, keterangan: document.getElementById('tugasKet').value };
+2174:      const table = document.getElementById('listSiswaTable');
+2175:      const loader = document.getElementById('loadingSiswa');
+2186:          const row = `<tr class="hover:bg-green-50 transition border-b border-gray-100">
+2227:      const sel = document.getElementById('sKelas');
+2242:      const btn = document.getElementById('btnSaveSiswa');
+2243:      const obj = {
+2273:      const file = input.files[0];
+2275:      const reader = new FileReader();
+2276:      const statusBtn = input.parentElement;
+2277:      const oldHtml = statusBtn.innerHTML;
+2282:        const data = new Uint8Array(e.target.result);
+2283:        const workbook = XLSX.read(data, { type: 'array' });
+2284:        const firstSheetName = workbook.SheetNames[0];
+2285:        const worksheet = workbook.Sheets[firstSheetName];
+2286:        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+2290:        const formattedData = jsonData.map(row => ({
+2318:      const table = document.getElementById('listKelasTable');
+2319:      const loader = document.getElementById('loadingKelas');
+2330:          const row = `<tr class="hover:bg-blue-50 transition border-b border-gray-100">
+2374:      const btn = document.getElementById('btnSaveKelas');
+2375:      const obj = {
+2403:      const btn = document.getElementById('btnSimpan'); btn.disabled = true; btn.innerText = "MENGUPLOAD...";
+2404:      const payload = { 
+2413:      const fileInp = document.getElementById('editFoto') || document.getElementById('inpFoto') || { files: [] };
+2414:      const sendData = (p) => { 
+2439:        const reader = new FileReader(); 
+2448:       const btn = document.getElementById('btnRegBio');
+2449:       const msg = document.getElementById('bioStatusMsg');
+2461:             const challenge = new Uint8Array(32);
+2464:             const userId = new TextEncoder().encode(activeUser.email);
+2466:             const options = {
+2484:             const credential = await navigator.credentials.create(options);
+2520:       const body = document.getElementById('tableJadwalBody');
+2531:          const hariOrder = { "SENIN": 1, "SELASA": 2, "RABU": 3, "KAMIS": 4, "JUMAT": 5, "SABTU": 6 };
+2535:             const row = `<tr class="border-b border-gray-50 hover:bg-indigo-50/30 transition">
+2553:       const btn = document.getElementById('btnSaveJadwal');
+2554:       const obj = {

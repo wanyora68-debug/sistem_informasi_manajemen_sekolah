@@ -1,0 +1,83 @@
+<!-- index.html (Untuk Google Apps Script) -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+      body { background-color: #f3f4f6; font-family: sans-serif; }
+      .card { background: white; border-radius: 1.5rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+    </style>
+  </head>
+  <body class="p-4 md:p-8">
+    <div class="max-w-md mx-auto card p-6 border-t-8 border-green-600">
+      <h2 class="text-2xl font-bold text-green-900 mb-6 uppercase italic">Input Data Siswa</h2>
+      
+      <form id="formSiswa" onsubmit="event.preventDefault(); submitForm();">
+        <div class="mb-4">
+          <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Nama Lengkap</label>
+          <input type="text" id="namaSiswa" required class="w-full p-3 bg-gray-50 border rounded-xl outline-none focus:border-green-500">
+        </div>
+        
+        <div class="mb-4">
+          <label class="block text-xs font-bold text-gray-400 uppercase mb-1">NIS / NISN</label>
+          <input type="text" id="nis" required class="w-full p-3 bg-gray-50 border rounded-xl outline-none focus:border-green-500">
+        </div>
+        
+        <div class="mb-4">
+          <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Jenis Kelamin</label>
+          <select id="gender" required class="w-full p-3 bg-gray-50 border rounded-xl outline-none focus:border-green-500">
+            <option value="L">Laki-Laki</option>
+            <option value="P">Perempuan</option>
+          </select>
+        </div>
+
+        <div class="mb-6">
+          <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Kelas</label>
+          <input type="text" id="kelas" required placeholder="Contoh: X RPL 1" class="w-full p-3 bg-gray-50 border rounded-xl outline-none focus:border-green-500">
+        </div>
+        
+        <button type="submit" id="btnSubmit" class="w-full bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-green-700 transition">
+          SIMPAN DATA SISWA
+        </button>
+      </form>
+      
+      <div id="status" class="mt-4 text-center text-sm font-bold"></div>
+    </div>
+
+    <script>
+      function submitForm() {
+        const btn = document.getElementById('btnSubmit');
+        const status = document.getElementById('status');
+        
+        btn.disabled = true;
+        btn.innerHTML = 'MENYIMPAN...';
+        status.innerHTML = '';
+        status.className = 'mt-4 text-center text-sm font-bold text-blue-600';
+
+        const data = {
+          nama: document.getElementById('namaSiswa').value,
+          nis: document.getElementById('nis').value,
+          gender: document.getElementById('gender').value,
+          kelas: document.getElementById('kelas').value
+        };
+
+        google.script.run
+          .withSuccessHandler(function(res) {
+            status.innerHTML = res;
+            status.className = 'mt-4 text-center text-sm font-bold text-green-600';
+            document.getElementById('formSiswa').reset();
+            btn.disabled = false;
+            btn.innerHTML = 'SIMPAN DATA SISWA';
+          })
+          .withFailureHandler(function(err) {
+            status.innerHTML = 'Error: ' + err;
+            status.className = 'mt-4 text-center text-sm font-bold text-red-600';
+            btn.disabled = false;
+            btn.innerHTML = 'SIMPAN DATA SISWA';
+          })
+          .simpanSiswa(data);
+      }
+    </script>
+  </body>
+</html>

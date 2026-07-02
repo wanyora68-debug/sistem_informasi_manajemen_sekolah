@@ -1,0 +1,6 @@
+{
+  "name": "SIMS KCD XI - Manajemen Sekolah Digital",
+  "description": "A digital school management application for Teachers, Principals, and Operators, featuring user authentication and profile management.",
+  "requestFramePermissions": ["camera", "microphone", "geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

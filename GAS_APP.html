@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIMS KCD XI - Manajemen Sekolah Digital</title>
+  
+  <!-- CSS & FONTS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- REACT & LIBRARIES -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+
+  <style>
+    body { font-family: 'Inter', sans-serif; overflow-x: hidden; }
+    .scroll-hide::-webkit-scrollbar { display: none; }
+    .animate-fadeIn { animation: fadeIn 0.5s ease-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .bento-card {
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+    .bento-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+    }
+
+    @media print {
+      .no-print { display: none !important; }
+      #print-area { display: block !important; padding: 0 !important; margin: 0 !important; width: 100% !important; }
+      body { background: white !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-50">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+    const { motion, AnimatePresence } = window.framerMotion;
+
+    // --- INTEGRASI GOOGLE APPS SCRIPT ---
+    function callGAS(funcName, ...args) {
+      return new Promise((resolve, reject) => {
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(resolve)
+            .withFailureHandler(reject)[funcName](...args);
+        } else {
+          console.warn(`Local Mode: ${funcName} called.`);
+          // Mocking data for local testing
+          if (funcName === 'getDaftarKelasFull') resolve([{id:'1', nama:'X A TKJ'}, {id:'2', nama:'XI B RPL'}]);
+          if (funcName === 'getDaftarSiswa') resolve([{nama:'AJENG', nis:'123', kelas:'X A TKJ'}, {nama:'ANDIKA', nis:'124', kelas:'X A TKJ'}]);
+          resolve([]);
+        }
+      });
+    }
+
+    // --- KOMPONEN IKON ---
+    const Icon = ({ name, className = "w-5 h-5", strokeWidth = 2.5 }) => {
+      useEffect(() => { lucide.createIcons(); }, [name]);
+      return <i data-lucide={name} className={className} style={{ strokeWidth }}></i>;
+    };
+
+    // --- APLIKASI UTAMA ---
+    function App() {
+      const [currentPage, setCurrentPage] = useState('landing');
+      const [activeTab, setActiveTab] = useState('home');
+      const [activeUser, setActiveUser] = useState(null);
+      const [showLoginModal, setShowLoginModal] = useState(false);
+      const [selectedRole, setSelectedRole] = useState('Guru');
+      
+      const [classList, setClassList] = useState([]);
+      const [studentList, setStudentList] = useState([]);
+      const [absensiSiswaDate, setAbsensiSiswaDate] = useState(new Date().toISOString().split('T')[0]);
+      const [selectedKelas, setSelectedKelas] = useState('');
+      const [mapelSiswa, setMapelSiswa] = useState('');
+      const [attendanceRecords, setAttendanceRecords] = useState({});
+      const [viewModeAbsensi, setViewModeAbsensi] = useState('input');
+      const [laporanData, setLaporanData] = useState([]);
+      const [isBusy, setIsBusy] = useState(false);
+
+      useEffect(() => {
+        if (activeUser) {
+           callGAS('getDaftarKelasFull').then(setClassList);
+           callGAS('getDaftarSiswa').then(setStudentList);
+        }
+      }, [activeUser]);
+
+      const handleLogin = async (e) => {
+        e.preventDefault();
+        const email = e.target.email.value;
+        const pass = e.target.pass.value;
+        setIsBusy(true);
+        try {
+          const res = await callGAS('prosesLogin', email, pass, selectedRole);
+          if (res && res.status === 'success') {
+            setActiveUser(res.user);
+            setCurrentPage('dashboard');
+          } else {
+            alert(res?.message || "Login Gagal. Pastikan Email/Password benar.");
+          }
+        } finally { setIsBusy(false); }
+      };
+
+      const submitAbsensi = async () => {
+        if (!selectedKelas || !mapelSiswa) return alert("Pilih kelas dan isi Mapel!");
+        setIsBusy(true);
+        try {
+          const payload = {
+            tgl: absensiSiswaDate,
+            hari: new Date(absensiSiswaDate).toLocaleDateString('id-ID', {weekday: 'long'}),
+            guru: activeUser.nama,
+            kelas: selectedKelas,
+            mapel: mapelSiswa,
+            absensi: attendanceRecords
+          };
+          const res = await callGAS('simpanAbsensiSiswa', payload);
+          alert(res);
+        } finally { setIsBusy(false); }
+      };
+
+      const loadLaporan = async () => {
+        if (!selectedKelas) return alert("Pilih Kelas!");
+        setIsBusy(true);
+        try {
+          const data = await callGAS('getLaporanAbsensiSiswa', absensiSiswaDate, selectedKelas);
+          setLaporanData(data || []);
+          if (data && data.length > 0) setViewModeAbsensi('laporan');
+          else alert("Data tidak ditemukan.");
+        } finally { setIsBusy(false); }
+      };
+
+      if (currentPage === 'landing') {
+        return (
+          <div className="min-h-screen bg-blue-950 flex items-center justify-center p-6 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-600 via-blue-900 to-slate-950">
+            <motion.div initial={{opacity:0, scale:0.9}} animate={{opacity:1, scale:1}} className="max-w-md w-full bg-white/10 backdrop-blur-3xl p-10 rounded-[4rem] border border-white/20 shadow-2xl text-center">
+              <div className="w-24 h-24 bg-white rounded-3xl mx-auto mb-8 flex items-center justify-center shadow-2xl">
+                 <Icon name="school" className="w-12 h-12 text-blue-900" />
+              </div>
+              <h1 className="text-5xl font-black text-white mb-2 tracking-tighter italic">SIMS DIGITAL</h1>
+              <p className="text-blue-200 text-[10px] font-bold uppercase tracking-[0.4em] mb-12">Manajemen Sekolah Terintegrasi</p>
+              
+              <button 
+                onClick={() => setShowLoginModal(true)}
+                className="w-full bg-yellow-400 hover:bg-yellow-500 text-blue-950 py-6 rounded-2xl font-black text-xl shadow-xl shadow-yellow-400/20 active:scale-95 transition-all uppercase tracking-widest"
+              >
+                MULAI SEKARANG
+              </button>
+            </motion.div>
+
+            {showLoginModal && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md">
+                <motion.div initial={{y:20}} animate={{y:0}} className="bg-white w-full max-w-sm rounded-[3rem] p-10 shadow-3xl">
+                   <div className="flex justify-between items-center mb-10">
+                      <h2 className="text-3xl font-black text-blue-950 italic tracking-tight">AKSES MASUK</h2>
+                      <button onClick={() => setShowLoginModal(false)} className="bg-slate-100 p-3 rounded-full hover:bg-red-100 transition-colors"><Icon name="x" className="w-5 h-5 text-slate-400" /></button>
+                   </div>
+                   
+                   <div className="flex gap-2 mb-8 bg-slate-100 p-1.5 rounded-2xl">
+                     {['Guru', 'Operator'].map(role => (
+                       <button key={role} onClick={() => setSelectedRole(role)} className={`flex-1 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${selectedRole === role ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400'}`}>{role}</button>
+                     ))}
+                   </div>
+
+                   <form className="space-y-6" onSubmit={handleLogin}>
+                     <div className="space-y-2">
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-3">Alamat Email</label>
+                       <input name="email" type="email" placeholder="example@school.id" className="w-full p-5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-blue-500 outline-none font-bold" required />
+                     </div>
+                     <div className="space-y-2">
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-3">Password</label>
+                       <input name="pass" type="password" placeholder="••••••••" className="w-full p-5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-blue-500 outline-none font-bold" required />
+                     </div>
+                     <button disabled={isBusy} className="w-full bg-blue-950 text-white py-6 rounded-2xl font-black shadow-2xl hover:bg-black transition-all flex items-center justify-center gap-3">
+                        {isBusy ? <Icon name="loader-2" className="animate-spin" /> : <Icon name="log-in" />}
+                        SINKRONISASI DATA
+                     </button>
+                   </form>
+                </motion.div>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      return (
+        <div className="min-h-screen flex flex-col no-print">
+           {/* TOP NAV */}
+           <header className="bg-blue-950 text-white p-6 flex items-center justify-between sticky top-0 z-50">
+             <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-blue-900 shadow-xl">
+                  <Icon name="school" className="w-8 h-8" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-black italic tracking-tighter">SIMS KCD XI</h1>
+                  <p className="text-[9px] font-bold text-blue-400 uppercase tracking-[0.3em]">{activeUser?.nama} | {activeUser?.role}</p>
+                </div>
+             </div>
+             <button onClick={() => setCurrentPage('landing')} className="bg-red-500 text-white p-4 rounded-2xl shadow-xl shadow-red-500/20 active:scale-95 transition-all"><Icon name="log-out" /></button>
+           </header>
+
+           {/* SIDEBAR/MENU TABS */}
+           <div className="bg-blue-900 px-6 flex overflow-x-auto scroll-hide border-b border-blue-800">
+              {[
+                {id: 'home', l: 'Beranda', i: 'home'},
+                {id: 'absensi-siswa', l: 'Absensi Siswa', i: 'users'},
+                {id: 'jurnal', l: 'Jurnal Guru', i: 'book-open'},
+                {id: 'profil', l: 'Akun Saya', i: 'user'}
+              ].map(t => (
+                <button key={t.id} onClick={() => setActiveTab(t.id)} className={`px-8 py-6 text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all relative whitespace-nowrap ${activeTab === t.id ? 'text-white' : 'text-blue-300'}`}>
+                  <Icon name={t.i} className="w-4 h-4" /> {t.l}
+                  {activeTab === t.id && <motion.div layoutId="nav" className="absolute bottom-0 left-4 right-4 h-1 bg-yellow-400 rounded-t-full" />}
+                </button>
+              ))}
+           </div>
+
+           {/* MAIN CONTENT AREA */}
+           <main className="flex-1 p-8 max-w-7xl mx-auto w-full">
+              <AnimatePresence mode="wait">
+                 {activeTab === 'home' && (
+                    <motion.div key="h" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                       <div className="lg:col-span-3 p-16 bg-white rounded-[4rem] shadow-2xl text-center border-b-[12px] border-blue-600">
+                          <h2 className="text-5xl font-black text-blue-950 italic mb-4">SELAMAT DATANG</h2>
+                          <p className="text-blue-500 font-bold uppercase tracking-[0.4em] text-xs">Pilih menu di atas untuk mulai bekerja</p>
+                       </div>
+                    </motion.div>
+                 )}
+
+                 {activeTab === 'absensi-siswa' && (
+                    <motion.div key="as" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} className="bg-white p-12 rounded-[4rem] shadow-2xl border border-blue-50">
+                       <div className="flex flex-col lg:flex-row justify-between items-center gap-8 mb-12 border-b border-slate-100 pb-8">
+                          <div className="flex items-center gap-5">
+                             <div className="p-5 bg-blue-600 rounded-[2rem] text-white shadow-2xl shadow-blue-100"><Icon name="users" className="w-10 h-10" /></div>
+                             <div>
+                                <h2 className="text-3xl font-black text-blue-950">MODUL ABSENSI</h2>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Otomatisasi Kehadiran Peserta Didik</p>
+                             </div>
+                          </div>
+                          <div className="flex bg-slate-100 p-1.5 rounded-2xl">
+                             <button onClick={() => setViewModeAbsensi('input')} className={`px-8 py-4 rounded-xl text-[10px] font-black uppercase transition-all ${viewModeAbsensi === 'input' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-400'}`}>INPUT DATA</button>
+                             <button onClick={() => setViewModeAbsensi('laporan')} className={`px-8 py-4 rounded-xl text-[10px] font-black uppercase transition-all ${viewModeAbsensi === 'laporan' ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-400'}`}>ARSIP LAPORAN</button>
+                          </div>
+                       </div>
+
+                       {viewModeAbsensi === 'input' ? (
+                         <div className="space-y-10">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                               <div className="bg-blue-50 p-8 rounded-[3rem] border border-blue-100 shadow-inner">
+                                  <label className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-3 block">Tanggal Absensi</label>
+                                  <input type="date" value={absensiSiswaDate} onChange={e => setAbsensiSiswaDate(e.target.value)} className="w-full p-5 bg-white rounded-2xl border-none font-black text-blue-900 shadow-sm outline-none" />
+                               </div>
+                               <div className="bg-slate-50 p-8 rounded-[3rem] border border-slate-100 shadow-inner">
+                                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Rombongan Belajar</label>
+                                  <select value={selectedKelas} onChange={e => setSelectedKelas(e.target.value)} className="w-full p-5 bg-white rounded-2xl border-none font-black text-blue-950 outline-none shadow-sm appearance-none">
+                                    <option value="">-- PILIH KELAS --</option>
+                                    {classList.map(c => <option key={c.id} value={c.nama}>{c.nama}</option>)}
+                                  </select>
+                               </div>
+                               <div className="bg-slate-50 p-8 rounded-[3rem] border border-slate-100 shadow-inner">
+                                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Mata Pelajaran</label>
+                                  <input value={mapelSiswa} onChange={e => setMapelSiswa(e.target.value)} placeholder="Misal: Bahasa Inggris" className="w-full p-5 bg-white rounded-2xl border-none font-black text-slate-800 outline-none shadow-sm" />
+                               </div>
+                            </div>
+
+                            {selectedKelas ? (
+                               <div className="bg-white border-2 border-slate-50 rounded-[3rem] p-10 shadow-inner">
+                                  <div className="grid gap-4 max-h-[600px] overflow-y-auto pr-3 scroll-hide">
+                                     {studentList.filter(s => s.kelas === selectedKelas).map((s, idx) => {
+                                        const sid = s.row || s.id || idx;
+                                        return (
+                                          <div key={idx} className="flex items-center justify-between p-6 bg-slate-50/50 border border-slate-100 rounded-[2rem] hover:bg-blue-50/30 transition-all">
+                                             <div>
+                                                <p className="text-sm font-black text-blue-950 uppercase">{s.nama}</p>
+                                                <p className="text-[9px] font-bold text-slate-400 tracking-widest">NIS: {s.nis}</p>
+                                             </div>
+                                             <div className="flex gap-1.5">
+                                               {['H', 'S', 'I', 'A'].map(v => (
+                                                  <button key={v} onClick={() => setAttendanceRecords(p => ({...p, [s.nama]: v}))} className={`w-11 h-11 rounded-xl font-black text-xs transition-all active:scale-90 ${attendanceRecords[s.nama] === v ? 'bg-blue-600 text-white shadow-xl' : 'bg-white text-slate-300 hover:text-slate-500'}`}>{v}</button>
+                                               ))}
+                                             </div>
+                                          </div>
+                                        );
+                                     })}
+                                  </div>
+                                  <button onClick={submitAbsensi} disabled={isBusy} className="w-full bg-blue-950 text-white py-8 rounded-[2.5rem] mt-12 font-black text-xl shadow-3xl flex items-center justify-center gap-5 uppercase tracking-[0.3em] hover:bg-black transition-all">
+                                     {isBusy ? <Icon name="loader-2" className="animate-spin" /> : <Icon name="save" className="w-8 h-8" />}
+                                     SIMPAN LAPORAN DIGITAL
+                                  </button>
+                               </div>
+                            ) : (
+                               <div className="text-center py-32 bg-slate-50/50 border-4 border-dashed border-slate-100 rounded-[4rem]">
+                                  <Icon name="printer" className="w-20 h-20 text-slate-200 mx-auto mb-6" />
+                                  <p className="text-lg font-black text-slate-300 uppercase tracking-widest italic">Pilih kelas untuk memuat daftar absen</p>
+                               </div>
+                            )}
+                         </div>
+                       ) : (
+                         <div className="space-y-12">
+                            <div className="bg-indigo-50 p-10 rounded-[3rem] border border-indigo-100 flex flex-wrap items-end gap-8">
+                               <div className="flex-1 min-w-[240px]">
+                                  <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-3 block px-3">Filter Tanggal</label>
+                                  <input type="date" value={absensiSiswaDate} onChange={e => setAbsensiSiswaDate(e.target.value)} className="w-full p-5 bg-white rounded-2xl border-none font-black text-indigo-900 shadow-sm" />
+                               </div>
+                               <div className="flex-1 min-w-[240px]">
+                                  <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-3 block px-3">Filter Kelas</label>
+                                  <select value={selectedKelas} onChange={e => setSelectedKelas(e.target.value)} className="w-full p-5 bg-white rounded-2xl border-none font-black text-indigo-900 shadow-sm">
+                                     <option value="">-- PILIH --</option>
+                                     {classList.map(c => <option key={c.id} value={c.nama}>{c.nama}</option>)}
+                                  </select>
+                               </div>
+                               <button onClick={loadLaporan} className="bg-indigo-600 text-white px-12 py-5 rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-2xl shadow-indigo-200 hover:bg-black transition-all">MUAT DATA</button>
+                            </div>
+
+                            {laporanData.length > 0 ? (
+                               <div className="space-y-10">
+                                  {laporanData.map((l, i) => (
+                                    <div key={i} className="bg-white border-2 border-slate-100 rounded-[4rem] p-12 shadow-sm overflow-hidden" id="print-area">
+                                       <div className="flex justify-between items-center mb-12 border-b-2 border-dotted border-slate-200 pb-10">
+                                          <div className="flex items-center gap-5">
+                                             <div className="w-16 h-16 bg-slate-900 text-white rounded-2xl flex items-center justify-center"><Icon name="printer" className="w-8 h-8" /></div>
+                                             <div>
+                                                <h4 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter">BUKTI ABSENSI</h4>
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">Verifikasi Digital: {new Date().toLocaleTimeString()}</p>
+                                             </div>
+                                          </div>
+                                          <button onClick={() => window.print()} className="bg-slate-900 text-white px-10 py-5 rounded-2xl text-[10px] font-black uppercase flex items-center gap-4 shadow-xl no-print active:scale-95 transition-all"><Icon name="download" /> CETAK / PDF</button>
+                                       </div>
+
+                                       <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+                                          {[
+                                            {l: 'TANGGAL', v: new Date(l.tanggal).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})},
+                                            {l: 'KELAS', v: l.kelas},
+                                            {l: 'HARI', v: l.hari},
+                                            {l: 'MAPEL', v: l.mapel}
+                                          ].map(info => (
+                                            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                                               <p className="text-[8px] font-black text-slate-400 mb-1">{info.l}</p>
+                                               <p className="text-sm font-black text-slate-900 uppercase truncate">{info.v}</p>
+                                            </div>
+                                          ))}
+                                       </div>
+
+                                       <table className="w-full text-left text-xs border-collapse">
+                                          <thead className="bg-slate-950 text-white">
+                                             <tr>
+                                                <th className="p-6 font-black uppercase text-center w-16 border-r border-slate-700">NO</th>
+                                                <th className="p-6 font-black uppercase border-r border-slate-700">NAMA PESERTA DIDIK</th>
+                                                <th className="p-6 font-black uppercase text-center w-40">STATUS</th>
+                                             </tr>
+                                          </thead>
+                                          <tbody className="divide-y divide-slate-100">
+                                             {Object.entries(l.absensi || {}).map(([nama, stat], idx) => (
+                                                <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
+                                                   <td className="p-5 text-center font-black text-slate-300 border-r border-slate-50">{idx+1}</td>
+                                                   <td className="p-5 font-black text-slate-800 uppercase border-r border-slate-50">{nama}</td>
+                                                   <td className="p-5 text-center">
+                                                      <span className={`inline-block px-4 py-2 rounded-xl font-black text-[10px] min-w-[80px] ${stat==='H'?'bg-green-100 text-green-700':stat==='S'?'bg-blue-100 text-blue-700':stat==='I'?'bg-yellow-100 text-yellow-700':'bg-red-100 text-red-700 font-black'}`}>
+                                                        {stat==='H'?'HADIR':stat==='S'?'SAKIT':stat==='I'?'IZIN':'ALPA'}
+                                                      </span>
+                                                   </td>
+                                                </tr>
+                                             ))}
+                                          </tbody>
+                                       </table>
+
+                                       <div className="mt-20 flex justify-end">
+                                          <div className="text-center space-y-24 w-64">
+                                             <p className="text-[10px] font-black italic text-slate-400 mb-2">Guru Mata Pelajaran,</p>
+                                             <div className="border-b-2 border-slate-950 pb-1">
+                                                <p className="text-sm font-black text-slate-900 uppercase">{l.guru}</p>
+                                             </div>
+                                          </div>
+                                       </div>
+                                    </div>
+                                  ))}
+                               </div>
+                            ) : (
+                               <div className="text-center py-40 bg-slate-50 rounded-[4rem] border-4 border-dashed border-slate-100">
+                                  <Icon name="search" className="w-20 h-20 text-slate-200 mx-auto mb-6" />
+                                  <h4 className="text-2xl font-black text-slate-300 uppercase italic italic">Arsip Cloud Kosong</h4>
+                                  <p className="text-xs text-slate-400 font-bold uppercase mt-2">Filter data untuk menarik laporan absensi</p>
+                               </div>
+                            )}
+                         </div>
+                       )}
+                    </motion.div>
+                 )}
+              </AnimatePresence>
+           </main>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

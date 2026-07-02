@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIMS KCD XI - Manajemen Sekolah Digital</title>
+    <!-- Framework & UI Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/@lucide/react@latest"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .scroll-hide::-webkit-scrollbar { display: none; }
+        .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); }
+        .loading-shimmer {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 overflow-x-hidden">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, Suspense } = React;
+        const { motion, AnimatePresence } = FramerMotion;
+        const { 
+            LogIn, UserPlus, LogOut, Home, User, Settings, ChevronRight, 
+            Camera, School, AlertCircle, Loader2, Calendar, CheckCircle2, 
+            Clock, BookOpen, Users, MapPin, ClipboardList, Save, Activity,
+            Printer, Download, Search, Layout, FileText, ChevronDown, Check,
+            X, Eye, Filter, RefreshCcw, MoreHorizontal
+        } = dev.lucide.react;
+
+        // --- GAS Bridge ---
+        const callGAS = (functionName, ...args) => {
+            return new Promise((resolve, reject) => {
+                if (typeof google !== 'undefined' && google.script && google.script.run) {
+                    google.script.run
+                        .withSuccessHandler(resolve)
+                        .withFailureHandler(reject)[functionName](...args);
+                } else {
+                    console.warn("GAS NOT DETECTED - USING MOCK DATA FOR FUNCTION:", functionName);
+                    // Mock data for development outside GAS
+                    setTimeout(() => {
+                        if (functionName === 'prosesLogin') resolve({ status: 'success', user: { nama: 'GURU DEMO', email: 'guru@demo.com', role: 'Guru', sekolah: 'SMKN 4 GARUT' } });
+                        if (functionName === 'getMasterSekolah') resolve([{ nama: 'SMKN 4 GARUT', lat: -7.2278, lng: 107.9087, jamMasuk: '07:00', jamPulang: '15:00' }]);
+                        if (functionName === 'getDaftarKelasFull') resolve([{ id: '1', nama: 'X PPLG 1', keahlian: 'PPLG', jumlah: '36', wali: 'Budi Santoso' }]);
+                        if (functionName === 'getLaporanAbsensiSiswa') resolve([
+                            { tgl: '2024-04-28', hari: 'Selasa', guru: 'GURU DEMO', kelas: args[1], mapel: 'Matematika', absensi: { 'Siswa 1': 'H', 'Siswa 2': 'S'} }
+                        ]);
+                        resolve([]);
+                    }, 800);
+                }
+            });
+        };
+
+        // --- COMPONENTS ---
+
+        function NavTab({ icon, label, active, onClick }) {
+            return (
+                <button 
+                    onClick={onClick}
+                    className={`flex items-center gap-2 px-6 py-4 transition-all relative whitespace-nowrap min-w-max ${
+                        active ? 'text-white' : 'text-blue-100/60 hover:text-white'
+                    }`}
+                >
+                    {React.cloneElement(icon, { size: 18 })}
+                    <span className="text-xs font-bold uppercase tracking-wider">{label}</span>
+                    {active && (
+                        <motion.div 
+                            layoutId="activeTabBadge"
+                            className="absolute bottom-0 left-0 right-0 h-1 bg-yellow-400"
+                        />
+                    )}
+                </button>
+            );
+        }
+
+        function App() {
+            const [currentPage, setCurrentPage] = useState('landing');
+            const [activeTab, setActiveTab] = useState('home');
+            const [showLoginModal, setShowLoginModal] = useState(false);
+            const [selectedRole, setSelectedRole] = useState('Guru');
+            const [activeUser, setActiveUser] = useState(null);
+            
+            // App Data
+            const [classList, setClassList] = useState([]);
+            const [studentList, setStudentList] = useState([]);
+            const [schoolSettings, setSchoolSettings] = useState({ nama: "MEMUAT...", jamMasuk: "07:00", jamPulang: "15:00" });
+
+            // Login State
+            const [loginEmail, setLoginEmail] = useState('');
+            const [loginPass, setLoginPass] = useState('');
+            const [isVerifying, setIsVerifying] = useState(false);
+
+            // Absensi Siswa Section
+            const [absensiSiswaDate, setAbsensiSiswaDate] = useState(new Date().toISOString().split('T')[0]);
+            const [selectedKelas, setSelectedKelas] = useState('');
+            const [viewModeAbsensi, setViewModeAbsensi] = useState('input');
+            const [laporanAbsensiData, setLaporanAbsensiData] = useState([]);
+            const [isFetchingLaporan, setIsFetchingLaporan] = useState(false);
+
+            useEffect(() => {
+                if (currentPage === 'dashboard') {
+                    loadInitialData();
+                }
+            }, [currentPage]);
+
+            const loadInitialData = async () => {
+                try {
+                    const classes = await callGAS('getDaftarKelasFull');
+                    setClassList(classes || []);
+                    const schools = await callGAS('getMasterSekolah');
+                    if (schools && schools.length > 0) setSchoolSettings(schools[0]);
+                } catch (e) { console.error(e); }
+            };
+
+            const handleLogin = async () => {
+                setIsVerifying(true);
+                try {
+                    const res = await callGAS('prosesLogin', loginEmail, loginPass, selectedRole);
+                    if (res.status === 'success') {
+                        setActiveUser(res.user);
+                        setCurrentPage('dashboard');
+                        setShowLoginModal(false);
+                    } else { alert(res.message); }
+                } catch (e) { alert("Login Error"); }
+                setIsVerifying(false);
+            };
+
+            const handleFetchLaporan = async () => {
+                if (!selectedKelas) { alert("Pilih kelas dahulu!"); return; }
+                setIsFetchingLaporan(true);
+                try {
+                    const data = await callGAS('getLaporanAbsensiSiswa', absensiSiswaDate, selectedKelas);
+                    setLaporanAbsensiData(data || []);
+                    if (data && data.length > 0) setViewModeAbsensi('laporan');
+                    else alert("Belum ada data absensi");
+                } catch (e) { alert("Gagal ambil laporan"); }
+                setIsFetchingLaporan(false);
+            };
+
+            const handlePrintLaporan = () => {
+                const printWindow = window.open('', '_blank');
+                const content = `
+                    <html>
+                    <head>
+                        <title>Laporan Absensi ${selectedKelas}</title>
+                        <style>
+                            body { font-family: sans-serif; padding: 20px; }
+                            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                            th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+                            th { bg-color: #f4f4f4; }
+                        </style>
+                    </head>
+                    <body>
+                        <h2>LAPORAN ABSENSI HARIAN SISWA</h2>
+                        <p>Kelas: ${selectedKelas}</p>
+                        <p>Tanggal: ${absensiSiswaDate}</p>
+                        <table>
+                            <thead><tr><th>Nama Siswa</th><th>Status</th></tr></thead>
+                            <tbody>
+                                ${laporanAbsensiData[0] ? Object.entries(laporanAbsensiData[0].absensi).map(([nama, status]) => `
+                                    <tr><td>${nama}</td><td>${status}</td></tr>
+                                `).join('') : ''}
+                            </tbody>
+                        </table>
+                    </body>
+                    </html>
+                `;
+                printWindow.document.write(content);
+                printWindow.document.close();
+                printWindow.print();
+            };
+
+            return (
+                <div class="min-h-screen">
+                    <AnimatePresence mode="wait">
+                        {currentPage === 'landing' ? (
+                            <motion.div 
+                                key="landing"
+                                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                class="flex flex-col items-center justify-center min-h-screen bg-blue-900 p-6 text-center text-white"
+                            >
+                                <motion.div 
+                                    initial={{ y: -20 }} animate={{ y: 0 }}
+                                    class="bg-white/10 p-8 rounded-full mb-8 backdrop-blur-xl border border-white/20"
+                                >
+                                    <School size={64} class="text-yellow-400" />
+                                </motion.div>
+                                <h1 class="text-4xl font-black tracking-tighter mb-2">SIMS KCD XI</h1>
+                                <p class="text-blue-200 font-bold mb-12 uppercase tracking-widest text-xs">Manajemen Sekolah Digital</p>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-4xl">
+                                    {['Guru', 'Kepala Sekolah', 'Operator'].map(role => (
+                                        <button 
+                                            key={role}
+                                            onClick={() => { setSelectedRole(role); setShowLoginModal(true); }}
+                                            class="bg-white text-blue-900 p-6 rounded-3xl font-black text-sm uppercase shadow-xl hover:scale-105 active:scale-95 transition-all"
+                                        >
+                                            Masuk Sebagai {role}
+                                        </button>
+                                    ))}
+                                </div>
+                            </motion.div>
+                        ) : (
+                            <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                                {/* Header */}
+                                <header class="bg-blue-900 text-white p-4 flex items-center justify-between sticky top-0 z-50">
+                                    <div class="flex items-center gap-4">
+                                        <div class="p-2 bg-yellow-400 rounded-xl text-blue-900"><School size={20}/></div>
+                                        <div>
+                                            <h2 class="font-black text-xs uppercase leading-none">{activeUser.nama}</h2>
+                                            <p class="text-[9px] text-blue-300 font-bold uppercase">{activeUser.role} | {activeUser.sekolah}</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => setCurrentPage('landing')} class="bg-red-500 p-2 rounded-full"><LogOut size={16}/></button>
+                                </header>
+
+                                {/* Tabs */}
+                                <div class="bg-blue-800 flex overflow-x-auto scroll-hide sticky top-[68px] z-40">
+                                    <NavTab icon={<Home/>} label="Beranda" active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
+                                    {activeUser.role === 'Guru' && (
+                                        <NavTab icon={<Users/>} label="Absen Siswa" active={activeTab === 'absensi-siswa'} onClick={() => setActiveTab('absensi-siswa')} />
+                                    )}
+                                    <NavTab icon={<User/>} label="Profil" active={activeTab === 'profil'} onClick={() => setActiveTab('profil')} />
+                                </div>
+
+                                {/* Content */}
+                                <main class="p-4 max-w-4xl mx-auto">
+                                    {activeTab === 'home' && (
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div class="bg-white p-6 rounded-3xl shadow-lg">
+                                                <h3 class="font-black text-blue-900 mb-2 uppercase text-xs">Informasi Sekolah</h3>
+                                                <p class="text-2xl font-black">{schoolSettings.nama}</p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {activeTab === 'absensi-siswa' && (
+                                        <div class="bg-white p-6 rounded-3xl shadow-lg">
+                                            <div class="flex items-center justify-between mb-6">
+                                                <h3 class="text-xl font-black text-blue-900 uppercase">Absensi Siswa</h3>
+                                                <div class="flex gap-2">
+                                                    <button onClick={() => setViewModeAbsensi('input')} class={`px-4 py-2 rounded-full text-[10px] font-black ${viewModeAbsensi === 'input' ? 'bg-blue-600 text-white' : 'bg-slate-100'}`}>INPUT</button>
+                                                    <button onClick={() => setViewModeAbsensi('laporan')} class={`px-4 py-2 rounded-full text-[10px] font-black ${viewModeAbsensi === 'laporan' ? 'bg-blue-600 text-white' : 'bg-slate-100'}`}>LAPORAN</button>
+                                                </div>
+                                            </div>
+
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                                <div>
+                                                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Pilih Kelas</label>
+                                                    <select 
+                                                        value={selectedKelas} onChange={e => setSelectedKelas(e.target.value)}
+                                                        class="w-full p-4 bg-slate-50 border-0 rounded-2xl font-bold"
+                                                    >
+                                                        <option value="">-- PILIH KELAS --</option>
+                                                        {classList.map(k => <option key={k.nama} value={k.nama}>{k.nama}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Pilih Tanggal</label>
+                                                    <input type="date" value={absensiSiswaDate} onChange={e => setAbsensiSiswaDate(e.target.value)} class="w-full p-4 bg-slate-50 rounded-2xl font-bold" />
+                                                </div>
+                                            </div>
+
+                                            {viewModeAbsensi === 'input' ? (
+                                                <div class="text-center p-12 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
+                                                    <Users class="mx-auto mb-4 text-slate-300" size={48} />
+                                                    <p class="text-slate-400 font-bold uppercase text-xs">Pilih Kelas untuk memulai absensi</p>
+                                                </div>
+                                            ) : (
+                                                <div>
+                                                    <div class="flex justify-between items-center mb-4">
+                                                        <button 
+                                                            onClick={handleFetchLaporan} 
+                                                            disabled={isFetchingLaporan}
+                                                            class="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase flex items-center gap-2 shadow-lg"
+                                                        >
+                                                            {isFetchingLaporan ? <Loader2 class="animate-spin" size={16}/> : <RefreshCcw size={16}/>}
+                                                            Ambil Data Laporan
+                                                        </button>
+
+                                                        {laporanAbsensiData.length > 0 && (
+                                                            <button 
+                                                                onClick={handlePrintLaporan}
+                                                                class="bg-yellow-400 text-blue-900 px-6 py-3 rounded-2xl font-black text-xs uppercase flex items-center gap-2 shadow-lg"
+                                                            >
+                                                                <Printer size={16}/>
+                                                                Cetak Laporan
+                                                            </button>
+                                                        )}
+                                                    </div>
+
+                                                    {laporanAbsensiData.length > 0 && (
+                                                        <div class="overflow-x-auto border rounded-2xl">
+                                                            <table class="w-full text-left text-xs">
+                                                                <thead class="bg-slate-50 font-black uppercase text-slate-500">
+                                                                    <tr>
+                                                                        <th class="p-4 border-b">Nama Siswa</th>
+                                                                        <th class="p-4 border-b">Status</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {Object.entries(laporanAbsensiData[0].absensi).map(([nama, status]) => (
+                                                                        <tr key={nama} class="border-b hover:bg-slate-50">
+                                                                            <td class="p-4 font-bold">{nama}</td>
+                                                                            <td class="p-4">
+                                                                                <span class={`px-2 py-1 rounded font-black ${
+                                                                                    status === 'H' ? 'bg-green-100 text-green-700' :
+                                                                                    status === 'S' ? 'bg-blue-100 text-blue-700' :
+                                                                                    status === 'I' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+                                                                                }`}>{status}</span>
+                                                                            </td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </main>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Login Modal */}
+                    <AnimatePresence>
+                        {showLoginModal && (
+                            <motion.div 
+                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-blue-900/80 backdrop-blur-md"
+                            >
+                                <motion.div 
+                                    initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
+                                    class="bg-white w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl overflow-hidden relative"
+                                >
+                                    <button onClick={() => setShowLoginModal(false)} class="absolute top-6 right-6 text-slate-300 hover:text-slate-900"><X/></button>
+                                    <div class="text-center mb-8">
+                                        <div class="w-16 h-16 bg-blue-100 rounded-3xl flex items-center justify-center mx-auto mb-4 text-blue-600"><LogIn size={32}/></div>
+                                        <h3 class="text-2xl font-black text-blue-900 uppercase">LOGIN {selectedRole}</h3>
+                                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Masukkan Kredensial Akun Anda</p>
+                                    </div>
+
+                                    <div class="space-y-4">
+                                        <input type="email" placeholder="Alamat Email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} class="w-full p-5 bg-slate-50 rounded-2xl font-bold border-2 border-slate-50 focus:border-blue-500 outline-none" />
+                                        <input type="password" placeholder="Password" value={loginPass} onChange={e => setLoginPass(e.target.value)} class="w-full p-5 bg-slate-50 rounded-2xl font-bold border-2 border-slate-50 focus:border-blue-500 outline-none" />
+                                        <button 
+                                            onClick={handleLogin}
+                                            disabled={isVerifying}
+                                            class="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl hover:bg-blue-700 transition flex items-center justify-center gap-3"
+                                        >
+                                            {isVerifying ? <Loader2 class="animate-spin"/> : <LogIn size={18}/>}
+                                            <span>MASUK SEKARANG</span>
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</body>
+</html>
