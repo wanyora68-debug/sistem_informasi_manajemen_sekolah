@@ -5825,7 +5825,7 @@
           Koneksi Google Sheets (GAS)
         </h3>
         <p class="text-[10px] text-slate-500 mb-6 text-center">
-          Hubungkan aplikasi SIMS Anda yang dihosting di Vercel dengan database Google Sheets Anda secara langsung.
+          Atur koneksi SIMS Anda ke database Google Sheets secara instan.
         </p>
 
         <!-- Pilihan Mode -->
@@ -5854,41 +5854,6 @@
             </button>
           </div>
         </div>
-
-        <!-- Input URL -->
-        <div id="gasUrlInputContainer" class="mb-6 hidden">
-          <label class="block text-[10px] font-bold text-slate-700 uppercase mb-2">URL Web App Google Apps Script</label>
-          <input
-            id="gasWebAppUrl"
-            type="url"
-            placeholder="https://script.google.com/macros/s/.../exec"
-            class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3 text-xs focus:border-emerald-500 focus:outline-none transition font-mono"
-          />
-          <p class="text-[9px] text-emerald-600 mt-1 font-semibold leading-relaxed">
-            * Pastikan URL berakhiran <strong>/exec</strong> dan dideploy dengan akses "Anyone".
-          </p>
-        </div>
-
-        <!-- Cara Deployment (Collapsible details widget) -->
-        <details class="group bg-slate-50 rounded-2xl p-4 mb-6 border border-slate-100 transition duration-300">
-          <summary class="font-bold text-[10px] text-slate-800 uppercase flex items-center justify-between cursor-pointer select-none">
-            <span class="flex items-center gap-1.5">📖 Cara Menghubungkan Google Sheets</span>
-            <span class="text-xs transition-transform group-open:rotate-180">▼</span>
-          </summary>
-          <div class="mt-3 border-t border-slate-200/60 pt-3">
-            <ol class="list-decimal list-inside text-[9px] text-slate-600 space-y-2 leading-relaxed">
-              <li>Buka Google Spreadsheet Anda.</li>
-              <li>Pilih menu <strong>Extensions &gt; Apps Script</strong>.</li>
-              <li>Salin seluruh kode dari file <code>code.gs</code> di project ini ke editor Apps Script Anda.</li>
-              <li>Klik ikon <strong>Save (💾)</strong>, lalu klik tombol <strong>Deploy &gt; New deployment</strong> di kanan atas.</li>
-              <li>Pilih tipe: <strong>Web app</strong>.</li>
-              <li>Atur <strong>Execute as:</strong> <span class="text-emerald-700 font-bold">Me (email Anda)</span>.</li>
-              <li>Atur <strong>Who has access:</strong> <span class="text-emerald-700 font-bold">Anyone</span>.</li>
-              <li>Klik <strong>Deploy</strong>, lalu salin <strong>Web app URL</strong> yang berakhiran <code>/exec</code>.</li>
-              <li>Pilih mode <strong>Live Google Sheets</strong> di atas, paste URL di kolom input, lalu klik <strong>Simpan Koneksi</strong>.</li>
-            </ol>
-          </div>
-        </details>
 
         <div class="flex flex-col gap-2">
           <button
@@ -5952,6 +5917,27 @@
     </div>
 
     <script>
+      // Safe localStorage proxy/polyfill to prevent SecurityError in third-party iframe environments (Google Apps Script Web App)
+      let safeLocalStorage;
+      try {
+        const testKey = "__test_storage_active__";
+        window.localStorage.setItem(testKey, "1");
+        window.localStorage.removeItem(testKey);
+        safeLocalStorage = window.localStorage;
+      } catch (e) {
+        console.warn("localStorage is not accessible (blocked in iframe). Using in-memory fallback.");
+        const memoryStorage = {};
+        safeLocalStorage = {
+          getItem: (key) => (key in memoryStorage ? memoryStorage[key] : null),
+          setItem: (key, val) => { memoryStorage[key] = String(val); },
+          removeItem: (key) => { delete memoryStorage[key]; },
+          clear: () => { for (let k in memoryStorage) delete memoryStorage[k]; },
+          key: (index) => Object.keys(memoryStorage)[index] || null,
+          get length() { return Object.keys(memoryStorage).length; }
+        };
+      }
+      const localStorage = safeLocalStorage;
+
       // =========================================================================
       // CONFIGURATION GLOBAL UNTUK AUTOMATIC CONNECTION GOOGLE SHEETS (GAS)
       // =========================================================================
@@ -10618,12 +10604,6 @@
         if (!modal) return;
 
         const savedMode = window.getGASDbMode();
-        const savedUrl = window.getGASWebAppUrl();
-
-        const inputUrl = document.getElementById("gasWebAppUrl");
-        if (inputUrl) {
-          inputUrl.value = savedUrl;
-        }
         setDatabaseMode(savedMode);
 
         modal.classList.remove("hidden");
@@ -10633,55 +10613,30 @@
         currentGasConfigMode = mode;
         const btnSimulasi = document.getElementById("btnModeSimulasi");
         const btnLive = document.getElementById("btnModeLive");
-        const urlContainer = document.getElementById("gasUrlInputContainer");
 
-        if (!btnSimulasi || !btnLive || !urlContainer) return;
+        if (!btnSimulasi || !btnLive) return;
 
         if (mode === "live") {
           // Live button active
           btnLive.className = "flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-50/20 text-slate-700 transition cursor-pointer active:scale-95 text-center";
           // Simulasi button inactive
           btnSimulasi.className = "flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-slate-200 bg-white text-slate-700 transition cursor-pointer active:scale-95 text-center";
-          // Show URL input
-          urlContainer.classList.remove("hidden");
         } else {
           // Simulasi button active
           btnSimulasi.className = "flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-50/20 text-slate-700 transition cursor-pointer active:scale-95 text-center";
           // Live button inactive
           btnLive.className = "flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-slate-200 bg-white text-slate-700 transition cursor-pointer active:scale-95 text-center";
-          // Hide URL input
-          urlContainer.classList.add("hidden");
         }
       }
 
       function saveGASConfig() {
-        const urlInputEl = document.getElementById("gasWebAppUrl");
-        const urlInput = urlInputEl ? urlInputEl.value.trim() : "";
-        
         if (currentGasConfigMode === "live") {
-          if (!urlInput) {
-            Swal.fire({
-              icon: "warning",
-              title: "URL Diperlukan",
-              text: "Silakan masukkan URL Web App Google Apps Script Anda.",
-              confirmButtonColor: "#10b981",
-            });
-            return;
-          }
-          if (!urlInput.startsWith("https://script.google.com/macros/s/") || !urlInput.endsWith("/exec")) {
-            Swal.fire({
-              icon: "warning",
-              title: "Format URL Salah",
-              text: "URL harus berformat 'https://script.google.com/macros/s/.../exec'",
-              confirmButtonColor: "#10b981",
-            });
-            return;
-          }
+          const urlInput = DEFAULT_GAS_WEB_APP_URL;
           
           // Test the connection
           Swal.fire({
             title: "Menguji Koneksi...",
-            text: "Menghubungi Google Apps Script...",
+            text: "Menghubungi Google Sheets...",
             allowOutsideClick: false,
             didOpen: () => {
               Swal.showLoading();
@@ -10716,7 +10671,7 @@
               Swal.fire({
                 icon: "error",
                 title: "Koneksi Gagal",
-                text: "Gagal memverifikasi URL. Pastikan Anda telah mengklik 'Deploy' -> 'New deployment' -> akses 'Anyone' di editor Google Apps Script.",
+                text: "Gagal terhubung ke Google Sheets. Silakan pastikan server web app aktif dan dapat dijangkau.",
                 confirmButtonColor: "#10b981",
               });
             });
