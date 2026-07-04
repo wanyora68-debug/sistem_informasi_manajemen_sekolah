@@ -11484,8 +11484,8 @@
 
         const filtered = allUsersList.filter(
           (u) =>
-            u.role === "Guru" &&
-            (schoolName === "ALL" || u.sekolah === schoolName),
+            (u.role || "").toString().toUpperCase().trim() === "GURU" &&
+            (schoolName === "ALL" || (u.sekolah || "").toString().toUpperCase().trim() === schoolName.toString().toUpperCase().trim()),
         );
         filtered.forEach((u) => {
           let opt = document.createElement("option");
@@ -17001,7 +17001,8 @@
         const populateFunc = (list) => {
           const teachers = (list || []).filter(
             (u) =>
-              u.role === "Guru" &&
+              (u.role || "").toString().toUpperCase().trim() === "GURU" &&
+              u.sekolah &&
               u.sekolah.toString().toUpperCase().trim() ===
                 activeUser.sekolah.toString().toUpperCase().trim(),
           );
@@ -17124,7 +17125,7 @@
 
         const teachers = allUsersList.filter(
           (u) =>
-            u.role === "Guru" &&
+            (u.role || "").toString().toUpperCase().trim() === "GURU" &&
             (u.sekolah || "").toString().toUpperCase().trim() ===
               schoolName.toUpperCase().trim(),
         );
@@ -17298,7 +17299,7 @@
 
         const teachers = allUsersList.filter(
           (u) =>
-            u.role === "Guru" &&
+            (u.role || "").toString().toUpperCase().trim() === "GURU" &&
             (u.sekolah || "").toString().toUpperCase().trim() ===
               schoolName.toUpperCase().trim(),
         );
@@ -17510,7 +17511,12 @@
           }
           if (schoolContainer) schoolContainer.classList.add("hidden");
           if (schoolSel) {
-            schoolSel.value = activeUser.sekolah;
+            schoolSel.innerHTML = "";
+            const opt = document.createElement("option");
+            opt.value = activeUser.sekolah || "";
+            opt.text = activeUser.sekolah || "";
+            schoolSel.add(opt);
+            schoolSel.value = activeUser.sekolah || "";
             onFilterAbsenSekolahChange();
           }
         } else {
