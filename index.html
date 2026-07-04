@@ -7610,7 +7610,10 @@
           // Jika di tab absensi, tampilkan peringatan
           const errUI = document.getElementById("cameraErrorUI");
           if (errUI) {
-            errUI.querySelector("h4").innerText = "Mode Preview Terdeteksi";
+            const hHeading = errUI.querySelector("h4") || errUI.querySelector("p");
+            if (hHeading) {
+              hHeading.innerText = "Mode Preview Terdeteksi";
+            }
             errUI.classList.remove("hidden");
           }
         }
