@@ -10934,6 +10934,9 @@
             loadDaftarJurnalUI();
           }
           if (id === "laporan") {
+            if (typeof populateSchoolFilters === "function") {
+              populateSchoolFilters();
+            }
             const sLap = document.getElementById("lapSchoolFilter");
             const currentSchool =
               sLap && !sLap.classList.contains("hidden") ? sLap.value : "ALL";
@@ -11026,6 +11029,9 @@
             }
           }
           if (id === "rekap-absen-guru") {
+            if (typeof populateSchoolFilters === "function") {
+              populateSchoolFilters();
+            }
             const blnGuru = document.getElementById("selBlnRekapGuru");
             if (blnGuru && !blnGuru.dataset.initialized) {
               blnGuru.value = new Date().getMonth();
@@ -11034,6 +11040,9 @@
             loadRekapAbsenGuru();
           }
           if (id === "rekap-absen-siswa") {
+            if (typeof populateSchoolFilters === "function") {
+              populateSchoolFilters();
+            }
             const blnSiswa = document.getElementById("selBlnRekapSiswa");
             if (blnSiswa && !blnSiswa.dataset.initialized) {
               blnSiswa.value = new Date().getMonth();
@@ -11321,8 +11330,7 @@
       }
 
       function populateSchoolFilters() {
-        if (activeUser.role !== "Admin" && activeUser.role !== "Pengawas")
-          return;
+        if (!activeUser || !activeUser.role) return;
 
         const sJurnal = document.getElementById("schoolJurnalFilter");
         const sAktivitas = document.getElementById("schoolAktivitasFilter");
@@ -11331,6 +11339,48 @@
         const sAktKepsek = document.getElementById("aktSchoolFilter");
         const sRekapGuru = document.getElementById("schoolFilterRekapGuru");
         const sRekapSiswa = document.getElementById("schoolFilterRekapSiswa");
+
+        const canSelectSchool = isAdminRole(activeUser.role) || isPengawasRole(activeUser.role);
+
+        if (!canSelectSchool) {
+          const userSchool = activeUser.sekolah || "";
+          if (sJurnal) {
+            sJurnal.classList.add("hidden");
+            sJurnal.innerHTML = `<option value="${userSchool}">${userSchool}</option>`;
+            sJurnal.value = userSchool;
+          }
+          if (sAktivitas) {
+            sAktivitas.classList.add("hidden");
+            sAktivitas.innerHTML = `<option value="${userSchool}">${userSchool}</option>`;
+            sAktivitas.value = userSchool;
+          }
+          if (sLap) {
+            sLap.classList.add("hidden");
+            sLap.innerHTML = `<option value="${userSchool}">${userSchool}</option>`;
+            sLap.value = userSchool;
+          }
+          if (sCek) {
+            sCek.classList.add("hidden");
+            sCek.innerHTML = `<option value="${userSchool}">${userSchool}</option>`;
+            sCek.value = userSchool;
+          }
+          if (sAktKepsek) {
+            sAktKepsek.classList.add("hidden");
+            sAktKepsek.innerHTML = `<option value="${userSchool}">${userSchool}</option>`;
+            sAktKepsek.value = userSchool;
+          }
+          if (sRekapGuru) {
+            sRekapGuru.classList.add("hidden");
+            sRekapGuru.innerHTML = `<option value="${userSchool}">${userSchool}</option>`;
+            sRekapGuru.value = userSchool;
+          }
+          if (sRekapSiswa) {
+            sRekapSiswa.classList.add("hidden");
+            sRekapSiswa.innerHTML = `<option value="${userSchool}">${userSchool}</option>`;
+            sRekapSiswa.value = userSchool;
+          }
+          return;
+        }
 
         if (sJurnal) sJurnal.classList.remove("hidden");
         if (sAktivitas) sAktivitas.classList.remove("hidden");
@@ -11714,6 +11764,8 @@
               selectedSchool !== "ALL"
             ) {
               filtered = filtered.filter((j) => j.sekolah === selectedSchool);
+            } else if (!isAdminRole(activeUser.role) && !isPengawasRole(activeUser.role)) {
+              filtered = filtered.filter((j) => j.sekolah && matchSchool(j.sekolah, activeUser.sekolah));
             }
             if (userFilter && userFilter !== "ALL") {
               filtered = filtered.filter((j) => j.guru === userFilter);
@@ -11896,6 +11948,8 @@
               selectedSchool !== "ALL"
             ) {
               filtered = filtered.filter((a) => a.sekolah === selectedSchool);
+            } else if (!isAdminRole(activeUser.role) && !isPengawasRole(activeUser.role)) {
+              filtered = filtered.filter((a) => a.sekolah && matchSchool(a.sekolah, activeUser.sekolah));
             }
             if (userFilter && userFilter !== "ALL") {
               filtered = filtered.filter((a) => a.guru === userFilter);
@@ -13011,6 +13065,9 @@
       }
 
       function initAllRekapFilters() {
+        if (typeof populateSchoolFilters === "function") {
+          populateSchoolFilters();
+        }
         const sgValue = document.getElementById("schoolFilterRekapGuru")
           ? document.getElementById("schoolFilterRekapGuru").value
           : "ALL";
@@ -13040,9 +13097,12 @@
 
         let querySchool = activeUser.sekolah;
         const sFilter = document.getElementById("schoolFilterRekapSiswa");
-        if (sFilter && sFilter.value) {
+        const canSelectSchool = isAdminRole(activeUser.role) || isPengawasRole(activeUser.role);
+        if (canSelectSchool && sFilter && sFilter.value) {
           querySchool =
             sFilter.value === "ALL" ? "PUSAT KCD XI" : sFilter.value;
+        } else {
+          querySchool = activeUser.sekolah;
         }
 
         google.script.run
@@ -13240,9 +13300,12 @@
 
         let querySchool = activeUser.sekolah;
         const sFilter = document.getElementById("schoolFilterRekapGuru");
-        if (sFilter && sFilter.value) {
+        const canSelectSchool = isAdminRole(activeUser.role) || isPengawasRole(activeUser.role);
+        if (canSelectSchool && sFilter && sFilter.value) {
           querySchool =
             sFilter.value === "ALL" ? "PUSAT KCD XI" : sFilter.value;
+        } else {
+          querySchool = activeUser.sekolah;
         }
 
         loadAllSchedulesForRekap(() => {
@@ -19036,6 +19099,20 @@
                 allowedSchools.includes(
                   (item.sekolah || "").toUpperCase().trim(),
                 ),
+              );
+            }
+          } else {
+            const normSchool = (activeUser.sekolah || "").toString().toUpperCase().trim();
+            if (normSchool) {
+              jurnal = jurnal.filter(
+                (item) =>
+                  (item.sekolah || "").toString().toUpperCase().trim() ===
+                  normSchool,
+              );
+              aktivitas = aktivitas.filter(
+                (item) =>
+                  (item.sekolah || "").toString().toUpperCase().trim() ===
+                  normSchool,
               );
             }
           }
