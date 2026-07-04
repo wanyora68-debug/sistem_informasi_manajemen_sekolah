@@ -2622,6 +2622,9 @@
                   >
                 </div>
               </div>
+              <p id="labelScheduleStatus" class="text-[7px] font-black text-yellow-300 uppercase mt-2 hidden tracking-wider bg-yellow-950/40 py-1 px-2 rounded-lg inline-block">
+                ⚠️ JADWAL KHUSUS AKTIF
+              </p>
             </div>
 
             <div class="mt-auto">
@@ -4099,6 +4102,73 @@
               >
                 Batas radius default adalah 100 meter apabila dikosongkan
               </p>
+            </div>
+
+            <!-- JADWAL KHUSUS HARI & TANGGAL -->
+            <div class="border-t border-gray-200 pt-6 mt-6 space-y-6">
+              <div class="text-center">
+                <h4 class="font-black text-blue-900 uppercase italic text-sm">
+                  🕒 Pengaturan Jam Kerja Khusus (Hari & Tanggal)
+                </h4>
+                <p class="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-1">
+                  Atur jam masuk dan pulang dinamis sesuai hari atau tanggal tertentu
+                </p>
+              </div>
+
+              <!-- JADWAL MINGGUAN -->
+              <div class="p-6 bg-gray-50 rounded-3xl border-2 border-gray-100 space-y-4">
+                <p class="text-[9px] font-black text-blue-900 uppercase tracking-wider text-center border-b pb-2">
+                  1. Jadwal Mingguan Hari Tertentu
+                </p>
+                <div class="space-y-4" id="weeklySchedulesContainer">
+                  <!-- Will be rendered dynamically for Monday-Sunday -->
+                </div>
+              </div>
+
+              <!-- JADWAL TANGGAL SPESIFIK -->
+              <div class="p-6 bg-gray-50 rounded-3xl border-2 border-gray-100 space-y-4">
+                <p class="text-[9px] font-black text-blue-900 uppercase tracking-wider text-center border-b pb-2">
+                  2. Jadwal Tanggal Spesifik (Kalender Override)
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label class="text-[8px] font-black text-gray-400 uppercase block mb-1 pl-1">Pilih Tanggal</label>
+                    <input type="date" id="schedOverrideDate" class="w-full p-3 bg-white border border-gray-200 rounded-xl font-bold text-xs" />
+                  </div>
+                  <div>
+                    <label class="text-[8px] font-black text-gray-400 uppercase block mb-1 pl-1">Batas Masuk</label>
+                    <input type="time" id="schedOverrideJamMasuk" class="w-full p-3 bg-white border border-gray-200 rounded-xl font-bold text-xs" />
+                  </div>
+                  <div>
+                    <label class="text-[8px] font-black text-gray-400 uppercase block mb-1 pl-1">Batas Pulang</label>
+                    <input type="time" id="schedOverrideJamPulang" class="w-full p-3 bg-white border border-gray-200 rounded-xl font-bold text-xs" />
+                  </div>
+                </div>
+                <button type="button" onclick="addDateOverride()" class="w-full bg-blue-900 hover:bg-blue-800 text-white font-black py-3 rounded-2xl text-[9px] uppercase tracking-wider active:scale-95 transition-all">
+                  ➕ Tambah / Update Jadwal Tanggal Spesifik
+                </button>
+
+                <div class="mt-4 border-t border-gray-200 pt-4">
+                  <p class="text-[8px] font-black text-gray-400 uppercase tracking-wider mb-2">Daftar Jadwal Tanggal Spesifik Terdaftar:</p>
+                  <div class="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+                    <table class="w-full text-left text-xs">
+                      <thead>
+                        <tr class="bg-gray-100 text-[8px] font-black uppercase text-gray-500 tracking-wider border-b">
+                          <th class="p-3">Tanggal</th>
+                          <th class="p-3">Masuk</th>
+                          <th class="p-3">Pulang</th>
+                          <th class="p-3 text-center">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody id="dateOverridesList" class="divide-y divide-gray-100">
+                        <tr>
+                          <td colspan="4" class="p-4 text-center text-[9px] font-bold uppercase text-gray-400 tracking-wider">Belum ada tanggal spesifik yang diatur</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <button
@@ -5965,7 +6035,7 @@
           }
           getMasterSekolah() {
             setTimeout(() => {
-              const schools = [
+              const defaultSchools = [
                 {
                   nama: "SMKN 1 GARUT",
                   npsn: "20202001",
@@ -5992,7 +6062,53 @@
                   alamat: "JL. MERDEKA NO. 120, TAROGONG KIDUL, GARUT",
                 },
               ];
+              const overrides = JSON.parse(
+                localStorage.getItem("sims_mock_lokasi_sekolah") || "{}",
+              );
+              const schools = defaultSchools.map((sch) => {
+                const schoolKey = sch.nama.toUpperCase().trim();
+                const over = overrides[schoolKey] || {};
+                return {
+                  ...sch,
+                  lat: typeof over.lat !== "undefined" ? over.lat : -7.2278,
+                  lng: typeof over.lng !== "undefined" ? over.lng : 107.9087,
+                  jamMasuk: over.jamMasuk || "07:00",
+                  jamPulang: over.jamPulang || "15:00",
+                  radius: over.radius || 100,
+                  customSchedules: over.customSchedules || "{}",
+                };
+              });
               if (this._successHandler) this._successHandler(schools);
+            }, 20);
+            return this;
+          }
+          simpanLokasiSekolah(
+            sekolahName,
+            lat,
+            lng,
+            jamMasuk,
+            jamPulang,
+            radius,
+            customSchedulesJson,
+          ) {
+            setTimeout(() => {
+              let overrides = JSON.parse(
+                localStorage.getItem("sims_mock_lokasi_sekolah") || "{}",
+              );
+              overrides[sekolahName.toUpperCase().trim()] = {
+                lat: lat,
+                lng: lng,
+                jamMasuk: jamMasuk,
+                jamPulang: jamPulang,
+                radius: radius || 100,
+                customSchedules: customSchedulesJson || "{}",
+              };
+              localStorage.setItem(
+                "sims_mock_lokasi_sekolah",
+                JSON.stringify(overrides),
+              );
+              if (this._successHandler)
+                this._successHandler("Pengaturan lokasi berhasil disimpan!");
             }, 20);
             return this;
           }
@@ -7409,18 +7525,31 @@
               (s) => s.nama === activeUser.sekolah,
             );
             if (config) {
+              let parsedSched = {};
+              if (config.customSchedules) {
+                if (typeof config.customSchedules === "string") {
+                  try {
+                    parsedSched = JSON.parse(config.customSchedules);
+                  } catch (e) {
+                    console.error("Gagal parse customSchedules:", e);
+                  }
+                } else if (typeof config.customSchedules === "object") {
+                  parsedSched = config.customSchedules;
+                }
+              }
               SCHOOL_COORDS = {
                 lat: parseFloat(config.lat),
                 lng: parseFloat(config.lng),
                 jamMasuk: config.jamMasuk,
                 jamPulang: config.jamPulang,
                 radius: parseFloat(config.radius) || 100,
+                customSchedules: parsedSched,
               };
               localStorage.setItem(
                 "sims_school_coords",
                 JSON.stringify(SCHOOL_COORDS),
               );
-              console.log("School config updated:", SCHOOL_COORDS);
+              console.log("School config updated with custom schedules:", SCHOOL_COORDS);
             }
           })
           .getMasterSekolah();
@@ -10860,6 +10989,9 @@
               SCHOOL_COORDS.jamPulang || "15:00";
             document.getElementById("setRadius").value =
               SCHOOL_COORDS.radius || 100;
+            if (typeof loadCustomSchedulesUI === "function") {
+              loadCustomSchedulesUI();
+            }
           }
           if (id === "rekap-absen-guru") {
             const blnGuru = document.getElementById("selBlnRekapGuru");
@@ -10900,6 +11032,175 @@
         });
       }
 
+      const DAYS_OF_WEEK = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
+      let CURRENT_CUSTOM_SCHEDULES = {};
+
+      function loadCustomSchedulesUI() {
+        if (!SCHOOL_COORDS.customSchedules) {
+          SCHOOL_COORDS.customSchedules = {};
+        }
+        try {
+          CURRENT_CUSTOM_SCHEDULES = JSON.parse(JSON.stringify(SCHOOL_COORDS.customSchedules));
+        } catch (e) {
+          CURRENT_CUSTOM_SCHEDULES = {};
+        }
+        if (!CURRENT_CUSTOM_SCHEDULES.weekly) CURRENT_CUSTOM_SCHEDULES.weekly = {};
+        if (!CURRENT_CUSTOM_SCHEDULES.dates) CURRENT_CUSTOM_SCHEDULES.dates = {};
+
+        renderWeeklySchedules();
+        renderDateOverrides();
+      }
+
+      function renderWeeklySchedules() {
+        const container = document.getElementById("weeklySchedulesContainer");
+        if (!container) return;
+
+        container.innerHTML = "";
+
+        DAYS_OF_WEEK.forEach(day => {
+          const sched = CURRENT_CUSTOM_SCHEDULES.weekly[day] || { active: false, jamMasuk: "07:00", jamPulang: "15:00" };
+          
+          const div = document.createElement("div");
+          div.className = "flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-white rounded-2xl border border-gray-100 gap-3";
+          
+          div.innerHTML = `
+            <div class="flex items-center gap-3">
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="weekly_active_${day}" ${sched.active ? "checked" : ""} class="sr-only peer" onchange="toggleWeeklyActive('${day}', this.checked)">
+                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-900"></div>
+              </label>
+              <span class="font-black text-xs uppercase text-gray-700 w-16">${day}</span>
+            </div>
+            
+            <div class="flex items-center gap-4 ${sched.active ? "" : "opacity-40 pointer-events-none"} transition-all" id="weekly_inputs_${day}">
+              <div class="flex items-center gap-2">
+                <span class="text-[8px] font-bold text-gray-400 uppercase">Masuk:</span>
+                <input type="time" id="weekly_masuk_${day}" value="${sched.jamMasuk || "07:00"}" onchange="updateWeeklyTime('${day}', 'jamMasuk', this.value)" class="p-2 border border-gray-200 rounded-lg text-xs font-bold" />
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[8px] font-bold text-gray-400 uppercase">Pulang:</span>
+                <input type="time" id="weekly_pulang_${day}" value="${sched.jamPulang || "15:00"}" onchange="updateWeeklyTime('${day}', 'jamPulang', this.value)" class="p-2 border border-gray-200 rounded-lg text-xs font-bold" />
+              </div>
+            </div>
+          `;
+          container.appendChild(div);
+        });
+      }
+
+      window.toggleWeeklyActive = function(day, checked) {
+        if (!CURRENT_CUSTOM_SCHEDULES.weekly[day]) {
+          CURRENT_CUSTOM_SCHEDULES.weekly[day] = { active: false, jamMasuk: "07:00", jamPulang: "15:00" };
+        }
+        CURRENT_CUSTOM_SCHEDULES.weekly[day].active = checked;
+        
+        const inputDiv = document.getElementById(`weekly_inputs_${day}`);
+        if (inputDiv) {
+          if (checked) {
+            inputDiv.classList.remove("opacity-40", "pointer-events-none");
+          } else {
+            inputDiv.classList.add("opacity-40", "pointer-events-none");
+          }
+        }
+      };
+
+      window.updateWeeklyTime = function(day, key, val) {
+        if (!CURRENT_CUSTOM_SCHEDULES.weekly[day]) {
+          CURRENT_CUSTOM_SCHEDULES.weekly[day] = { active: true, jamMasuk: "07:00", jamPulang: "15:00" };
+        }
+        CURRENT_CUSTOM_SCHEDULES.weekly[day][key] = val;
+      };
+
+      function renderDateOverrides() {
+        const tbody = document.getElementById("dateOverridesList");
+        if (!tbody) return;
+
+        tbody.innerHTML = "";
+
+        const dates = CURRENT_CUSTOM_SCHEDULES.dates || {};
+        const dateKeys = Object.keys(dates).sort();
+
+        if (dateKeys.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="4" class="p-4 text-center text-[9px] font-bold uppercase text-gray-400 tracking-wider">Belum ada tanggal spesifik yang diatur</td>
+            </tr>
+          `;
+          return;
+        }
+
+        dateKeys.forEach(dateStr => {
+          const item = dates[dateStr];
+          const tr = document.createElement("tr");
+          tr.className = "hover:bg-gray-50 transition-colors border-b border-gray-100";
+          tr.innerHTML = `
+            <td class="p-3 font-bold text-gray-700 text-xs">${formatIndonesianDate(dateStr)}</td>
+            <td class="p-3 font-mono text-gray-600 text-xs">${item.jamMasuk}</td>
+            <td class="p-3 font-mono text-gray-600 text-xs">${item.jamPulang}</td>
+            <td class="p-3 text-center">
+              <button type="button" onclick="removeDateOverride('${dateStr}')" class="bg-red-50 hover:bg-red-100 text-red-600 font-black py-2 px-3 rounded-xl text-[9px] uppercase tracking-wider transition-all">
+                🗑️ Hapus
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function formatIndonesianDate(dateStr) {
+        try {
+          const parts = dateStr.split("-");
+          if (parts.length !== 3) return dateStr;
+          const months = [
+            "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+            "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+          ];
+          const d = parseInt(parts[2], 10);
+          const m = parseInt(parts[1], 10) - 1;
+          const y = parts[0];
+          return `${d} ${months[m]} ${y}`;
+        } catch (e) {
+          return dateStr;
+        }
+      }
+
+      window.addDateOverride = function() {
+        const dateInput = document.getElementById("schedOverrideDate");
+        const masukInput = document.getElementById("schedOverrideJamMasuk");
+        const pulangInput = document.getElementById("schedOverrideJamPulang");
+
+        if (!dateInput || !masukInput || !pulangInput) return;
+
+        const dateVal = dateInput.value;
+        const masukVal = masukInput.value;
+        const pulangVal = pulangInput.value;
+
+        if (!dateVal) return alert("Pilih tanggal terlebih dahulu!");
+        if (!masukVal || !pulangVal) return alert("Tentukan jam masuk dan jam pulang!");
+
+        if (!CURRENT_CUSTOM_SCHEDULES.dates) {
+          CURRENT_CUSTOM_SCHEDULES.dates = {};
+        }
+
+        CURRENT_CUSTOM_SCHEDULES.dates[dateVal] = {
+          jamMasuk: masukVal,
+          jamPulang: pulangVal
+        };
+
+        // Reset inputs except date maybe
+        masukInput.value = "";
+        pulangInput.value = "";
+        dateInput.value = "";
+
+        renderDateOverrides();
+      };
+
+      window.removeDateOverride = function(dateStr) {
+        if (CURRENT_CUSTOM_SCHEDULES.dates && CURRENT_CUSTOM_SCHEDULES.dates[dateStr]) {
+          delete CURRENT_CUSTOM_SCHEDULES.dates[dateStr];
+          renderDateOverrides();
+        }
+      };
+
       function doSimpanLokasiSekolah() {
         const lat = parseFloat(document.getElementById("setLat").value);
         const lng = parseFloat(document.getElementById("setLng").value);
@@ -10910,16 +11211,22 @@
 
         if (isNaN(lat) || isNaN(lng)) return alert("Format Kordinat salah!");
 
-        const btn = event.target;
-        btn.disabled = true;
-        btn.innerText = "MENYIMPAN...";
+        const btn = (typeof event !== 'undefined' && event && event.target) ? event.target : document.querySelector('button[onclick="doSimpanLokasiSekolah()"]');
+        if (btn) {
+          btn.disabled = true;
+          btn.innerText = "MENYIMPAN...";
+        }
+
+        const customSchedulesJson = JSON.stringify(CURRENT_CUSTOM_SCHEDULES || {});
 
         google.script.run
           .withSuccessHandler((res) => {
             alert(res);
-            btn.disabled = false;
-            btn.innerText = "Simpan Pengaturan Sekolah";
-            SCHOOL_COORDS = { lat, lng, jamMasuk, jamPulang, radius };
+            if (btn) {
+              btn.disabled = false;
+              btn.innerText = "Simpan Pengaturan Sekolah";
+            }
+            SCHOOL_COORDS = { lat, lng, jamMasuk, jamPulang, radius, customSchedules: CURRENT_CUSTOM_SCHEDULES };
             localStorage.setItem(
               "sims_school_coords",
               JSON.stringify(SCHOOL_COORDS),
@@ -10933,6 +11240,7 @@
             jamMasuk,
             jamPulang,
             radius,
+            customSchedulesJson,
           );
       }
 
@@ -14342,6 +14650,65 @@
         if (errorUI) errorUI.classList.add("hidden");
         checkReadyToSubmit();
       }
+      function normalizeTime(val) {
+        if (!val) return null;
+        if (val instanceof Date) {
+          return (
+            val.getHours().toString().padStart(2, "0") +
+            ":" +
+            val.getMinutes().toString().padStart(2, "0")
+          );
+        }
+        const str = val.toString().trim();
+        const match = str.match(/^(\d{1,2}):(\d{2})(:(\d{2}))?$/);
+        if (match) {
+          return match[1].padStart(2, "0") + ":" + match[2];
+        }
+        const timeMatch = str.match(/(\d{1,2}):(\d{2})/);
+        if (timeMatch)
+          return timeMatch[1].padStart(2, "0") + ":" + timeMatch[2];
+        return null;
+      }
+
+      function getDynamicSchoolSchedule(date) {
+        const indonesianDays = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, "0");
+        const day = date.getDate().toString().padStart(2, "0");
+        const dateStr = `${year}-${month}-${day}`;
+        const dayName = indonesianDays[date.getDay()];
+
+        const scheds = SCHOOL_COORDS.customSchedules || {};
+        
+        // 1. Check Date Specific Override
+        if (scheds.dates && scheds.dates[dateStr]) {
+          return {
+            jamMasuk: normalizeTime(scheds.dates[dateStr].jamMasuk) || "07:00",
+            jamPulang: normalizeTime(scheds.dates[dateStr].jamPulang) || "15:00",
+            isOverride: true,
+            reason: `Jadwal Khusus Tanggal ${dateStr}`
+          };
+        }
+
+        // 2. Check Weekly Day Override
+        if (scheds.weekly && scheds.weekly[dayName] && scheds.weekly[dayName].active) {
+          return {
+            jamMasuk: normalizeTime(scheds.weekly[dayName].jamMasuk) || "07:00",
+            jamPulang: normalizeTime(scheds.weekly[dayName].jamPulang) || "15:00",
+            isOverride: true,
+            reason: `Jadwal Khusus Hari ${dayName}`
+          };
+        }
+
+        // 3. Fallback to global config
+        return {
+          jamMasuk: normalizeTime(SCHOOL_COORDS.jamMasuk) || "07:00",
+          jamPulang: normalizeTime(SCHOOL_COORDS.jamPulang) || "15:00",
+          isOverride: false,
+          reason: "Jadwal Standar Sekolah"
+        };
+      }
+
       function checkReadyToSubmit() {
         const now = new Date();
         const btn = document.getElementById("btnKirimAbsen");
@@ -14351,32 +14718,26 @@
         const tipeVal = document.getElementById("tipeAbsen").value;
         const isMasuk = tipeVal.includes("Masuk");
 
-        const normalizeTime = (val) => {
-          if (!val) return null;
-          if (val instanceof Date) {
-            return (
-              val.getHours().toString().padStart(2, "0") +
-              ":" +
-              val.getMinutes().toString().padStart(2, "0")
-            );
-          }
-          const str = val.toString().trim();
-          const match = str.match(/^(\d{1,2}):(\d{2})(:(\d{2}))?$/);
-          if (match) {
-            return match[1].padStart(2, "0") + ":" + match[2];
-          }
-          const timeMatch = str.match(/(\d{1,2}):(\d{2})/);
-          if (timeMatch)
-            return timeMatch[1].padStart(2, "0") + ":" + timeMatch[2];
-          return null;
-        };
-
-        const jamMasukStr = normalizeTime(SCHOOL_COORDS.jamMasuk) || "07:00";
-        const jamPulangStr = normalizeTime(SCHOOL_COORDS.jamPulang) || "15:00";
+        const sched = getDynamicSchoolSchedule(now);
+        const jamMasukStr = sched.jamMasuk;
+        const jamPulangStr = sched.jamPulang;
 
         // Update Info Jam Kerja
-        document.getElementById("labelJamMasuk").innerText = jamMasukStr;
-        document.getElementById("labelJamPulang").innerText = jamPulangStr;
+        const labelM = document.getElementById("labelJamMasuk");
+        const labelP = document.getElementById("labelJamPulang");
+        if (labelM) labelM.innerText = jamMasukStr;
+        if (labelP) labelP.innerText = jamPulangStr;
+
+        // Update Info Status Jadwal Khusus
+        const labelStatus = document.getElementById("labelScheduleStatus");
+        if (labelStatus) {
+          if (sched.isOverride) {
+            labelStatus.innerText = `⚠️ ${sched.reason}`;
+            labelStatus.classList.remove("hidden");
+          } else {
+            labelStatus.classList.add("hidden");
+          }
+        }
 
         // Calculate current distance
         let dist = 999999;
