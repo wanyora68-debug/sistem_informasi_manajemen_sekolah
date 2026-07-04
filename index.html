@@ -9,6 +9,7 @@
       rel="stylesheet"
     />
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
@@ -11262,17 +11263,35 @@
 
         google.script.run
           .withSuccessHandler((res) => {
-            alert(res);
+            Swal.fire({
+              icon: "success",
+              title: "Berhasil",
+              text: res || "Pengaturan lokasi berhasil disimpan!",
+              confirmButtonColor: "#10b981",
+            }).then(() => {
+              if (btn) {
+                btn.disabled = false;
+                btn.innerText = "Simpan Pengaturan Sekolah";
+              }
+              SCHOOL_COORDS = { lat, lng, jamMasuk, jamPulang, radius, customSchedules: CURRENT_CUSTOM_SCHEDULES };
+              localStorage.setItem(
+                "sims_school_coords",
+                JSON.stringify(SCHOOL_COORDS),
+              );
+              switchTab("home");
+            });
+          })
+          .withFailureHandler((err) => {
+            Swal.fire({
+              icon: "error",
+              title: "Gagal Menyimpan",
+              text: err ? err.toString() : "Terjadi kesalahan koneksi.",
+              confirmButtonColor: "#10b981",
+            });
             if (btn) {
               btn.disabled = false;
               btn.innerText = "Simpan Pengaturan Sekolah";
             }
-            SCHOOL_COORDS = { lat, lng, jamMasuk, jamPulang, radius, customSchedules: CURRENT_CUSTOM_SCHEDULES };
-            localStorage.setItem(
-              "sims_school_coords",
-              JSON.stringify(SCHOOL_COORDS),
-            );
-            switchTab("home");
           })
           .simpanLokasiSekolah(
             activeUser.sekolah,
