@@ -9167,40 +9167,24 @@
 
           htmlStats = `
              <!-- Block 1: Schedules -->
-             <div class="bg-white p-5 rounded-[1.25rem] border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-300 flex items-center gap-4 relative overflow-hidden group hover:-translate-y-0.5">
-                <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-full"></div>
-                <div class="text-2xl bg-blue-50 text-blue-600 w-12 h-12 rounded-2xl flex items-center justify-center transition duration-300 group-hover:scale-110">📅</div>
-                <div>
-                   <h4 class="text-slate-400 text-[10px] font-semibold uppercase tracking-widest leading-none mb-1.5 font-black-override">Jadwal Mengajar</h4>
-                   <div class="text-2xl font-bold text-slate-800 tracking-tight">${mySchedules.length} <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Kelas</span></div>
-                </div>
+             <div class="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-300 flex flex-col items-center justify-center text-center relative overflow-hidden group hover:-translate-y-0.5" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                <span class="text-slate-400 text-[10px] md:text-[11px] font-bold uppercase tracking-wider mb-2">Jadwal Mengajar</span>
+                <span class="text-3xl font-bold text-slate-800 tracking-tight transition duration-300 group-hover:scale-105">${mySchedules.length}</span>
              </div>
              <!-- Block 2: Journals -->
-             <div class="bg-white p-5 rounded-[1.25rem] border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-300 flex items-center gap-4 relative overflow-hidden group hover:-translate-y-0.5">
-                <div class="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 rounded-l-full"></div>
-                <div class="text-2xl bg-indigo-50 text-indigo-600 w-12 h-12 rounded-2xl flex items-center justify-center transition duration-300 group-hover:scale-110">📓</div>
-                <div>
-                   <h4 class="text-slate-400 text-[10px] font-semibold uppercase tracking-widest leading-none mb-1.5 font-black-override">Jurnal Mengajar Saya</h4>
-                   <div class="text-2xl font-bold text-slate-800 tracking-tight">${myJurnals.length} <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Input</span></div>
-                </div>
+             <div class="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-blue-200 transition-all duration-300 flex flex-col items-center justify-center text-center relative overflow-hidden group hover:-translate-y-0.5" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                <span class="text-slate-400 text-[10px] md:text-[11px] font-bold uppercase tracking-wider mb-2">Jurnal Mengajar Saya</span>
+                <span class="text-3xl font-bold text-blue-600 tracking-tight transition duration-300 group-hover:scale-105">${myJurnals.length}</span>
              </div>
              <!-- Block 3: Activities -->
-             <div class="bg-white p-5 rounded-[1.25rem] border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-300 flex items-center gap-4 relative overflow-hidden group hover:-translate-y-0.5">
-                <div class="absolute left-0 top-0 bottom-0 w-1 bg-green-500 rounded-l-full"></div>
-                <div class="text-2xl bg-green-50 text-green-600 w-12 h-12 rounded-2xl flex items-center justify-center transition duration-300 group-hover:scale-110">🏃</div>
-                <div>
-                   <h4 class="text-slate-400 text-[10px] font-semibold uppercase tracking-widest leading-none mb-1.5 font-black-override">Aktivitas Terlapor</h4>
-                   <div class="text-2xl font-bold text-slate-800 tracking-tight">${myAktivitas.length} <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Kegiatan</span></div>
-                </div>
+             <div class="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all duration-300 flex flex-col items-center justify-center text-center relative overflow-hidden group hover:-translate-y-0.5" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                <span class="text-slate-400 text-[10px] md:text-[11px] font-bold uppercase tracking-wider mb-2">Aktivitas Terlapor</span>
+                <span class="text-3xl font-bold text-emerald-600 tracking-tight transition duration-300 group-hover:scale-105">${myAktivitas.length}</span>
              </div>
              <!-- Block 4: Students -->
-             <div class="bg-white p-5 rounded-[1.25rem] border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-300 flex items-center gap-4 relative overflow-hidden group hover:-translate-y-0.5">
-                <div class="absolute left-0 top-0 bottom-0 w-1 bg-purple-500 rounded-l-full"></div>
-                <div class="text-2xl bg-purple-50 text-purple-600 w-12 h-12 rounded-2xl flex items-center justify-center transition duration-300 group-hover:scale-110">👨‍🎓</div>
-                <div>
-                   <h4 class="text-slate-400 text-[10px] font-semibold uppercase tracking-widest leading-none mb-1.5 font-black-override font-black-override">Siswa Sekolah</h4>
-                   <div class="text-2xl font-bold text-slate-800 tracking-tight">${mySiswaCount} <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Siswa</span></div>
-                </div>
+             <div class="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-purple-200 transition-all duration-300 flex flex-col items-center justify-center text-center relative overflow-hidden group hover:-translate-y-0.5" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                <span class="text-slate-400 text-[10px] md:text-[11px] font-bold uppercase tracking-wider mb-2">Siswa Sekolah</span>
+                <span class="text-3xl font-bold text-purple-600 tracking-tight transition duration-300 group-hover:scale-105">${mySiswaCount}</span>
              </div>
           `;
 
@@ -9313,40 +9297,24 @@
 
           htmlStats = `
              <!-- Block 1: Gurus -->
-             <div class="bg-white p-5 rounded-[1.25rem] border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-300 flex items-center gap-4 relative overflow-hidden group hover:-translate-y-0.5">
-                <div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500 rounded-l-full"></div>
-                <div class="text-2xl bg-red-50 text-red-600 w-12 h-12 rounded-2xl flex items-center justify-center transition duration-300 group-hover:scale-110">👨‍🏫</div>
-                <div>
-                   <h4 class="text-slate-400 text-[10px] font-semibold uppercase tracking-widest leading-none mb-1.5 font-black-override">Guru & Staf Sekolah</h4>
-                   <div class="text-2xl font-bold text-slate-800 tracking-tight">${mySchoolGurus.length} <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Aktif</span></div>
-                </div>
+             <div class="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-300 flex flex-col items-center justify-center text-center relative overflow-hidden group hover:-translate-y-0.5" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                <span class="text-slate-400 text-[10px] md:text-[11px] font-bold uppercase tracking-wider mb-2">Guru & Staf Sekolah</span>
+                <span class="text-3xl font-bold text-slate-800 tracking-tight transition duration-300 group-hover:scale-105">${mySchoolGurus.length}</span>
              </div>
              <!-- Block 2: Jurnals -->
-             <div class="bg-white p-5 rounded-[1.25rem] border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-300 flex items-center gap-4 relative overflow-hidden group hover:-translate-y-0.5">
-                <div class="absolute left-0 top-0 bottom-0 w-1 bg-green-500 rounded-l-full"></div>
-                <div class="text-2xl bg-green-50 text-green-600 w-12 h-12 rounded-2xl flex items-center justify-center transition duration-300 group-hover:scale-110">📓</div>
-                <div>
-                   <h4 class="text-slate-400 text-[10px] font-semibold uppercase tracking-widest leading-none mb-1.5 font-black-override font-black-override">Total Jurnal KBM</h4>
-                   <div class="text-2xl font-bold text-slate-800 tracking-tight">${mySchoolJurnals.length} <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Jurnal</span></div>
-                </div>
+             <div class="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all duration-300 flex flex-col items-center justify-center text-center relative overflow-hidden group hover:-translate-y-0.5" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                <span class="text-slate-400 text-[10px] md:text-[11px] font-bold uppercase tracking-wider mb-2">Total Jurnal KBM</span>
+                <span class="text-3xl font-bold text-emerald-600 tracking-tight transition duration-300 group-hover:scale-105">${mySchoolJurnals.length}</span>
              </div>
              <!-- Block 3: Siswa -->
-             <div class="bg-white p-5 rounded-[1.25rem] border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-300 flex items-center gap-4 relative overflow-hidden group hover:-translate-y-0.5">
-                <div class="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 rounded-l-full"></div>
-                <div class="text-2xl bg-indigo-50 text-indigo-600 w-12 h-12 rounded-2xl flex items-center justify-center transition duration-300 group-hover:scale-110">👨‍🎓</div>
-                <div>
-                   <h4 class="text-slate-400 text-[10px] font-semibold uppercase tracking-widest leading-none mb-1.5 font-black-override font-black-override">Total Siswa</h4>
-                   <div class="text-2xl font-bold text-slate-800 tracking-tight">${mySchoolSiswa.length} <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Siswa</span></div>
-                </div>
+             <div class="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all duration-300 flex flex-col items-center justify-center text-center relative overflow-hidden group hover:-translate-y-0.5" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                <span class="text-slate-400 text-[10px] md:text-[11px] font-bold uppercase tracking-wider mb-2">Total Siswa</span>
+                <span class="text-3xl font-bold text-indigo-600 tracking-tight transition duration-300 group-hover:scale-105">${mySchoolSiswa.length}</span>
              </div>
              <!-- Block 4: Aktivitas -->
-             <div class="bg-white p-5 rounded-[1.25rem] border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-300 flex items-center gap-4 relative overflow-hidden group hover:-translate-y-0.5">
-                <div class="absolute left-0 top-0 bottom-0 w-1 bg-yellow-500 rounded-l-full"></div>
-                <div class="text-2xl bg-yellow-50 text-yellow-600 w-12 h-12 rounded-2xl flex items-center justify-center transition duration-300 group-hover:scale-110">🏃</div>
-                <div>
-                   <h4 class="text-slate-400 text-[10px] font-semibold uppercase tracking-widest leading-none mb-1.5 font-black-override">Laporan Aktivitas</h4>
-                   <div class="text-2xl font-bold text-slate-800 tracking-tight">${mySchoolAktivitas.length} <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Kegiatan</span></div>
-                </div>
+             <div class="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-amber-200 transition-all duration-300 flex flex-col items-center justify-center text-center relative overflow-hidden group hover:-translate-y-0.5" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                <span class="text-slate-400 text-[10px] md:text-[11px] font-bold uppercase tracking-wider mb-2">Laporan Aktivitas</span>
+                <span class="text-3xl font-bold text-amber-500 tracking-tight transition duration-300 group-hover:scale-105">${mySchoolAktivitas.length}</span>
              </div>
           `;
 
@@ -9456,40 +9424,24 @@
 
           htmlStats = `
              <!-- Block 1: Supervised Schools -->
-             <div class="bg-white p-5 rounded-[1.25rem] border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-300 flex items-center gap-4 relative overflow-hidden group hover:-translate-y-0.5">
-                <div class="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 rounded-l-full"></div>
-                <div class="text-2xl bg-indigo-50 text-indigo-600 w-12 h-12 rounded-2xl flex items-center justify-center transition duration-300 group-hover:scale-110">🏫</div>
-                <div>
-                   <h4 class="text-slate-400 text-[10px] font-semibold uppercase tracking-widest leading-none mb-1.5 font-black-override">Sekolah Binaan</h4>
-                   <div class="text-2xl font-bold text-slate-800 tracking-tight">${binaanNamesUpper.length} <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Lembaga</span></div>
-                </div>
+             <div class="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-300 flex flex-col items-center justify-center text-center relative overflow-hidden group hover:-translate-y-0.5" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                <span class="text-slate-400 text-[10px] md:text-[11px] font-bold uppercase tracking-wider mb-2">Sekolah Binaan</span>
+                <span class="text-3xl font-bold text-slate-800 tracking-tight transition duration-300 group-hover:scale-105">${binaanNamesUpper.length}</span>
              </div>
              <!-- Block 2: Pending reports -->
-             <div class="bg-white p-5 rounded-[1.25rem] border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-300 flex items-center gap-4 relative overflow-hidden group hover:-translate-y-0.5">
-                <div class="absolute left-0 top-0 bottom-0 w-1 bg-yellow-500 rounded-l-full"></div>
-                <div class="text-2xl bg-yellow-50 text-yellow-600 w-12 h-12 rounded-2xl flex items-center justify-center transition duration-300 group-hover:scale-110">📋</div>
-                <div>
-                   <h4 class="text-slate-400 text-[10px] font-semibold uppercase tracking-widest leading-none mb-1.5 font-black-override">Laporan Kepsek Masuk</h4>
-                   <div class="text-2xl font-bold text-slate-800 tracking-tight" id="home-rep-val-real">...</div>
-                </div>
+             <div class="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-blue-200 transition-all duration-300 flex flex-col items-center justify-center text-center relative overflow-hidden group hover:-translate-y-0.5" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                <span class="text-slate-400 text-[10px] md:text-[11px] font-bold uppercase tracking-wider mb-2">Laporan Kepsek Masuk</span>
+                <span class="text-3xl font-bold text-blue-600 tracking-tight transition duration-300 group-hover:scale-105" id="home-rep-val-real">...</span>
              </div>
              <!-- Block 3: Jurnals under supervision -->
-             <div class="bg-white p-5 rounded-[1.25rem] border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-300 flex items-center gap-4 relative overflow-hidden group hover:-translate-y-0.5">
-                <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-full"></div>
-                <div class="text-2xl bg-blue-50 text-blue-600 w-12 h-12 rounded-2xl flex items-center justify-center transition duration-300 group-hover:scale-110">📓</div>
-                <div>
-                   <h4 class="text-slate-400 text-[10px] font-semibold uppercase tracking-widest leading-none mb-1.5 font-black-override font-black-override">Jurnal KBM Binaan</h4>
-                   <div class="text-2xl font-bold text-slate-800 tracking-tight">${binaanJurnals.length} <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Jurnal</span></div>
-                </div>
+             <div class="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all duration-300 flex flex-col items-center justify-center text-center relative overflow-hidden group hover:-translate-y-0.5" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                <span class="text-slate-400 text-[10px] md:text-[11px] font-bold uppercase tracking-wider mb-2">Jurnal KBM Binaan</span>
+                <span class="text-3xl font-bold text-emerald-600 tracking-tight transition duration-300 group-hover:scale-105">${binaanJurnals.length}</span>
              </div>
              <!-- Block 4: Total Teachers Under Supervision -->
-             <div class="bg-white p-5 rounded-[1.25rem] border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-300 flex items-center gap-4 relative overflow-hidden group hover:-translate-y-0.5">
-                <div class="absolute left-0 top-0 bottom-0 w-1 bg-pink-500 rounded-l-full"></div>
-                <div class="text-2xl bg-pink-50 text-pink-600 w-12 h-12 rounded-2xl flex items-center justify-center transition duration-300 group-hover:scale-110">👨‍🏫</div>
-                <div>
-                   <h4 class="text-slate-400 text-[10px] font-semibold uppercase tracking-widest leading-none mb-1.5 font-black-override">Total Guru Binaan</h4>
-                   <div class="text-2xl font-bold text-slate-800 tracking-tight">${binaanGurus.length} <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Guru</span></div>
-                </div>
+             <div class="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-purple-200 transition-all duration-300 flex flex-col items-center justify-center text-center relative overflow-hidden group hover:-translate-y-0.5" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                <span class="text-slate-400 text-[10px] md:text-[11px] font-bold uppercase tracking-wider mb-2">Total Guru Binaan</span>
+                <span class="text-3xl font-bold text-purple-600 tracking-tight transition duration-300 group-hover:scale-105">${binaanGurus.length}</span>
              </div>
           `;
 
@@ -9698,40 +9650,24 @@
 
           htmlStats = `
              <!-- Block 1: Schools -->
-             <div class="bg-white p-5 rounded-[1.25rem] border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-300 flex items-center gap-4 relative overflow-hidden group hover:-translate-y-0.5">
-                <div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500 rounded-l-full"></div>
-                <div class="text-2xl bg-red-50 text-red-600 w-12 h-12 rounded-2xl flex items-center justify-center transition duration-300 group-hover:scale-110">🏫</div>
-                <div>
-                   <h4 class="text-slate-400 text-[10px] font-semibold uppercase tracking-widest leading-none mb-1.5 font-black-override">Lembaga Sekolah</h4>
-                   <div class="text-2xl font-bold text-slate-800 tracking-tight">${filteredSchools.length} <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Instansi</span></div>
-                </div>
+             <div class="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-300 flex flex-col items-center justify-center text-center relative overflow-hidden group hover:-translate-y-0.5" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                <span class="text-slate-400 text-[10px] md:text-[11px] font-bold uppercase tracking-wider mb-2">Lembaga Sekolah</span>
+                <span class="text-3xl font-bold text-slate-800 tracking-tight transition duration-300 group-hover:scale-105">${filteredSchools.length}</span>
              </div>
              <!-- Block 2: Guru Aktif -->
-             <div class="bg-white p-5 rounded-[1.25rem] border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-300 flex items-center gap-4 relative overflow-hidden group hover:-translate-y-0.5">
-                <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-full"></div>
-                <div class="text-2xl bg-blue-50 text-blue-600 w-12 h-12 rounded-2xl flex items-center justify-center transition duration-300 group-hover:scale-110">👨‍🏫</div>
-                <div>
-                   <h4 class="text-slate-400 text-[10px] font-semibold uppercase tracking-widest leading-none mb-1.5 font-black-override">Total Guru Aktif</h4>
-                   <div class="text-2xl font-bold text-slate-800 tracking-tight">${totalGurus} <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Guru</span></div>
-                </div>
+             <div class="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-blue-200 transition-all duration-300 flex flex-col items-center justify-center text-center relative overflow-hidden group hover:-translate-y-0.5" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                <span class="text-slate-400 text-[10px] md:text-[11px] font-bold uppercase tracking-wider mb-2">Total Guru Aktif</span>
+                <span class="text-3xl font-bold text-blue-600 tracking-tight transition duration-300 group-hover:scale-105">${totalGurus}</span>
              </div>
              <!-- Block 3: Rombel Master -->
-             <div class="bg-white p-5 rounded-[1.25rem] border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-300 flex items-center gap-4 relative overflow-hidden group hover:-translate-y-0.5">
-                <div class="absolute left-0 top-0 bottom-0 w-1 bg-purple-500 rounded-l-full"></div>
-                <div class="text-2xl bg-purple-50 text-purple-600 w-12 h-12 rounded-2xl flex items-center justify-center transition duration-300 group-hover:scale-110">📐</div>
-                <div>
-                   <h4 class="text-slate-400 text-[10px] font-semibold uppercase tracking-widest leading-none mb-1.5 font-black-override">Total Rombel Master</h4>
-                   <div class="text-2xl font-bold text-slate-800 tracking-tight">${filteredKelas.length} <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Kelas</span></div>
-                </div>
+             <div class="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-purple-200 transition-all duration-300 flex flex-col items-center justify-center text-center relative overflow-hidden group hover:-translate-y-0.5" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                <span class="text-slate-400 text-[10px] md:text-[11px] font-bold uppercase tracking-wider mb-2">Total Rombel Master</span>
+                <span class="text-3xl font-bold text-purple-600 tracking-tight transition duration-300 group-hover:scale-105">${filteredKelas.length}</span>
              </div>
              <!-- Block 4: Siswa Global -->
-             <div class="bg-white p-5 rounded-[1.25rem] border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-300 flex items-center gap-4 relative overflow-hidden group hover:-translate-y-0.5">
-                <div class="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 rounded-l-full"></div>
-                <div class="text-2xl bg-indigo-50 text-indigo-600 w-12 h-12 rounded-2xl flex items-center justify-center transition duration-300 group-hover:scale-110">👨‍🎓</div>
-                <div>
-                   <h4 class="text-slate-400 text-[10px] font-semibold uppercase tracking-widest leading-none mb-1.5 font-black-override">Total Siswa Terdata</h4>
-                   <div class="text-2xl font-bold text-slate-800 tracking-tight">${filteredSiswas.length.toLocaleString()} <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Siswa</span></div>
-                </div>
+             <div class="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-rose-200 transition-all duration-300 flex flex-col items-center justify-center text-center relative overflow-hidden group hover:-translate-y-0.5" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                <span class="text-slate-400 text-[10px] md:text-[11px] font-bold uppercase tracking-wider mb-2">Total Siswa Terdata</span>
+                <span class="text-3xl font-bold text-rose-500 tracking-tight transition duration-300 group-hover:scale-105">${filteredSiswas.length.toLocaleString()}</span>
              </div>
           `;
 
@@ -11179,7 +11115,7 @@
         });
       }
 
-      const DAYS_OF_WEEK = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
+      const DAYS_OF_WEEK = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
       let CURRENT_CUSTOM_SCHEDULES = {};
 
       function loadCustomSchedulesUI() {
