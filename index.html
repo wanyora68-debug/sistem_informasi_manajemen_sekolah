@@ -8609,67 +8609,106 @@
         }
 
         const fotoHtml = (j.f1 || j.f2) ? `
-          <div class="mt-4">
-            <p class="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider text-center">Foto Bukti KBM:</p>
-            <div class="flex gap-3 justify-center">
-              ${j.f1 ? `<img src="${j.f1}" referrerPolicy="no-referrer" class="w-28 h-28 object-cover rounded-xl border-2 border-slate-200 shadow hover:scale-105 transition cursor-pointer" onclick="window.open('${j.f1}', '_blank')"/>` : ""}
-              ${j.f2 ? `<img src="${j.f2}" referrerPolicy="no-referrer" class="w-28 h-28 object-cover rounded-xl border-2 border-slate-200 shadow hover:scale-105 transition cursor-pointer" onclick="window.open('${j.f2}', '_blank')"/>` : ""}
+          <div class="mt-4 pt-4 border-t border-slate-100">
+            <p class="text-[9px] font-black text-slate-400 mb-2.5 uppercase tracking-wider text-center">📸 Foto Bukti Kegiatan Belajar Mengajar (KBM)</p>
+            <div class="flex gap-4 justify-center">
+              ${j.f1 ? `
+                <div class="group relative overflow-hidden rounded-xl border-2 border-slate-200 shadow-sm transition transform hover:scale-105 duration-300">
+                  <img src="${j.f1}" referrerPolicy="no-referrer" class="w-24 h-24 object-cover cursor-pointer" onclick="window.open('${j.f1}', '_blank')"/>
+                  <span class="absolute bottom-1 right-1 bg-black/60 text-white text-[7px] px-1 rounded font-black uppercase">FOTO 1</span>
+                </div>` : ""}
+              ${j.f2 ? `
+                <div class="group relative overflow-hidden rounded-xl border-2 border-slate-200 shadow-sm transition transform hover:scale-105 duration-300">
+                  <img src="${j.f2}" referrerPolicy="no-referrer" class="w-24 h-24 object-cover cursor-pointer" onclick="window.open('${j.f2}', '_blank')"/>
+                  <span class="absolute bottom-1 right-1 bg-black/60 text-white text-[7px] px-1 rounded font-black uppercase">FOTO 2</span>
+                </div>` : ""}
             </div>
+            <p class="text-[7.5px] text-gray-400 text-center mt-2 uppercase font-black tracking-wider">Klik gambar untuk melihat dalam ukuran penuh</p>
           </div>
         ` : "";
 
         const feedbackHtml = j.feedback && j.feedback.trim().length > 0 ? `
-          <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-xl text-left">
-            <span class="text-[9px] font-black text-yellow-800 uppercase block tracking-wider">💬 CATATAN / FEEDBACK:</span>
-            <p class="text-xs text-yellow-950 italic mt-1 font-medium leading-relaxed">${j.feedback}</p>
+          <div class="mt-4 p-4 bg-yellow-50/80 border-2 border-yellow-200 rounded-2xl text-left shadow-sm">
+            <div class="flex items-center gap-1.5 mb-1.5">
+              <span class="text-sm">💬</span>
+              <span class="text-[9px] font-black text-yellow-800 uppercase tracking-widest block">CATATAN & FEEDBACK REVIU:</span>
+            </div>
+            <p class="text-xs text-yellow-950 italic font-bold leading-relaxed pl-5">${j.feedback}</p>
           </div>
         ` : `
-          <div class="mt-4 p-3 bg-slate-50 border border-slate-150 rounded-xl text-left">
-            <span class="text-[9px] font-black text-slate-500 uppercase block tracking-wider">💬 CATATAN / FEEDBACK:</span>
-            <p class="text-xs text-slate-400 italic mt-1 leading-relaxed">Belum ada feedback dari kepala sekolah atau pengawas.</p>
+          <div class="mt-4 p-3 bg-slate-50 border border-slate-150 rounded-2xl text-left">
+            <div class="flex items-center gap-1.5 mb-0.5">
+              <span class="text-xs">💬</span>
+              <span class="text-[9px] font-black text-slate-450 uppercase tracking-widest block text-slate-400">CATATAN & FEEDBACK REVIU:</span>
+            </div>
+            <p class="text-[10px] text-slate-400 italic pl-4">Belum ada catatan atau feedback dari Kepala Sekolah atau Pengawas.</p>
           </div>
         `;
 
         Swal.fire({
-          title: '<span class="font-black text-xs uppercase tracking-widest text-slate-800">📖 Detail Jurnal Mengajar Mandiri</span>',
-          html: `
-            <div class="text-left text-[11px] text-gray-700 leading-relaxed font-sans mt-3 space-y-2 border-t border-b py-3 border-gray-150">
-              <div class="flex justify-between border-b pb-1.5 border-slate-100">
-                <span class="font-extrabold text-slate-400 uppercase tracking-wide">Nama Guru:</span>
-                <span class="font-bold text-slate-900">${j.guru || "-"}</span>
-              </div>
-              <div class="flex justify-between border-b pb-1.5 border-slate-100">
-                <span class="font-extrabold text-slate-400 uppercase tracking-wide">Asal Sekolah:</span>
-                <span class="font-bold text-slate-900">${j.sekolah || "-"}</span>
-              </div>
-              <div class="flex justify-between border-b pb-1.5 border-slate-100">
-                <span class="font-extrabold text-slate-400 uppercase tracking-wide">Hari / Tanggal:</span>
-                <span class="font-bold text-slate-900">${j.hari || "-"}, ${j.tgl || "-"}</span>
-              </div>
-              <div class="flex justify-between border-b pb-1.5 border-slate-100">
-                <span class="font-extrabold text-slate-400 uppercase tracking-wide">Kelas & Jurusan:</span>
-                <span class="font-bold text-slate-900">${j.kelas || "-"} (${j.keahlian || "-"})</span>
-              </div>
-              <div class="flex justify-between border-b pb-1.5 border-slate-100">
-                <span class="font-extrabold text-slate-400 uppercase tracking-wide">Jam Pelajaran:</span>
-                <span class="font-bold text-slate-900">Jam ke-${j.jam || "-"}</span>
-              </div>
-              <div class="flex justify-between border-b pb-1.5 border-slate-100">
-                <span class="font-extrabold text-slate-400 uppercase tracking-wide">Mata Pelajaran:</span>
-                <span class="font-bold text-slate-900">${j.mapel || "-"}</span>
-              </div>
-              <div class="mt-2 text-left">
-                <span class="font-extrabold text-slate-400 uppercase tracking-wide block mb-1">Materi Pembelajaran:</span>
-                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-slate-900 font-semibold italic text-[11px] leading-relaxed">
-                  ✍️ "${j.materi || "-"}"
-                </div>
-              </div>
-              ${feedbackHtml}
-              ${fotoHtml}
+          title: `
+            <div class="flex flex-col items-center gap-1 mt-2" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+              <span class="bg-blue-50 text-blue-800 border border-blue-100 text-[8px] font-black tracking-widest uppercase px-3 py-1 rounded-full shadow-inner leading-none">📖 INFORMASI JURNAL HARIAN</span>
+              <h3 class="font-black text-base text-slate-900 uppercase tracking-tight leading-none mt-1.5">Detail Jurnal Mengajar</h3>
             </div>
           `,
-          confirmButtonColor: "#16a34a",
-          confirmButtonText: "TUTUP",
+          html: `
+            <div class="text-left font-sans mt-2 space-y-4" style="font-family: 'Inter', sans-serif;">
+              
+              <!-- Info Block Card -->
+              <div class="bg-gradient-to-tr from-slate-50 to-slate-100/30 p-4 rounded-3xl border border-slate-150 space-y-2.5 shadow-inner">
+                
+                <div class="flex justify-between items-start border-b pb-1.5 border-slate-100">
+                  <span class="font-bold text-[9px] text-slate-400 uppercase tracking-wider mt-0.5">Nama Guru</span>
+                  <span class="font-black text-[11px] text-slate-800 text-right leading-tight max-w-[220px]">${j.guru || "-"}</span>
+                </div>
+                
+                <div class="flex justify-between items-start border-b pb-1.5 border-slate-100">
+                  <span class="font-bold text-[9px] text-slate-400 uppercase tracking-wider mt-0.5">Asal Sekolah</span>
+                  <span class="font-black text-[11px] text-slate-800 text-right leading-tight max-w-[220px]">${j.sekolah || "-"}</span>
+                </div>
+                
+                <div class="flex justify-between items-start border-b pb-1.5 border-slate-100">
+                  <span class="font-bold text-[9px] text-slate-400 uppercase tracking-wider mt-0.5">Hari / Tanggal</span>
+                  <span class="font-black text-[11px] text-slate-800 text-right leading-none">${j.hari || "-"}, ${j.tgl || "-"}</span>
+                </div>
+                
+                <div class="flex justify-between items-start border-b pb-1.5 border-slate-100">
+                  <span class="font-bold text-[9px] text-slate-400 uppercase tracking-wider mt-0.5">Kelas & Jurusan</span>
+                  <span class="font-black text-[11px] text-slate-800 text-right leading-tight">${j.kelas || "-"} <span class="text-[9px] font-bold text-slate-400">(${j.keahlian || "-"})</span></span>
+                </div>
+                
+                <div class="flex justify-between items-start border-b pb-1.5 border-slate-100">
+                  <span class="font-bold text-[9px] text-slate-400 uppercase tracking-wider mt-0.5">Jam & Mapel</span>
+                  <span class="font-black text-[11px] text-slate-800 text-right leading-tight">Jam ke-${j.jam || "-"} — <span class="text-indigo-600">${j.mapel || "-"}</span></span>
+                </div>
+
+              </div>
+
+              <!-- Materi Card -->
+              <div class="text-left space-y-1.5">
+                <span class="font-black text-[9px] text-slate-400 uppercase tracking-wider block ml-1">✍️ Materi / Pembahasan Pembelajaran:</span>
+                <div class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white p-4 rounded-3xl shadow-md relative overflow-hidden">
+                  <!-- Decorative quotation mark background -->
+                  <div class="absolute -right-2 -bottom-6 text-7xl font-serif text-white/10 select-none">“</div>
+                  <p class="text-[11px] font-bold leading-relaxed italic relative z-10" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                    "${j.materi || "-"}"
+                  </p>
+                </div>
+              </div>
+
+              ${feedbackHtml}
+              ${fotoHtml}
+              
+            </div>
+          `,
+          width: '500px',
+          confirmButtonColor: "#1e293b",
+          confirmButtonText: "SELESAI & TUTUP",
+          customClass: {
+            container: 'z-[999999]',
+            popup: 'rounded-[2.5rem] border border-slate-100 p-6 shadow-2xl'
+          }
         });
       }
 
