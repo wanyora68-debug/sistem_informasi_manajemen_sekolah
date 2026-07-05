@@ -7082,6 +7082,9 @@
           return this;
         };
 
+        window.gasCache = window.gasCache || {};
+        const CACHE_TTL_MS = 3 * 60 * 1000; // Cache valid for 3 minutes
+
         window.google = {
           script: {
             get run() {
@@ -7104,6 +7107,26 @@
                       }
                       
                       return function (...args) {
+                        const isGet = propKey.startsWith("get");
+                        const cacheKey = propKey + "_" + JSON.stringify(args);
+                        
+                        if (isGet) {
+                          const cachedEntry = window.gasCache[cacheKey];
+                          if (cachedEntry && (Date.now() - cachedEntry.timestamp < CACHE_TTL_MS)) {
+                            // Return deep copy asynchronously to avoid side effects
+                            const clonedResult = JSON.parse(JSON.stringify(cachedEntry.data));
+                            if (successHandler) {
+                              setTimeout(() => {
+                                successHandler(clonedResult);
+                              }, 10);
+                            }
+                            return;
+                          }
+                        } else {
+                          // Write/modification operation: invalidate all cached reads to guarantee data accuracy
+                          window.gasCache = {};
+                        }
+                        
                         fetch(webAppUrl, {
                           method: "POST",
                           mode: "cors",
@@ -7135,8 +7158,15 @@
                               });
                             }
                           } else {
+                            const result = data ? data.result : null;
+                            if (isGet) {
+                              window.gasCache[cacheKey] = {
+                                data: JSON.parse(JSON.stringify(result)),
+                                timestamp: Date.now()
+                              };
+                            }
                             if (successHandler) {
-                              successHandler(data ? data.result : null);
+                              successHandler(result);
                             }
                           }
                         })
