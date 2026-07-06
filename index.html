@@ -10869,7 +10869,27 @@
         updateStatusSistemUI();
       });
 
+      window.originalAbsensiGuruHtml = null;
+
+      function resetAbsensiGuruForm() {
+        if (window.originalAbsensiGuruHtml) {
+          document.getElementById("sec-absensi-guru").innerHTML = window.originalAbsensiGuruHtml;
+        }
+        if (window.videoStream) {
+          try {
+            window.videoStream.getTracks().forEach((t) => t.stop());
+          } catch (e) {}
+          window.videoStream = null;
+        }
+        switchTab("absensi-guru");
+      }
+
       function switchTab(id) {
+        if (id === "absensi-guru") {
+          if (!window.originalAbsensiGuruHtml) {
+            window.originalAbsensiGuruHtml = document.getElementById("sec-absensi-guru").innerHTML;
+          }
+        }
         if (id === "home") {
           try {
             refreshHomeDashboardData();
@@ -13930,13 +13950,12 @@
                 const statusNorm = (a.status || "").toUpperCase().trim();
                 const tipeNorm = (a.tipe || "").toUpperCase().trim();
 
+                if (statusNorm === "TEPAT WAKTU") {
+                  tepatWaktu++;
+                }
+
                 if (tipeNorm === "DATANG" || tipeNorm.includes("MASUK")) {
-                  if (statusNorm === "TEPAT WAKTU") {
-                    tepatWaktu++;
-                  } else if (
-                    statusNorm === "TERLAMBAT" ||
-                    statusNorm.includes("LAMBAT")
-                  ) {
+                  if (statusNorm === "TERLAMBAT" || statusNorm.includes("LAMBAT")) {
                     terlambat++;
                   }
                 } else if (tipeNorm === "PULANG") {
@@ -15118,7 +15137,7 @@
                   <h2 class="text-2xl font-black text-blue-900 uppercase italic mb-1 tracking-tighter">ABSENSI BERHASIL</h2>
                   <p class="text-blue-600 font-black text-lg uppercase italic mb-2">${detailMsg}</p>
                   <p class="text-green-600 font-black text-sm uppercase italic mb-8">${finalMsg}</p>
-                  <button onclick="location.reload()" class="bg-blue-900 text-white px-8 py-4 rounded-2xl font-black uppercase text-[10px] shadow-lg hover:scale-105 transition">Kembali ke Beranda</button>
+                  <button onclick="resetAbsensiGuruForm()" class="bg-blue-900 text-white px-8 py-4 rounded-2xl font-black uppercase text-[10px] shadow-lg hover:scale-105 transition">Kembali ke Panel Absensi</button>
                </div>
              `;
             })
@@ -15257,7 +15276,7 @@
                            <h2 class="text-2xl font-black text-blue-900 uppercase italic mb-1 tracking-tighter">ABSENSI BERHASIL</h2>
                            <p class="text-blue-600 font-black text-lg uppercase italic mb-2">${detailMsg}</p>
                            <p class="text-green-600 font-black text-sm uppercase italic mb-8">${finalMsg}</p>
-                           <button onclick="location.reload()" class="bg-blue-900 text-white px-8 py-4 rounded-2xl font-black uppercase text-[10px] shadow-lg hover:scale-105 transition">Kembali ke Beranda</button>
+                           <button onclick="resetAbsensiGuruForm()" class="bg-blue-900 text-white px-8 py-4 rounded-2xl font-black uppercase text-[10px] shadow-lg hover:scale-105 transition">Kembali ke Panel Absensi</button>
                         </div>
                       `;
                   })
