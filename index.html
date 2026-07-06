@@ -9169,6 +9169,12 @@
         const uSchoolNorm = activeSekolah.toUpperCase().trim();
         const uNamaNorm = activeNama.toUpperCase().trim();
 
+        if (activeRole === "Pengawas") {
+          statsContent.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4";
+        } else {
+          statsContent.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4";
+        }
+
         let listSekolahBinaanNames = [];
         if (activeRole === "Pengawas") {
           const binaan = window.mySekolahBinaan || [];
@@ -9451,6 +9457,11 @@
               j.sekolah &&
               binaanNamesUpper.includes(j.sekolah.toUpperCase().trim()),
           );
+          const binaanSiswas = (siswas || []).filter(
+            (s) =>
+              s.sekolah &&
+              binaanNamesUpper.includes(s.sekolah.toUpperCase().trim()),
+          );
 
           htmlStats = `
              <!-- Block 1: Supervised Schools -->
@@ -9472,6 +9483,11 @@
              <div class="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-purple-200 transition-all duration-300 flex flex-col items-center justify-center text-center relative overflow-hidden group hover:-translate-y-0.5" style="font-family: 'Plus Jakarta Sans', sans-serif;">
                 <span class="text-slate-400 text-[10px] md:text-[11px] font-bold uppercase tracking-wider mb-2">Total Guru Binaan</span>
                 <span class="text-3xl font-bold text-purple-600 tracking-tight transition duration-300 group-hover:scale-105">${binaanGurus.length}</span>
+             </div>
+             <!-- Block 5: Total Students Under Supervision -->
+             <div class="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-orange-200 transition-all duration-300 flex flex-col items-center justify-center text-center relative overflow-hidden group hover:-translate-y-0.5" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                <span class="text-slate-400 text-[10px] md:text-[11px] font-bold uppercase tracking-wider mb-2">Total Siswa Binaan</span>
+                <span class="text-3xl font-bold text-orange-600 tracking-tight transition duration-300 group-hover:scale-105">${binaanSiswas.length}</span>
              </div>
           `;
 
