@@ -5165,7 +5165,7 @@
           <div id="previewRekapJurnal" class="hidden">
             <div class="flex justify-end mb-4 no-print">
               <button
-                onclick="window.print()"
+                onclick="printRekapJurnal()"
                 class="bg-blue-900 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase shadow-md"
               >
                 Cetak PDF
@@ -5235,7 +5235,7 @@
           <div id="previewRekapAktivitas" class="hidden">
             <div class="flex justify-end mb-4 no-print">
               <button
-                onclick="window.print()"
+                onclick="printRekapAktivitas()"
                 class="bg-blue-900 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase shadow-md"
               >
                 Cetak PDF
@@ -12201,6 +12201,72 @@
             })
             .simpanFeedbackAktivitas(row, f);
         }
+      }
+
+      function printRekapJurnal() {
+        const area = document.getElementById("areaRekapJurnal");
+        if (!area || !area.innerHTML || area.innerHTML.includes("Sedang menyusun") || area.innerHTML.includes("TIDAK ADA DATA")) {
+          alert("Tidak ada data rekap jurnal untuk dicetak!");
+          return;
+        }
+
+        const htmlContent = `
+          <style>
+             #mobilePrintArea { 
+               font-family: 'Inter', sans-serif; 
+               font-size: 10px; 
+               text-transform: uppercase; 
+               color: #000; 
+               padding: 20px;
+             }
+             .text-blue-900 { color: #1e3a8a !important; }
+             .bg-blue-50 { background-color: #eff6ff !important; }
+             .bg-blue-900 { background-color: #1e3a8a !important; color: white !important; }
+             .border-blue-900 { border-color: #1e3a8a !important; }
+             table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+             th, td { border: 1px solid #1e3a8a !important; padding: 6px; text-align: left; }
+             th { background-color: #1e3a8a !important; color: white !important; }
+             .no-print { display: none !important; }
+             img { max-width: 40px; max-height: 40px; object-fit: cover; border-radius: 4px; }
+          </style>
+          <div class="print-container">
+            ${area.innerHTML}
+          </div>
+        `;
+        openPrintOverlay(htmlContent);
+      }
+
+      function printRekapAktivitas() {
+        const area = document.getElementById("areaRekapAktivitas");
+        if (!area || !area.innerHTML || area.innerHTML.includes("Sedang menyusun") || area.innerHTML.includes("TIDAK ADA DATA")) {
+          alert("Tidak ada data rekap aktivitas untuk dicetak!");
+          return;
+        }
+
+        const htmlContent = `
+          <style>
+             #mobilePrintArea { 
+               font-family: 'Inter', sans-serif; 
+               font-size: 10px; 
+               text-transform: uppercase; 
+               color: #000; 
+               padding: 20px;
+             }
+             .text-green-900 { color: #14532d !important; }
+             .bg-green-50 { background-color: #f0fdf4 !important; }
+             .bg-green-900 { background-color: #14532d !important; color: white !important; }
+             .border-green-700 { border-color: #15803d !important; }
+             table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+             th, td { border: 1px solid #15803d !important; padding: 6px; text-align: left; }
+             th { background-color: #14532d !important; color: white !important; }
+             .no-print { display: none !important; }
+             img { max-width: 40px; max-height: 40px; object-fit: cover; border-radius: 4px; }
+          </style>
+          <div class="print-container">
+            ${area.innerHTML}
+          </div>
+        `;
+        openPrintOverlay(htmlContent);
       }
 
       function loadKepsekName(targetId, sekolah, targetNipId) {
@@ -19560,6 +19626,8 @@
         openPrintOverlay(htmlContent);
       }
       /* MOBILE PRINT OVERLAY HELPERS */
+      let isPrintListenerAdded = false;
+
       function openPrintOverlay(htmlContent) {
         const overlay = document.getElementById("mobilePrintOverlay");
         const area = document.getElementById("mobilePrintArea");
@@ -19568,9 +19636,21 @@
         overlay.classList.remove("hidden");
         document.body.classList.add("overflow-hidden");
 
+        // Add afterprint event listener once to automatically close overlay after print finishes/cancels
+        if (!isPrintListenerAdded) {
+          window.addEventListener("afterprint", () => {
+            closePrintOverlay();
+          });
+          isPrintListenerAdded = true;
+        }
+
         setTimeout(() => {
           try {
             window.print();
+            // Immediate closing fallback for desktop environments where print blocks synchronously
+            setTimeout(() => {
+              closePrintOverlay();
+            }, 500);
           } catch (e) {
             console.error("Print auto fail:", e);
           }
@@ -19579,7 +19659,13 @@
 
       function closePrintOverlay() {
         const overlay = document.getElementById("mobilePrintOverlay");
-        overlay.classList.add("hidden");
+        if (overlay) {
+          overlay.classList.add("hidden");
+        }
+        const area = document.getElementById("mobilePrintArea");
+        if (area) {
+          area.innerHTML = "";
+        }
         document.body.classList.remove("overflow-hidden");
       }
 
@@ -20379,10 +20465,11 @@
     <!-- ================= PRINT OVERLAY FOR MOBILE & DESKTOP ================= -->
     <div
       id="mobilePrintOverlay"
-      class="hidden fixed inset-0 bg-gray-800/90 backdrop-blur-sm z-[999999] overflow-y-auto p-4 md:p-8 flex flex-col items-center"
+      class="hidden fixed inset-0 bg-gray-800/90 backdrop-blur-sm z-[999999] overflow-y-auto px-4 pb-4 md:px-8 md:pb-8 flex flex-col items-center"
+      onclick="if (event.target === this) closePrintOverlay()"
     >
       <div
-        class="no-print bg-blue-900 text-white p-4 w-full max-w-4xl flex flex-col sm:flex-row justify-between items-center shadow-2xl border-b border-blue-800 rounded-t-2xl gap-3"
+        class="no-print sticky top-0 bg-blue-900 text-white p-4 w-full max-w-4xl flex flex-col sm:flex-row justify-between items-center shadow-2xl border-b border-blue-800 rounded-t-2xl gap-3 z-50"
       >
         <div class="flex items-center gap-2">
           <button
