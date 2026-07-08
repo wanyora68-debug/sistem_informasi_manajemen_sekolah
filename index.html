@@ -7100,76 +7100,70 @@
                           window.gasCache = {};
                         }
                         
-                        fetch(webAppUrl, {
-                          method: "POST",
-                          mode: "cors",
-                          credentials: "omit",
-                          headers: {
-                            "Content-Type": "text/plain;charset=utf-8"
-                          },
-                          body: JSON.stringify({
-                            functionName: propKey,
-                            arguments: args
+                        const executeFetch = (attempt = 1) => {
+                          fetch(webAppUrl, {
+                            method: "POST",
+                            mode: "cors",
+                            credentials: "omit",
+                            headers: {
+                              "Content-Type": "text/plain;charset=utf-8"
+                            },
+                            body: JSON.stringify({
+                              functionName: propKey,
+                              arguments: args
+                            })
                           })
-                        })
-                        .then((response) => {
-                          if (!response.ok) {
-                            throw new Error("HTTP error! Status: " + response.status);
-                          }
-                          return response.json();
-                        })
-                        .then((data) => {
-                          if (data && data.status === "error") {
-                            console.error("GAS live error:", data.message);
-                            if (failureHandler) {
-                              failureHandler(new Error(data.message));
+                          .then((response) => {
+                            if (!response.ok) {
+                              throw new Error("HTTP error! Status: " + response.status);
+                            }
+                            return response.json();
+                          })
+                          .then((data) => {
+                            if (data && data.status === "error") {
+                              console.error("GAS live error for " + propKey + ":", data.message);
+                              if (failureHandler) {
+                                failureHandler(new Error(data.message));
+                              } else {
+                                console.warn("Google Sheets Error:", data.message);
+                              }
                             } else {
-                              Swal.fire({
-                                icon: "error",
-                                title: "Gagal Sinkronisasi",
-                                text: "Google Sheets Error: " + data.message,
-                                confirmButtonColor: "#10b981",
-                              });
+                              const result = data ? data.result : null;
+                              if (isGet) {
+                                window.gasCache[cacheKey] = {
+                                  data: JSON.parse(JSON.stringify(result)),
+                                  timestamp: Date.now()
+                                };
+                              }
+                              if (successHandler) {
+                                successHandler(result);
+                              }
                             }
-                          } else {
-                            const result = data ? data.result : null;
-                            if (isGet) {
-                              window.gasCache[cacheKey] = {
-                                data: JSON.parse(JSON.stringify(result)),
-                                timestamp: Date.now()
-                              };
+                          })
+                          .catch((error) => {
+                            console.warn("GAS fetch error (Attempt " + attempt + "/3) for " + propKey + ":", error);
+                            if (attempt < 3) {
+                              // Retry with a staggered timeout to reduce concurrent hits to Google Apps Script
+                              setTimeout(() => {
+                                executeFetch(attempt + 1);
+                              }, attempt * 750);
+                            } else {
+                              console.error("GAS fetch completely failed for " + propKey + " after 3 attempts:", error);
+                              if (failureHandler) {
+                                failureHandler(error);
+                              } else {
+                                // Silently log to console instead of showing annoying disruptive central modals.
+                                // This respects the user's specific request to remove distracting popups.
+                                console.warn("GAS background connection failed silently to avoid interrupting user.");
+                              }
                             }
-                            if (successHandler) {
-                              successHandler(result);
-                            }
-                          }
-                        })
-                        .catch((error) => {
-                          console.error("GAS fetch connection error:", error);
-                          if (failureHandler) {
-                            failureHandler(error);
-                          } else {
-                            Swal.fire({
-                              icon: "error",
-                              title: "Koneksi Gagal",
-                              html: `
-                                <div class="text-left text-[11px] leading-relaxed">
-                                  <p class="mb-2">Gagal terhubung ke Google Apps Script / Google Sheets.</p>
-                                  <p class="mb-2 font-bold text-red-600">Penyebab umum:</p>
-                                  <ol class="list-decimal pl-4 mb-3 space-y-1">
-                                    <li>Anda sedang login ke beberapa akun Google di browser ini (menyebabkan Google redirect block).</li>
-                                    <li>Web App Google Apps Script belum dideploy dengan benar sebagai <b>"Anyone"</b>.</li>
-                                    <li>Adblocker atau ekstensi keamanan browser memblokir request ke domain Google.</li>
-                                  </ol>
-                                  <p class="font-semibold text-emerald-700 bg-emerald-50 p-2 rounded-lg border border-emerald-100">
-                                    💡 <b>Solusi Utama:</b> Buka aplikasi ini menggunakan <b>Mode Penyamaran (Incognito Window)</b> atau logout dari akun Google Anda yang lain.
-                                  </p>
-                                </div>
-                              `,
-                              confirmButtonColor: "#10b981",
-                            });
-                          }
-                        });
+                          });
+                        };
+                        
+                        // Add a tiny random delay (jitter) between 0 and 200ms to spread out concurrent parallel requests
+                        setTimeout(() => {
+                          executeFetch();
+                        }, Math.random() * 200);
                       };
                     }
                   });
@@ -8160,21 +8154,21 @@
           })
           .withFailureHandler((err) => {
             console.error("Login server direct failure:", err);
-            Swal.fire({
+            const Toast = Swal.mixin({
+              toast: true,
+              position: 'top-end',
+              showConfirmButton: false,
+              timer: 4500,
+              timerProgressBar: true,
+              didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer);
+                toast.addEventListener('mouseleave', Swal.resumeTimer);
+              }
+            });
+            Toast.fire({
               icon: "error",
               title: "Koneksi Gagal",
-              html: `
-                <div class="text-left text-[11px] leading-relaxed">
-                  <p class="mb-2">Gagal menghubungi server Google Sheets (GAS): <b>${err.toString()}</b></p>
-                  <p class="mb-2 font-bold text-red-600">Solusi Masalah Koneksi:</p>
-                  <ul class="list-disc pl-4 mb-3 space-y-1">
-                    <li><b>Gunakan Mode Penyamaran (Incognito Window):</b> Ini menyelesaikan 99% masalah karena memblokir error multi-akun Google (CORS).</li>
-                    <li>Pastikan Web App Google Apps Script telah di-deploy terbaru sebagai <b>"Anyone"</b> (Siapa saja).</li>
-                    <li>Coba muat ulang halaman ini atau bersihkan cache browser.</li>
-                  </ul>
-                </div>
-              `,
-              confirmButtonColor: "#10b981",
+              text: "Gagal terhubung ke Google Sheets (GAS). Silakan coba lagi atau gunakan Mode Penyamaran (Incognito Mode)."
             });
             btn.disabled = false;
             btn.innerText = "MASUK SEKARANG";
