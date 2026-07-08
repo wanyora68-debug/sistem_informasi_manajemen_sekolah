@@ -7103,6 +7103,7 @@
                         fetch(webAppUrl, {
                           method: "POST",
                           mode: "cors",
+                          credentials: "omit",
                           headers: {
                             "Content-Type": "text/plain;charset=utf-8"
                           },
@@ -7151,7 +7152,20 @@
                             Swal.fire({
                               icon: "error",
                               title: "Koneksi Gagal",
-                              text: "Gagal terhubung ke Google Apps Script. Pastikan URL Web App benar dan dideploy sebagai 'Anyone'.",
+                              html: `
+                                <div class="text-left text-[11px] leading-relaxed">
+                                  <p class="mb-2">Gagal terhubung ke Google Apps Script / Google Sheets.</p>
+                                  <p class="mb-2 font-bold text-red-600">Penyebab umum:</p>
+                                  <ol class="list-decimal pl-4 mb-3 space-y-1">
+                                    <li>Anda sedang login ke beberapa akun Google di browser ini (menyebabkan Google redirect block).</li>
+                                    <li>Web App Google Apps Script belum dideploy dengan benar sebagai <b>"Anyone"</b>.</li>
+                                    <li>Adblocker atau ekstensi keamanan browser memblokir request ke domain Google.</li>
+                                  </ol>
+                                  <p class="font-semibold text-emerald-700 bg-emerald-50 p-2 rounded-lg border border-emerald-100">
+                                    💡 <b>Solusi Utama:</b> Buka aplikasi ini menggunakan <b>Mode Penyamaran (Incognito Window)</b> atau logout dari akun Google Anda yang lain.
+                                  </p>
+                                </div>
+                              `,
                               confirmButtonColor: "#10b981",
                             });
                           }
@@ -8146,11 +8160,22 @@
           })
           .withFailureHandler((err) => {
             console.error("Login server direct failure:", err);
-            alert(
-              "Gagal menghubungi server: " +
-                err.toString() +
-                "\n\nHarap pastikan Anda telah men-Deploy script Google Apps Script terbaru sebagai Web App.",
-            );
+            Swal.fire({
+              icon: "error",
+              title: "Koneksi Gagal",
+              html: `
+                <div class="text-left text-[11px] leading-relaxed">
+                  <p class="mb-2">Gagal menghubungi server Google Sheets (GAS): <b>${err.toString()}</b></p>
+                  <p class="mb-2 font-bold text-red-600">Solusi Masalah Koneksi:</p>
+                  <ul class="list-disc pl-4 mb-3 space-y-1">
+                    <li><b>Gunakan Mode Penyamaran (Incognito Window):</b> Ini menyelesaikan 99% masalah karena memblokir error multi-akun Google (CORS).</li>
+                    <li>Pastikan Web App Google Apps Script telah di-deploy terbaru sebagai <b>"Anyone"</b> (Siapa saja).</li>
+                    <li>Coba muat ulang halaman ini atau bersihkan cache browser.</li>
+                  </ul>
+                </div>
+              `,
+              confirmButtonColor: "#10b981",
+            });
             btn.disabled = false;
             btn.innerText = "MASUK SEKARANG";
           })
@@ -10783,7 +10808,7 @@
             }
           });
 
-          fetch(urlInput + "?ping=1")
+          fetch(urlInput + "?ping=1", { credentials: "omit" })
             .then(res => res.json())
             .then(data => {
               if (data && data.status === "success") {
@@ -10811,7 +10836,17 @@
               Swal.fire({
                 icon: "error",
                 title: "Koneksi Gagal",
-                text: "Gagal terhubung ke Google Sheets. Silakan pastikan server web app aktif dan dapat dijangkau.",
+                html: `
+                  <div class="text-left text-[11px] leading-relaxed">
+                    <p class="mb-2">Gagal terhubung ke Google Sheets: <b>${err.toString()}</b></p>
+                    <p class="mb-2 font-bold text-red-600">Langkah Pemeriksaan:</p>
+                    <ol class="list-decimal pl-4 mb-3 space-y-1">
+                      <li>Buka link Web App Anda langsung di tab baru browser untuk memastikan tidak ada error otorisasi dari Google.</li>
+                      <li>Pastikan Anda telah melakukan Deploy ulang di Apps Script sebagai versi baru (New Deployment) dengan akses <b>"Anyone"</b> (Siapa saja).</li>
+                      <li>Jika Anda login beberapa akun Google sekaligus di browser ini, silakan coba dalam <b>Mode Penyamaran (Incognito Window)</b>.</li>
+                    </ol>
+                  </div>
+                `,
                 confirmButtonColor: "#10b981",
               });
             });
