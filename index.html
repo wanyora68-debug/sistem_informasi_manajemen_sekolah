@@ -7101,6 +7101,11 @@
                         }
                         
                         const executeFetch = (attempt = 1) => {
+                          const controller = new AbortController();
+                          const timeoutId = setTimeout(() => {
+                            controller.abort();
+                          }, 12000); // 12 seconds timeout
+
                           fetch(webAppUrl, {
                             method: "POST",
                             mode: "cors",
@@ -7108,12 +7113,14 @@
                             headers: {
                               "Content-Type": "text/plain;charset=utf-8"
                             },
+                            signal: controller.signal,
                             body: JSON.stringify({
                               functionName: propKey,
                               arguments: args
                             })
                           })
                           .then((response) => {
+                            clearTimeout(timeoutId);
                             if (!response.ok) {
                               throw new Error("HTTP error! Status: " + response.status);
                             }
@@ -7141,6 +7148,7 @@
                             }
                           })
                           .catch((error) => {
+                            clearTimeout(timeoutId);
                             console.warn("GAS fetch error (Attempt " + attempt + "/3) for " + propKey + ":", error);
                             if (attempt < 3) {
                               // Retry with a staggered timeout to reduce concurrent hits to Google Apps Script
@@ -18420,25 +18428,9 @@
                     return isWali || isTaught;
                   });
                 } else {
-                  const allScheduledClassesSet = new Set(
-                    (schedulesList || []).map((s) =>
-                      (s.kelas || "").toString().toUpperCase().trim(),
-                    ),
-                  );
-                  filtered = filtered.filter((k) => {
-                    const kNamaUpper = (k.nama || "")
-                      .toString()
-                      .toUpperCase()
-                      .trim();
-                    const kWaliUpper = (k.wali || "")
-                      .toString()
-                      .toUpperCase()
-                      .trim();
-                    const hasValidWali =
-                      kWaliUpper && !kWaliUpper.includes("BELUM DIATUR");
-                    const hasSchedule = allScheduledClassesSet.has(kNamaUpper);
-                    return hasValidWali || hasSchedule;
-                  });
+                  // Jika memilih "SEMUA GURU", Operator harus dapat melihat semua kelas dari sekolahnya,
+                  // termasuk kelas baru yang belum ditentukan Wali Kelas atau belum diatur jadwalnya.
+                  // Oleh karena itu, tidak disaring agar kelas baru langsung muncul dan bisa dikelola.
                 }
               }
 
