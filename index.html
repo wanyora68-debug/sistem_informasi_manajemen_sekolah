@@ -19628,10 +19628,14 @@
         overlay.classList.remove("hidden");
         document.body.classList.add("overflow-hidden");
 
-        // Add afterprint event listener once to automatically close overlay after print finishes/cancels
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
+
+        // Add afterprint event listener once to automatically close overlay after print finishes/cancels (desktop only)
         if (!isPrintListenerAdded) {
           window.addEventListener("afterprint", () => {
-            closePrintOverlay();
+            if (!/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) && !(navigator.maxTouchPoints && navigator.maxTouchPoints > 2)) {
+              closePrintOverlay();
+            }
           });
           isPrintListenerAdded = true;
         }
@@ -19639,10 +19643,12 @@
         setTimeout(() => {
           try {
             window.print();
-            // Immediate closing fallback for desktop environments where print blocks synchronously
-            setTimeout(() => {
-              closePrintOverlay();
-            }, 500);
+            // Immediate closing fallback for desktop environments where print blocks synchronously (desktop only)
+            if (!isMobile) {
+              setTimeout(() => {
+                closePrintOverlay();
+              }, 500);
+            }
           } catch (e) {
             console.error("Print auto fail:", e);
           }
