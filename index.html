@@ -4471,12 +4471,12 @@
               <div>
                 <label
                   class="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-1 block"
-                  >NIP (Opsional)</label
+                  >NIP/NRG (Opsional)</label
                 >
                 <input
                   type="text"
                   id="editNip"
-                  placeholder="NIP"
+                  placeholder="NIP/NRG"
                   class="w-full p-4 bg-gray-50 rounded-2xl font-black border-2 border-transparent focus:border-blue-300 outline-none"
                 />
               </div>
@@ -4527,33 +4527,6 @@
                 id="inpFoto"
                 class="w-full p-4 bg-gray-50 rounded-2xl border-2 border-transparent outline-none"
               />
-            </div>
-
-            <!-- BIOMETRIC REGISTRATION -->
-            <div
-              class="p-6 bg-indigo-50 rounded-3xl border-2 border-dashed border-indigo-200 text-center"
-            >
-              <span class="text-3xl mb-2 block">☝️</span>
-              <h4 class="text-[10px] font-black text-indigo-900 uppercase mb-1">
-                Pendaftaran Biometrik
-              </h4>
-              <p
-                class="text-[8px] font-bold text-gray-500 uppercase mb-4 leading-tight"
-              >
-                Hubungkan sidik jari perangkat ini (Tombol Power/Fingerprint)
-                untuk validasi absensi yang lebih cepat dan aman.
-              </p>
-              <button
-                id="btnRegBio"
-                onclick="registerBiometric()"
-                class="bg-indigo-600 text-white px-6 py-3 rounded-xl font-black uppercase text-[9px] shadow-md hover:bg-indigo-700 transition"
-              >
-                Daftarkan Sidik Jari
-              </button>
-              <p
-                id="bioStatusMsg"
-                class="mt-2 text-[7px] font-black uppercase hidden"
-              ></p>
             </div>
 
             <button
@@ -5574,12 +5547,12 @@
             <div>
               <label
                 class="text-[9px] font-black text-gray-400 uppercase ml-1 block mb-1"
-                >NIP (Opsional)</label
+                >NIP/NRG (Opsional)</label
               >
               <input
                 type="text"
                 id="mUserNip"
-                placeholder="NIP"
+                placeholder="NIP/NRG"
                 class="w-full p-3 bg-gray-50 rounded-2xl font-black outline-none border-2 border-transparent focus:border-blue-300"
               />
             </div>
@@ -7622,14 +7595,16 @@
         // Update Bio Status in Profile
         const bioMsg = document.getElementById("bioStatusMsg");
         const bioBtn = document.getElementById("btnRegBio");
-        if (activeUser.bioRegistered) {
-          bioMsg.innerText = "✅ Biometrik Sudah Terdaftar";
-          bioMsg.className =
-            "mt-2 text-[7px] font-black uppercase text-green-600 block";
-          bioBtn.innerText = "Daftarkan Ulang";
-        } else {
-          bioMsg.classList.add("hidden");
-          bioBtn.innerText = "Daftarkan Sidik Jari";
+        if (bioMsg && bioBtn) {
+          if (activeUser.bioRegistered) {
+            bioMsg.innerText = "✅ Biometrik Sudah Terdaftar";
+            bioMsg.className =
+              "mt-2 text-[7px] font-black uppercase text-green-600 block";
+            bioBtn.innerText = "Daftarkan Ulang";
+          } else {
+            bioMsg.classList.add("hidden");
+            bioBtn.innerText = "Daftarkan Sidik Jari";
+          }
         }
 
         // Cek apakah di dalam iframe
