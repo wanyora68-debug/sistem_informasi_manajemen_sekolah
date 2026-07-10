@@ -458,22 +458,27 @@ function getDaftarUserManagement() {
     var data = sheet.getDataRange().getValues();
     var list = [];
     for (var i = 1; i < data.length; i++) {
+      var row = data[i];
+      if (!row || row.length < 3) continue;
       list.push({
         row: i + 1,
-        nama: data[i][1],
-        email: data[i][2],
-        password: data[i][3],
-        role: data[i][4],
-        sekolah: data[i][5],
-        status: data[i][7],
-        mapel: data[i][8] || "",
-        nip: data[i][9] || "",
-        pangkat: data[i][10] || "",
-        golongan: data[i][11] || ""
+        nama: row[1] ? row[1].toString() : "",
+        email: row[2] ? row[2].toString() : "",
+        password: row[3] ? row[3].toString() : "",
+        role: row[4] ? row[4].toString() : "",
+        sekolah: row[5] ? row[5].toString() : "",
+        status: row[7] ? row[7].toString() : "",
+        mapel: (row.length > 8 && row[8]) ? row[8].toString() : "",
+        nip: (row.length > 9 && row[9]) ? row[9].toString() : "",
+        pangkat: (row.length > 10 && row[10]) ? row[10].toString() : "",
+        golongan: (row.length > 11 && row[11]) ? row[11].toString() : ""
       });
     }
     return list;
-  } catch (e) { return []; }
+  } catch (e) { 
+    Logger.log("Error in getDaftarUserManagement: " + e.toString());
+    return []; 
+  }
 }
 
 function simpanUserManagemen(obj) {
@@ -751,7 +756,8 @@ function getMasterSekolah() {
                    lng: rowK.length > 2 ? rowK[2] : 107.9087,
                    jamMasuk: rowK.length > 3 ? (parseTime(rowK[3]) || "07:00") : "07:00",
                    jamPulang: rowK.length > 4 ? (parseTime(rowK[4]) || "15:00") : "15:00",
-                   radius: rowK.length > 5 ? parseFloat(rowK[5]) : 100
+                   radius: rowK.length > 5 ? parseFloat(rowK[5]) : 100,
+                   customSchedules: rowK.length > 6 ? (rowK[6] ? rowK[6] : "{}") : "{}"
                 };
              }
           }
@@ -820,7 +826,8 @@ function getMasterSekolah() {
              lng: finalLng,
              jamMasuk: jamM,
              jamPulang: jamP,
-             radius: overrides[schoolKey] ? (overrides[schoolKey].radius || 100) : 100
+             radius: overrides[schoolKey] ? (overrides[schoolKey].radius || 100) : 100,
+             customSchedules: overrides[schoolKey] ? (overrides[schoolKey].customSchedules || "{}") : "{}"
             });
         }
     }
@@ -846,21 +853,26 @@ function daftarUserBaru(obj) {
   } catch (e) { return "Gagal Daftar: " + e.toString(); }
 }
 
-function simpanLokasiSekolah(sekolahName, lat, lng, jamMasuk, jamPulang, radius) {
+function simpanLokasiSekolah(sekolahName, lat, lng, jamMasuk, jamPulang, radius, customSchedulesJson) {
   try {
     var ss = getSpreadsheet();
     var sheet = ss.getSheetByName("Lokasi_Sekolah");
     var defaultRadius = radius || 100;
+    var customSchedVal = customSchedulesJson || "{}";
     if (!sheet) {
       sheet = ss.insertSheet("Lokasi_Sekolah");
-      sheet.appendRow(["Nama Sekolah", "Latitude", "Longitude", "Jam Masuk", "Jam Pulang", "Radius"]);
-      sheet.getRange(1, 1, 1, 6).setFontWeight("bold").setBackground("#cfe2f3");
+      sheet.appendRow(["Nama Sekolah", "Latitude", "Longitude", "Jam Masuk", "Jam Pulang", "Radius", "Jadwal Khusus"]);
+      sheet.getRange(1, 1, 1, 7).setFontWeight("bold").setBackground("#cfe2f3");
     }
     var data = sheet.getDataRange().getValues();
     var headers = data[0];
     if (headers.length < 6) {
       sheet.getRange(1, 6).setValue("Radius");
       sheet.getRange(1, 6).setFontWeight("bold").setBackground("#cfe2f3");
+    }
+    if (headers.length < 7) {
+      sheet.getRange(1, 7).setValue("Jadwal Khusus");
+      sheet.getRange(1, 7).setFontWeight("bold").setBackground("#cfe2f3");
       data = sheet.getDataRange().getValues();
     }
     var foundIdx = -1;
@@ -876,8 +888,9 @@ function simpanLokasiSekolah(sekolahName, lat, lng, jamMasuk, jamPulang, radius)
       sheet.getRange(foundIdx + 1, 4).setValue(jamMasuk || "07:00");
       sheet.getRange(foundIdx + 1, 5).setValue(jamPulang || "15:00");
       sheet.getRange(foundIdx + 1, 6).setValue(defaultRadius);
+      sheet.getRange(foundIdx + 1, 7).setValue(customSchedVal);
     } else {
-      sheet.appendRow([sekolahName, lat, lng, jamMasuk || "07:00", jamPulang || "15:00", defaultRadius]);
+      sheet.appendRow([sekolahName, lat, lng, jamMasuk || "07:00", jamPulang || "15:00", defaultRadius, customSchedVal]);
     }
     return "Pengaturan lokasi sekolah " + sekolahName + " berhasil disimpan ke sheet terpisah (Lokasi_Sekolah)!";
   } catch (e) { return "Gagal simpan lokasi sekolah: " + e.toString(); }
