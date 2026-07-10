@@ -3602,33 +3602,90 @@
               <!-- Filter for Pengawas & Admin in User Management -->
               <div
                 id="wrapperFilterUserSekolah"
-                class="hidden mt-3 flex flex-wrap gap-2 items-center bg-green-50 border border-green-100 p-3 rounded-2xl"
+                class="hidden mt-4 flex flex-wrap gap-4 items-center bg-indigo-50/50 border border-indigo-100/50 p-4 rounded-2xl"
               >
-                <span class="text-[9px] font-black uppercase text-green-800"
-                  >Filter Sekolah (Pengawas/Admin):</span
-                >
-                <select
-                  id="filterUserSekolah"
-                  onchange="loadUserManagement()"
-                  class="p-2 rounded-xl border border-green-200 font-black text-[10px] uppercase outline-none bg-white text-green-900"
-                >
-                  <option value="ALL">-- SEMUA SEKOLAH --</option>
-                </select>
+                <!-- Supervisor Filter for Admin -->
+                <div id="wrapperFilterUserSupervisor" class="hidden flex items-center gap-2">
+                  <span class="text-[9px] font-black uppercase text-indigo-800">Filter Pengawas:</span>
+                  <select
+                    id="filterUserSupervisor"
+                    onchange="onUserSupervisorFilterChanged()"
+                    class="p-2 rounded-xl border border-indigo-200 font-black text-[10px] uppercase outline-none bg-white text-indigo-900"
+                  >
+                    <option value="ALL">-- SEMUA PENGAWAS --</option>
+                  </select>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <span id="lblFilterUserSekolah" class="text-[9px] font-black uppercase text-indigo-800">Filter Sekolah:</span>
+                  <select
+                    id="filterUserSekolah"
+                    onchange="loadUserManagement()"
+                    class="p-2 rounded-xl border border-indigo-200 font-black text-[10px] uppercase outline-none bg-white text-indigo-900"
+                  >
+                    <option value="ALL">-- SEMUA SEKOLAH --</option>
+                  </select>
+                </div>
               </div>
             </div>
             <div class="flex gap-2">
               <button
                 onclick="openFormUserManagement()"
-                class="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-lg"
+                class="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-lg hover:bg-blue-700 transition"
               >
                 Tambah User Baru
               </button>
               <button
                 onclick="openQRGenerator()"
-                class="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-lg flex items-center gap-2"
+                class="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-lg flex items-center gap-2 hover:bg-indigo-700 transition"
               >
                 <span>Generate QR Sekolah</span> <span>📱</span>
               </button>
+              <button
+                onclick="cetakUserManagementPDF()"
+                class="bg-rose-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-lg flex items-center gap-2 hover:bg-rose-700 transition"
+              >
+                <span>Cetak PDF</span> <span>🖨️</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- STATS KPI GRID FOR USER/GURU MANAGEMENT -->
+          <div id="rekapGuruKpiContainer" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <!-- Total Guru -->
+            <div class="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50 flex items-center justify-between">
+              <div>
+                <p class="text-slate-400 text-[8px] font-black uppercase tracking-wider">Total Guru</p>
+                <span id="rekapGuruKpiTotal" class="text-xl font-black text-blue-900 mt-1 block">0</span>
+              </div>
+              <span class="text-2xl">👨‍🏫</span>
+            </div>
+
+            <!-- Total Kepala Sekolah -->
+            <div class="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100/50 flex items-center justify-between">
+              <div>
+                <p class="text-slate-400 text-[8px] font-black uppercase tracking-wider">Total Kepala Sekolah</p>
+                <span id="rekapGuruKpiKepsek" class="text-xl font-black text-indigo-900 mt-1 block">0</span>
+              </div>
+              <span class="text-2xl">🎓</span>
+            </div>
+
+            <!-- Total Operator -->
+            <div class="bg-amber-50/50 p-4 rounded-2xl border border-amber-100/50 flex items-center justify-between">
+              <div>
+                <p class="text-slate-400 text-[8px] font-black uppercase tracking-wider">Total Operator</p>
+                <span id="rekapGuruKpiOperator" class="text-xl font-black text-amber-900 mt-1 block">0</span>
+              </div>
+              <span class="text-2xl">💻</span>
+            </div>
+
+            <!-- Total Sekolah Aktif -->
+            <div class="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100/50 flex items-center justify-between">
+              <div>
+                <p class="text-slate-400 text-[8px] font-black uppercase tracking-wider">Sekolah Tercover</p>
+                <span id="rekapGuruKpiSekolah" class="text-xl font-black text-emerald-900 mt-1 block">0</span>
+              </div>
+              <span class="text-2xl">🏫</span>
             </div>
           </div>
           <div class="overflow-x-auto scroll-hide">
@@ -9620,19 +9677,19 @@
           const binaanGurus = users.filter(
             (u) =>
               u.sekolah &&
-              binaanNamesUpper.includes(u.sekolah.toUpperCase().trim()) &&
+              binaanNamesUpper.some(b => matchSchool(u.sekolah, b)) &&
               u.role === "Guru" &&
               u.status === "Aktif",
           );
           const binaanJurnals = jurnals.filter(
             (j) =>
               j.sekolah &&
-              binaanNamesUpper.includes(j.sekolah.toUpperCase().trim()),
+              binaanNamesUpper.some(b => matchSchool(j.sekolah, b)),
           );
           const binaanSiswas = (siswas || []).filter(
             (s) =>
               s.sekolah &&
-              binaanNamesUpper.includes(s.sekolah.toUpperCase().trim()),
+              binaanNamesUpper.some(b => matchSchool(s.sekolah, b)),
           );
 
           htmlStats = `
@@ -12470,47 +12527,43 @@
           "<tr><td colspan='6' class='p-4 text-center'>Memuat...</td></tr>";
         google.script.run
           .withSuccessHandler((list) => {
+            const isUserAdmin = isAdminRole(activeUser.role);
+            const isUserPengawas = isPengawasRole(activeUser.role);
+            
+            const selSchool = document.getElementById("filterUserSekolah")
+              ? document.getElementById("filterUserSekolah").value
+              : "ALL";
+              
             table.innerHTML = "";
-            // Filter data berdasarkan sekolah untuk Kepala Sekolah dan Operator
-            let filtered = list;
-            if (
-              isKepsekRole(activeUser.role) ||
-              activeUser.role === "Operator"
-            ) {
-              const userSchool = (activeUser.sekolah || "")
-                .toString()
-                .toUpperCase()
-                .trim();
-              filtered = list.filter(
-                (u) =>
-                  (u.sekolah || "").toString().toUpperCase().trim() ===
-                  userSchool,
-              );
-            } else if (activeUser.role === "Pengawas") {
-              const allowedSchools = (window.mySekolahBinaan || []).map((s) =>
-                (s.nama || "").toUpperCase().trim(),
-              );
-              filtered = list.filter(
-                (u) =>
-                  u.sekolah &&
-                  allowedSchools.includes(
-                    u.sekolah.toString().toUpperCase().trim(),
-                  ),
-              );
-            }
-            if (["Pengawas", "Admin"].includes(activeUser.role)) {
-              const selSchool = document.getElementById("filterUserSekolah")
-                ? document.getElementById("filterUserSekolah").value
-                : "ALL";
-              if (selSchool && selSchool !== "ALL") {
-                filtered = filtered.filter(
-                  (u) =>
-                    (u.sekolah || "").toString().toUpperCase().trim() ===
-                    selSchool.toUpperCase().trim(),
-                );
+            let filtered = list || [];
+            
+            if (isKepsekRole(activeUser.role) || activeUser.role === "Operator") {
+              filtered = filtered.filter(u => u.sekolah && matchSchool(u.sekolah, activeUser.sekolah));
+            } else if (isUserPengawas) {
+              filtered = filtered.filter(u => u.sekolah && (window.mySekolahBinaan || []).some(s => matchSchool(u.sekolah, s.nama || s)));
+            } else if (isUserAdmin) {
+              const svSelect = document.getElementById("filterUserSupervisor");
+              const selectedSv = svSelect ? svSelect.value : "ALL";
+              if (selectedSv !== "ALL") {
+                filtered = filtered.filter(u => u.sekolah && (window.selectedSupervisorSchools || []).some(s => matchSchool(u.sekolah, s.nama || s)));
               }
             }
+            
+            // Apply school filter
+            if (selSchool && selSchool !== "ALL") {
+              filtered = filtered.filter(u => u.sekolah && matchSchool(u.sekolah, selSchool));
+            }
+            
             currentUsers = filtered;
+            
+            // Calculate and update KPIs
+            updateUserManagementKPIs(filtered);
+            
+            if (filtered.length === 0) {
+              table.innerHTML = "<tr><td colspan='6' class='p-8 text-center text-gray-400 font-bold uppercase text-[9px]'>Belum ada data guru/user sesuai filter.</td></tr>";
+              return;
+            }
+            
             filtered.forEach((u, idx) => {
               table.innerHTML += `<tr class="border-b transition hover:bg-gray-50">
                 <td class="p-4">${u.nama}</td>
@@ -12528,6 +12581,157 @@
             });
           })
           .getDaftarUserManagement();
+      }
+
+      function cetakUserManagementPDF() {
+        if (!currentUsers || currentUsers.length === 0) {
+          return alert("Tidak ada data user/guru yang tersedia untuk dicetak!");
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF("l", "mm", "a4");
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.text("LAPORAN DATA USER & MANAJEMEN GURU", 14, 20);
+        doc.setFontSize(10);
+        
+        const selSchool = document.getElementById("filterUserSekolah")
+          ? document.getElementById("filterUserSekolah").value
+          : "ALL";
+        const filterSupervisor = document.getElementById("filterUserSupervisor")
+          ? document.getElementById("filterUserSupervisor").value
+          : "ALL";
+
+        let filterText = `SEKOLAH: ${selSchool === "ALL" ? "SEMUA SEKOLAH" : selSchool.toUpperCase()}`;
+        if (filterSupervisor !== "ALL") {
+          filterText += ` | PENGAWAS: ${filterSupervisor.toUpperCase()}`;
+        }
+        
+        doc.text(filterText, 14, 26);
+        
+        const tanggalUnduh = new Date().toLocaleDateString("id-ID", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+        doc.text(`WAKTU CETAK: ${tanggalUnduh}`, 14, 32);
+
+        const headers = [
+          "NO",
+          "NAMA GURU / USER",
+          "NIP / NUPTK",
+          "EMAIL",
+          "ROLE",
+          "SEKOLAH",
+          "MATA PELAJARAN",
+          "PANGKAT / GOL",
+          "STATUS"
+        ];
+
+        const body = currentUsers.map((u, idx) => {
+          const pangkatGol = [u.pangkat, u.golongan].filter(Boolean).join(" - ") || "-";
+          return [
+            idx + 1,
+            u.nama || "-",
+            u.nip || "-",
+            u.email || "-",
+            u.role || "-",
+            u.sekolah || "-",
+            u.mapel || "-",
+            pangkatGol,
+            u.status || "-"
+          ];
+        });
+
+        doc.autoTable({
+          startY: 38,
+          head: [headers],
+          body: body,
+          theme: "grid",
+          headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255], fontSize: 8, fontStyle: "bold" },
+          styles: { fontSize: 7, font: "helvetica", halign: "left" },
+          columnStyles: {
+            0: { halign: "center", width: 8 },
+            1: { fontStyle: "bold" },
+            4: { halign: "center" },
+            7: { halign: "center" },
+            8: { halign: "center" }
+          },
+          margin: { left: 14, right: 14 }
+        });
+
+        let finalY = doc.lastAutoTable.finalY || 40;
+        let sigY = finalY + 15;
+        if (sigY + 40 > 195) {
+          doc.addPage();
+          sigY = 20;
+        }
+
+        const dateString = new Date().toLocaleDateString("id-ID", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric"
+        });
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        
+        let leftTitle = "MENGETAHUI,";
+        let leftRole = "PENGAWAS BINAAN / ADMIN,";
+        let leftNama = "_________________________";
+        let leftNip = "_________________________";
+
+        if (activeUser.role === "Pengawas") {
+          leftNama = activeUser.nama.toUpperCase();
+          leftNip = activeUser.nip || "_________________________";
+          leftRole = "PENGAWAS PEMBINA,";
+        } else if (activeUser.role === "Admin") {
+          leftNama = activeUser.nama.toUpperCase();
+          leftRole = "ADMINISTRATOR,";
+        }
+
+        let rightTitle = `Garut, ${dateString}`;
+        let rightRole = "KEPALA SEKOLAH,";
+        let rightNama = "_________________________";
+        let rightNip = "_________________________";
+
+        if (selSchool !== "ALL") {
+          const kepsek = currentUsers.find(u => isKepsekRole(u.role) && matchSchool(u.sekolah, selSchool));
+          if (kepsek) {
+            rightNama = kepsek.nama.toUpperCase();
+            rightNip = kepsek.nip || "_________________________";
+          }
+        } else if (activeUser.role === "Kepala Sekolah") {
+          rightNama = activeUser.nama.toUpperCase();
+          rightNip = activeUser.nip || "_________________________";
+        }
+
+        doc.text(leftTitle, 14, sigY);
+        doc.text(leftRole, 14, sigY + 5);
+        
+        doc.setFont("helvetica", "bold");
+        doc.text(leftNama, 14, sigY + 28);
+        const lWidth = doc.getTextWidth(leftNama);
+        doc.line(14, sigY + 29, 14 + lWidth, sigY + 29);
+        doc.setFont("helvetica", "normal");
+        doc.text(`NIP. ${leftNip}`, 14, sigY + 34);
+
+        const rightX = 200;
+        doc.text(rightTitle, rightX, sigY);
+        doc.text(rightRole, rightX, sigY + 5);
+        
+        doc.setFont("helvetica", "bold");
+        doc.text(rightNama, rightX, sigY + 28);
+        const rWidth = doc.getTextWidth(rightNama);
+        doc.line(rightX, sigY + 29, rightX + rWidth, sigY + 29);
+        doc.setFont("helvetica", "normal");
+        doc.text(`NIP. ${rightNip}`, rightX, sigY + 34);
+
+        const schoolNameClean = selSchool === "ALL" ? "SEMUA_SEKOLAH" : selSchool.toUpperCase().replace(/[^A-Z0-9]/g, "_");
+        doc.save(`DATA_USER_GURU_${schoolNameClean}.pdf`);
       }
 
       function openEditUserManagemen(idx) {
@@ -12558,7 +12762,7 @@
         }
         document.getElementById("mUserRole").value = u.role;
 
-        if (activeUser.role === "Admin") {
+        if (activeUser.role === "Admin" || activeUser.role === "Pengawas") {
           document.getElementById("mUserSekolah").disabled = false;
           document.getElementById("mUserSekolah").value = u.sekolah;
         } else {
@@ -14631,9 +14835,13 @@
           });
         }
 
-        if (activeUser.role === "Admin") {
+        if (activeUser.role === "Admin" || activeUser.role === "Pengawas") {
           document.getElementById("mUserSekolah").disabled = false;
-          document.getElementById("mUserSekolah").value = activeUser.sekolah;
+          if (activeUser.role === "Pengawas" && window.mySekolahBinaan && window.mySekolahBinaan.length > 0) {
+            document.getElementById("mUserSekolah").value = window.mySekolahBinaan[0].nama || "";
+          } else {
+            document.getElementById("mUserSekolah").value = activeUser.sekolah || "";
+          }
         } else {
           document.getElementById("mUserSekolah").value = activeUser.sekolah;
           document.getElementById("mUserSekolah").disabled = true;
@@ -14662,7 +14870,7 @@
           password: document.getElementById("mUserPass").value,
           role: document.getElementById("mUserRole").value,
           sekolah:
-            activeUser.role === "Admin"
+            (isAdminRole(activeUser.role) || isPengawasRole(activeUser.role))
               ? document
                   .getElementById("mUserSekolah")
                   .value.toString()
@@ -17928,12 +18136,149 @@
       function initializeUserSchoolFilter() {
         const wrapper = document.getElementById("wrapperFilterUserSekolah");
         if (!wrapper) return;
-        if (["Pengawas", "Admin"].includes(activeUser.role)) {
+        
+        const isUserAdmin = isAdminRole(activeUser.role);
+        const isUserPengawas = isPengawasRole(activeUser.role);
+        
+        // Show KPI Container if Admin or Pengawas
+        const kpiContainer = document.getElementById("rekapGuruKpiContainer");
+        if (kpiContainer) {
+          if (isUserAdmin || isUserPengawas) {
+            kpiContainer.classList.remove("hidden");
+          } else {
+            kpiContainer.classList.add("hidden");
+          }
+        }
+        
+        if (isUserAdmin || isUserPengawas) {
           wrapper.classList.remove("hidden");
-          populateSchoolFilterOptions("filterUserSekolah");
+          
+          // Populate supervisor filter if Admin
+          const supervisorWrapper = document.getElementById("wrapperFilterUserSupervisor");
+          if (isUserAdmin && supervisorWrapper) {
+            supervisorWrapper.classList.remove("hidden");
+            
+            // Populate supervisors list from user management list
+            const svSelect = document.getElementById("filterUserSupervisor");
+            if (svSelect && svSelect.options.length <= 1) {
+              google.script.run.withSuccessHandler((list) => {
+                const oldVal = svSelect.value || "ALL";
+                svSelect.innerHTML = '<option value="ALL">-- SEMUA PENGAWAS --</option>';
+                const supervisors = (list || []).filter(u => isPengawasRole(u.role));
+                supervisors.forEach(sv => {
+                  const opt = document.createElement("option");
+                  opt.value = sv.email;
+                  opt.text = (sv.nama || "").toUpperCase() + " (" + sv.email + ")";
+                  svSelect.add(opt);
+                });
+                svSelect.value = oldVal;
+              }).getDaftarUserManagement();
+            }
+          } else if (supervisorWrapper) {
+            supervisorWrapper.classList.add("hidden");
+          }
+          
+          populateUserSchoolDropdown();
         } else {
           wrapper.classList.add("hidden");
         }
+      }
+
+      function populateUserSchoolDropdown() {
+        const isUserAdmin = isAdminRole(activeUser.role);
+        const isUserPengawas = isPengawasRole(activeUser.role);
+        const sEl = document.getElementById("filterUserSekolah");
+        if (!sEl) return;
+        
+        const oldVal = sEl.value || "ALL";
+        sEl.innerHTML = '<option value="ALL">-- SEMUA SEKOLAH --</option>';
+        
+        const applyUserSchools = (schools) => {
+          const uniqueSchools = Array.from(new Set((schools || []).map(s => (s.nama || s || "").toUpperCase().trim()))).sort();
+          uniqueSchools.forEach((sch) => {
+            if (!sch) return;
+            const opt = document.createElement("option");
+            opt.value = sch;
+            opt.text = sch;
+            sEl.add(opt);
+          });
+          if (uniqueSchools.includes(oldVal)) {
+            sEl.value = oldVal;
+          } else {
+            sEl.value = "ALL";
+          }
+        };
+        
+        if (isUserAdmin) {
+          const svSelect = document.getElementById("filterUserSupervisor");
+          const selectedSv = svSelect ? svSelect.value : "ALL";
+          
+          if (selectedSv === "ALL") {
+            window.selectedSupervisorSchools = [];
+            if (window.allRegisteredSchools && window.allRegisteredSchools.length > 0) {
+              applyUserSchools(window.allRegisteredSchools);
+            } else {
+              google.script.run.withSuccessHandler((schools) => {
+                window.allRegisteredSchools = schools || [];
+                applyUserSchools(schools);
+                loadUserManagement();
+              }).getMasterSekolah();
+            }
+          } else {
+            google.script.run.withSuccessHandler((binaan) => {
+              window.selectedSupervisorSchools = binaan || [];
+              applyUserSchools(binaan);
+              loadUserManagement();
+            }).getSekolahBinaan(selectedSv);
+          }
+        } else if (isUserPengawas) {
+          if (window.mySekolahBinaan && window.mySekolahBinaan.length > 0) {
+            applyUserSchools(window.mySekolahBinaan);
+          } else {
+            google.script.run.withSuccessHandler((binaan) => {
+              window.mySekolahBinaan = binaan || [];
+              applyUserSchools(window.mySekolahBinaan);
+              loadUserManagement();
+            }).getSekolahBinaan(activeUser.email);
+          }
+        }
+      }
+
+      function onUserSupervisorFilterChanged() {
+        populateUserSchoolDropdown();
+        loadUserManagement();
+      }
+
+      function updateUserManagementKPIs(filteredUsers) {
+        let totalGuru = 0;
+        let totalKepsek = 0;
+        let totalOperator = 0;
+        const schoolsSet = new Set();
+        
+        filteredUsers.forEach(u => {
+          const role = (u.role || "").toUpperCase().trim();
+          const school = (u.sekolah || "").toUpperCase().trim();
+          if (school) {
+            schoolsSet.add(school);
+          }
+          if (role === "GURU") {
+            totalGuru++;
+          } else if (role === "KEPALA SEKOLAH" || role === "KEPSEK") {
+            totalKepsek++;
+          } else if (role === "OPERATOR") {
+            totalOperator++;
+          }
+        });
+        
+        const kpiTotal = document.getElementById("rekapGuruKpiTotal");
+        const kpiKepsek = document.getElementById("rekapGuruKpiKepsek");
+        const kpiOperator = document.getElementById("rekapGuruKpiOperator");
+        const kpiSekolah = document.getElementById("rekapGuruKpiSekolah");
+        
+        if (kpiTotal) kpiTotal.innerText = totalGuru;
+        if (kpiKepsek) kpiKepsek.innerText = totalKepsek;
+        if (kpiOperator) kpiOperator.innerText = totalOperator;
+        if (kpiSekolah) kpiSekolah.innerText = schoolsSet.size;
       }
 
       function initializeAbsenFiltersBasedOnRole() {
