@@ -592,6 +592,13 @@
               <span class="mr-3 text-lg">🏫</span> Sekolah Binaan
             </button>
             <button
+              onclick="switchTab('rekap-siswa')"
+              id="tab-rekap-siswa"
+              class="w-full text-left p-4 text-[10px] font-black uppercase tracking-widest flex items-center hover:bg-blue-700 transition hidden"
+            >
+              <span class="mr-3 text-lg">👥</span> Rekap Siswa
+            </button>
+            <button
               onclick="switchTab('lokasi')"
               id="tab-lokasi"
               class="w-full text-left p-4 text-[10px] font-black uppercase tracking-widest flex items-center hover:bg-blue-700 transition"
@@ -5108,6 +5115,159 @@
           </div>
         </div>
 
+        <!-- REKAP SISWA SECTION (PENGAWAS & ADMIN ONLY) -->
+        <div
+          id="sec-rekap-siswa"
+          class="hidden bg-white p-8 rounded-3xl shadow-xl"
+        >
+          <div
+            class="flex flex-col md:flex-row justify-between items-center mb-6 border-b pb-4"
+          >
+            <div>
+              <h3 class="font-black text-indigo-900 uppercase italic text-xl">
+                👥 Rekapitulasi Siswa
+              </h3>
+              <p class="text-[9px] font-bold text-gray-400">
+                Laporan rekapitulasi jumlah siswa seluruh sekolah binaan dan terdaftar
+              </p>
+            </div>
+            <button
+              onclick="cetakRekapSiswa()"
+              class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-3 rounded-2xl font-black text-[9px] uppercase shadow-md transition flex items-center gap-2"
+            >
+              <span>🖨️</span> Cetak PDF / Print
+            </button>
+          </div>
+
+          <!-- FILTERS PANEL -->
+          <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-8">
+            <h4 class="font-black text-[10px] text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-1">
+              <span>🔍</span> Filter Pencarian Rekap
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Admin Only: Supervisor Filter -->
+              <div id="filterRekapSiswaSupervisorWrapper" class="hidden">
+                <label class="text-[8px] font-black text-slate-500 uppercase ml-1 block mb-1">Pilih Pengawas Sekolah</label>
+                <select
+                  id="filterRekapSiswaSupervisor"
+                  onchange="onRekapSiswaSupervisorChanged()"
+                  class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-[10px] font-bold uppercase tracking-wider focus:outline-none focus:border-indigo-500 transition shadow-sm"
+                >
+                  <option value="ALL">-- SEMUA PENGAWAS --</option>
+                </select>
+              </div>
+
+              <!-- School Filter -->
+              <div id="filterRekapSiswaSchoolWrapper">
+                <label id="lblFilterRekapSiswaSchool" class="text-[8px] font-black text-slate-500 uppercase ml-1 block mb-1">Pilih Sekolah Binaan</label>
+                <select
+                  id="filterRekapSiswaSchool"
+                  onchange="loadRekapSiswaData()"
+                  class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-[10px] font-bold uppercase tracking-wider focus:outline-none focus:border-indigo-500 transition shadow-sm"
+                >
+                  <option value="ALL">-- SEMUA SEKOLAH BINAAN --</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- STATS KPI GRID -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <!-- Stat 1: Total Sekolah -->
+            <div class="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100/50 flex items-center justify-between group hover:shadow-md transition">
+              <div>
+                <p class="text-slate-400 text-[8px] font-black uppercase tracking-wider">Total Sekolah</p>
+                <span id="rekapSiswaKpiSekolah" class="text-2xl font-black text-indigo-900 mt-1 block">0</span>
+              </div>
+              <span class="text-3xl">🏫</span>
+            </div>
+
+            <!-- Stat 2: Total Kelas -->
+            <div class="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100/50 flex items-center justify-between group hover:shadow-md transition">
+              <div>
+                <p class="text-slate-400 text-[8px] font-black uppercase tracking-wider">Total Kelas</p>
+                <span id="rekapSiswaKpiKelas" class="text-2xl font-black text-emerald-900 mt-1 block">0</span>
+              </div>
+              <span class="text-3xl">🏫</span>
+            </div>
+
+            <!-- Stat 3: Total Siswa -->
+            <div class="bg-orange-50/50 p-5 rounded-2xl border border-orange-100/50 flex items-center justify-between group hover:shadow-md transition">
+              <div>
+                <p class="text-slate-400 text-[8px] font-black uppercase tracking-wider">Total Siswa</p>
+                <span id="rekapSiswaKpiSiswa" class="text-2xl font-black text-orange-900 mt-1 block">0</span>
+              </div>
+              <span class="text-3xl">👥</span>
+            </div>
+
+            <!-- Stat 4: Rasio Gender -->
+            <div class="bg-pink-50/50 p-5 rounded-2xl border border-pink-100/50 flex flex-col justify-center group hover:shadow-md transition">
+              <p class="text-slate-400 text-[8px] font-black uppercase tracking-wider mb-2">Rasio Laki-Laki vs Perempuan</p>
+              <div class="flex items-center justify-between text-[10px] font-black text-slate-700">
+                <span id="rekapSiswaKpiMale" class="text-blue-600">L: 0</span>
+                <span id="rekapSiswaKpiFemale" class="text-pink-600">P: 0</span>
+              </div>
+              <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden mt-1 flex">
+                <div id="rekapSiswaGenderProgressMale" class="bg-blue-500 h-full transition-all" style="width: 50%"></div>
+                <div id="rekapSiswaGenderProgressFemale" class="bg-pink-500 h-full transition-all" style="width: 50%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- DATA TABLE -->
+          <div class="overflow-x-auto rounded-2xl border border-slate-100 shadow-sm p-4">
+            <div id="printableRekapSiswaArea">
+              <!-- Header Surat saat dicetak -->
+              <div class="hidden print-only-block mb-6 border-b-2 border-slate-800 pb-4 text-center uppercase font-bold text-slate-900">
+                <h2 class="text-lg font-black">REKAPITULASI DATA SISWA SEKOLAH BINAAN</h2>
+                <h3 class="text-xs" id="printRekapSiswaSub"></h3>
+                <p class="text-[9px] text-slate-500 font-normal mt-1 italic">Dicetak pada: <span id="printRekapSiswaDate"></span></p>
+              </div>
+
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-indigo-900 text-white text-[9px] font-black tracking-wider uppercase">
+                    <th class="p-4 rounded-l-2xl">No</th>
+                    <th class="p-4">Nama Sekolah</th>
+                    <th class="p-4">Nama Kelas</th>
+                    <th class="p-4 text-center">Laki-Laki (L)</th>
+                    <th class="p-4 text-center">Perempuan (P)</th>
+                    <th class="p-4 text-center rounded-r-2xl">Total Siswa</th>
+                  </tr>
+                </thead>
+                <tbody
+                  id="tableRekapSiswaBody"
+                  class="divide-y text-[10px] font-black uppercase text-slate-800"
+                >
+                  <!-- Dynamic content loaded via JS -->
+                </tbody>
+                <tfoot>
+                  <tr class="bg-indigo-50 font-black text-[10px] text-indigo-950 uppercase border-t-2 border-indigo-200">
+                    <td colspan="3" class="p-4 text-right rounded-l-2xl font-black">TOTAL KESELURUHAN:</td>
+                    <td id="tableRekapSiswaTotalMale" class="p-4 text-center font-black text-blue-700">0</td>
+                    <td id="tableRekapSiswaTotalFemale" class="p-4 text-center font-black text-pink-700">0</td>
+                    <td id="tableRekapSiswaTotalGrand" class="p-4 text-center font-black text-slate-900 rounded-r-2xl">0</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <!-- Loader / Empty States -->
+            <div
+              id="loadingRekapSiswa"
+              class="hidden p-12 text-center font-black text-indigo-600 animate-pulse italic uppercase text-[10px]"
+            >
+              🔄 Memuat Laporan Rekapitulasi Siswa...
+            </div>
+            <div
+              id="emptyRekapSiswa"
+              class="hidden p-12 text-center font-black text-slate-400 uppercase text-[10px]"
+            >
+              ⚠️ Tidak ada data siswa yang sesuai dengan filter yang dipilih.
+            </div>
+          </div>
+        </div>
+
         <!-- REKAP JURNAL SECTION -->
         <div
           id="sec-rekap-jurnal"
@@ -7692,6 +7852,16 @@
         const isUserKepsek = isKepsekRole(activeUser.role);
         const isUserAdmin = isAdminRole(activeUser.role);
         const isUserOperator = isOperatorRole(activeUser.role);
+
+        // Explicitly control tab-rekap-siswa visibility
+        const tabRekapSiswa = document.getElementById("tab-rekap-siswa");
+        if (tabRekapSiswa) {
+          if (isUserPengawas || isUserAdmin) {
+            tabRekapSiswa.classList.remove("hidden");
+          } else {
+            tabRekapSiswa.classList.add("hidden");
+          }
+        }
 
         // Explicitly control tab-lokasi visibility
         const tabLokasi = document.getElementById("tab-lokasi");
@@ -10957,6 +11127,7 @@
             "laporan-kepsek",
             "cek-laporan-kepsek",
             "sekolah-binaan",
+            "rekap-siswa",
             "rekap-jurnal",
             "rekap-aktivitas",
             "mockup-visual",
@@ -11129,6 +11300,7 @@
           if (id === "laporan-kepsek") loadLaporanKepsekConfig();
           if (id === "cek-laporan-kepsek") loadCekLaporanKepsek();
           if (id === "sekolah-binaan") loadSekolahBinaanUI();
+          if (id === "rekap-siswa") initRekapSiswaPage();
           if (id === "users") {
             if (typeof initializeUserSchoolFilter === "function") {
               initializeUserSchoolFilter();
@@ -18279,6 +18451,383 @@
           container.classList.add("hidden");
         }
       });
+
+      // --- REKAP SISWA FUNCTIONS ---
+      window.rekapSiswaData = {
+        students: [],
+        classes: [],
+        binaan: [],
+        users: []
+      };
+
+      function initRekapSiswaPage() {
+        const loadingEl = document.getElementById("loadingRekapSiswa");
+        if (loadingEl) loadingEl.classList.remove("hidden");
+        
+        const tbody = document.getElementById("tableRekapSiswaBody");
+        if (tbody) tbody.innerHTML = "";
+        
+        const isUserAdmin = isAdminRole(activeUser.role);
+        const supervisorWrapper = document.getElementById("filterRekapSiswaSupervisorWrapper");
+        
+        if (isUserAdmin) {
+          if (supervisorWrapper) supervisorWrapper.classList.remove("hidden");
+          const lbl = document.getElementById("lblFilterRekapSiswaSchool");
+          if (lbl) lbl.innerText = "Pilih Sekolah (Filter)";
+        } else {
+          if (supervisorWrapper) supervisorWrapper.classList.add("hidden");
+          const lbl = document.getElementById("lblFilterRekapSiswaSchool");
+          if (lbl) lbl.innerText = "Pilih Sekolah Binaan";
+        }
+        
+        google.script.run.withSuccessHandler((studentsList) => {
+          google.script.run.withSuccessHandler((classesList) => {
+            const emailForBinaan = isUserAdmin ? "wanyora68@gmail.com" : activeUser.email;
+            google.script.run.withSuccessHandler((binaanList) => {
+              
+              window.rekapSiswaData = {
+                students: studentsList || [],
+                classes: classesList || [],
+                binaan: binaanList || [],
+                users: []
+              };
+              
+              if (isUserAdmin) {
+                google.script.run.withSuccessHandler((usersList) => {
+                  window.rekapSiswaData.users = usersList || [];
+                  populateRekapFilters();
+                }).getDaftarUserManagement();
+              } else {
+                populateRekapFilters();
+              }
+              
+            }).getSekolahBinaan(emailForBinaan);
+          }).getDaftarKelasFull();
+        }).getDaftarSiswa();
+      }
+
+      function populateRekapFilters() {
+        const isUserAdmin = isAdminRole(activeUser.role);
+        const supervisorSelect = document.getElementById("filterRekapSiswaSupervisor");
+        
+        if (isUserAdmin && supervisorSelect) {
+          const oldVal = supervisorSelect.value || "ALL";
+          supervisorSelect.innerHTML = '<option value="ALL">-- SEMUA PENGAWAS --</option>';
+          
+          const supervisors = (window.rekapSiswaData.users || []).filter(u => isPengawasRole(u.role));
+          supervisors.forEach(sv => {
+            const opt = document.createElement("option");
+            opt.value = sv.email;
+            opt.text = (sv.nama || "").toUpperCase() + " (" + sv.email + ")";
+            supervisorSelect.add(opt);
+          });
+          supervisorSelect.value = oldVal;
+        }
+        
+        populateRekapSchoolDropdown();
+        loadRekapSiswaData();
+      }
+
+      function populateRekapSchoolDropdown() {
+        const isUserAdmin = isAdminRole(activeUser.role);
+        const supervisorSelect = document.getElementById("filterRekapSiswaSupervisor");
+        const schoolSelect = document.getElementById("filterRekapSiswaSchool");
+        if (!schoolSelect) return;
+        
+        const oldVal = schoolSelect.value || "ALL";
+        schoolSelect.innerHTML = isUserAdmin 
+          ? '<option value="ALL">-- SEMUA SEKOLAH TERDAFTAR --</option>'
+          : '<option value="ALL">-- SEMUA SEKOLAH BINAAN --</option>';
+          
+        let schoolsToChoose = [];
+        
+        if (isUserAdmin) {
+          const svEmail = supervisorSelect ? supervisorSelect.value : "ALL";
+          if (svEmail === "ALL") {
+            const schoolSet = new Set();
+            (window.rekapSiswaData.binaan || []).forEach(b => {
+              if (b.nama) schoolSet.add(b.nama.toUpperCase().trim());
+            });
+            (window.rekapSiswaData.classes || []).forEach(c => {
+              if (c.sekolah) schoolSet.add(c.sekolah.toUpperCase().trim());
+            });
+            (window.rekapSiswaData.students || []).forEach(s => {
+              if (s.sekolah) schoolSet.add(s.sekolah.toUpperCase().trim());
+            });
+            schoolsToChoose = Array.from(schoolSet).sort();
+          } else {
+            schoolsToChoose = (window.rekapSiswaData.binaan || [])
+              .filter(b => (b.pengawas || "").toLowerCase().trim() === svEmail.toLowerCase().trim())
+              .map(b => (b.nama || "").toUpperCase().trim());
+            schoolsToChoose = Array.from(new Set(schoolsToChoose)).sort();
+          }
+        } else {
+          schoolsToChoose = (window.rekapSiswaData.binaan || []).map(b => (b.nama || "").toUpperCase().trim());
+          schoolsToChoose = Array.from(new Set(schoolsToChoose)).sort();
+        }
+        
+        schoolsToChoose.forEach(sch => {
+          const opt = document.createElement("option");
+          opt.value = sch;
+          opt.text = sch;
+          schoolSelect.add(opt);
+        });
+        
+        if (schoolsToChoose.includes(oldVal)) {
+          schoolSelect.value = oldVal;
+        } else {
+          schoolSelect.value = "ALL";
+        }
+      }
+
+      function onRekapSiswaSupervisorChanged() {
+        populateRekapSchoolDropdown();
+        loadRekapSiswaData();
+      }
+
+      function loadRekapSiswaData() {
+        const loadingEl = document.getElementById("loadingRekapSiswa");
+        const emptyEl = document.getElementById("emptyRekapSiswa");
+        
+        if (loadingEl) loadingEl.classList.remove("hidden");
+        if (emptyEl) emptyEl.classList.add("hidden");
+        
+        const isUserAdmin = isAdminRole(activeUser.role);
+        const supervisorSelect = document.getElementById("filterRekapSiswaSupervisor");
+        const schoolSelect = document.getElementById("filterRekapSiswaSchool");
+        
+        const selectedSv = isUserAdmin && supervisorSelect ? supervisorSelect.value : "ALL";
+        const selectedSchool = schoolSelect ? schoolSelect.value : "ALL";
+        
+        let allowedSchools = [];
+        if (isUserAdmin) {
+          if (selectedSv === "ALL") {
+            if (selectedSchool === "ALL") {
+              const schoolSet = new Set();
+              (window.rekapSiswaData.binaan || []).forEach(b => {
+                if (b.nama) schoolSet.add(b.nama.toUpperCase().trim());
+              });
+              (window.rekapSiswaData.classes || []).forEach(c => {
+                if (c.sekolah) schoolSet.add(c.sekolah.toUpperCase().trim());
+              });
+              (window.rekapSiswaData.students || []).forEach(s => {
+                if (s.sekolah) schoolSet.add(s.sekolah.toUpperCase().trim());
+              });
+              allowedSchools = Array.from(schoolSet);
+            } else {
+              allowedSchools = [selectedSchool.toUpperCase().trim()];
+            }
+          } else {
+            const svSchools = (window.rekapSiswaData.binaan || [])
+              .filter(b => (b.pengawas || "").toLowerCase().trim() === selectedSv.toLowerCase().trim())
+              .map(b => (b.nama || "").toUpperCase().trim());
+            
+            if (selectedSchool === "ALL") {
+              allowedSchools = svSchools;
+            } else {
+              allowedSchools = [selectedSchool.toUpperCase().trim()];
+            }
+          }
+        } else {
+          const mySchools = (window.rekapSiswaData.binaan || []).map(b => (b.nama || "").toUpperCase().trim());
+          if (selectedSchool === "ALL") {
+            allowedSchools = mySchools;
+          } else {
+            allowedSchools = [selectedSchool.toUpperCase().trim()];
+          }
+        }
+        
+        const aggregated = aggregateRekapSiswa(
+          window.rekapSiswaData.students,
+          window.rekapSiswaData.classes,
+          allowedSchools
+        );
+        
+        const tbody = document.getElementById("tableRekapSiswaBody");
+        if (!tbody) return;
+        tbody.innerHTML = "";
+        
+        let totalMale = 0;
+        let totalFemale = 0;
+        let totalGrand = 0;
+        
+        const uniqueSchoolsSet = new Set();
+        const uniqueClassesSet = new Set();
+        
+        if (loadingEl) loadingEl.classList.add("hidden");
+        
+        if (aggregated.length === 0) {
+          if (emptyEl) emptyEl.classList.remove("hidden");
+          document.getElementById("rekapSiswaKpiSekolah").innerText = "0";
+          document.getElementById("rekapSiswaKpiKelas").innerText = "0";
+          document.getElementById("rekapSiswaKpiSiswa").innerText = "0";
+          document.getElementById("rekapSiswaKpiMale").innerText = "L: 0";
+          document.getElementById("rekapSiswaKpiFemale").innerText = "P: 0";
+          document.getElementById("rekapSiswaGenderProgressMale").style.width = "50%";
+          document.getElementById("rekapSiswaGenderProgressFemale").style.width = "50%";
+          
+          document.getElementById("tableRekapSiswaTotalMale").innerText = "0";
+          document.getElementById("tableRekapSiswaTotalFemale").innerText = "0";
+          document.getElementById("tableRekapSiswaTotalGrand").innerText = "0";
+          return;
+        }
+        
+        aggregated.forEach((row, idx) => {
+          uniqueSchoolsSet.add(row.sekolah);
+          uniqueClassesSet.add(row.sekolah + "|" + row.kelas);
+          
+          totalMale += row.male;
+          totalFemale += row.female;
+          totalGrand += row.total;
+          
+          const tr = document.createElement("tr");
+          tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+          tr.innerHTML = `
+            <td class="p-4 text-slate-500 font-normal text-center">${idx + 1}</td>
+            <td class="p-4 text-indigo-900 font-bold">${row.sekolah}</td>
+            <td class="p-4 text-slate-700 font-medium">${row.kelas}</td>
+            <td class="p-4 text-center font-bold text-blue-600">${row.male}</td>
+            <td class="p-4 text-center font-bold text-pink-600">${row.female}</td>
+            <td class="p-4 text-center font-black text-slate-900 bg-slate-50/50">${row.total}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+        
+        document.getElementById("rekapSiswaKpiSekolah").innerText = uniqueSchoolsSet.size;
+        document.getElementById("rekapSiswaKpiKelas").innerText = uniqueClassesSet.size;
+        document.getElementById("rekapSiswaKpiSiswa").innerText = totalGrand;
+        document.getElementById("rekapSiswaKpiMale").innerText = "L: " + totalMale + " (" + (totalGrand > 0 ? Math.round(totalMale / totalGrand * 100) : 50) + "%)";
+        document.getElementById("rekapSiswaKpiFemale").innerText = "P: " + totalFemale + " (" + (totalGrand > 0 ? Math.round(totalFemale / totalGrand * 100) : 50) + "%)";
+        
+        const malePercent = totalGrand > 0 ? Math.round(totalMale / totalGrand * 100) : 50;
+        const femalePercent = 100 - malePercent;
+        document.getElementById("rekapSiswaGenderProgressMale").style.width = malePercent + "%";
+        document.getElementById("rekapSiswaGenderProgressFemale").style.width = femalePercent + "%";
+        
+        document.getElementById("tableRekapSiswaTotalMale").innerText = totalMale;
+        document.getElementById("tableRekapSiswaTotalFemale").innerText = totalFemale;
+        document.getElementById("tableRekapSiswaTotalGrand").innerText = totalGrand;
+      }
+
+      function aggregateRekapSiswa(students, classes, allowedSchools) {
+        const rowMap = {};
+        
+        const allowedSchoolsUpper = (allowedSchools || []).map(s => s.toUpperCase().trim());
+        
+        classes.forEach(c => {
+          const sch = (c.sekolah || "").toUpperCase().trim();
+          const kls = (c.nama || "").toUpperCase().trim();
+          if (!sch || !kls) return;
+          
+          if (allowedSchoolsUpper.length > 0 && !allowedSchoolsUpper.includes(sch)) return;
+          
+          const key = sch + "|" + kls;
+          rowMap[key] = {
+            sekolah: sch,
+            kelas: kls,
+            male: 0,
+            female: 0,
+            total: 0
+          };
+        });
+        
+        students.forEach(s => {
+          const sch = (s.sekolah || "").toUpperCase().trim();
+          const kls = (s.kelas || "").toUpperCase().trim();
+          if (!sch || !kls) return;
+          
+          if (allowedSchoolsUpper.length > 0 && !allowedSchoolsUpper.includes(sch)) return;
+          
+          const key = sch + "|" + kls;
+          if (!rowMap[key]) {
+            rowMap[key] = {
+              sekolah: sch,
+              kelas: kls,
+              male: 0,
+              female: 0,
+              total: 0
+            };
+          }
+          
+          const g = (s.gender || "").toUpperCase().trim();
+          if (g === "LAKI-LAKI" || g === "L" || g === "LAKI LAKI") {
+            rowMap[key].male++;
+          } else if (g === "PEREMPUAN" || g === "P") {
+            rowMap[key].female++;
+          }
+          rowMap[key].total++;
+        });
+        
+        return Object.values(rowMap).sort((a, b) => {
+          if (a.sekolah !== b.sekolah) {
+            return a.sekolah.localeCompare(b.sekolah);
+          }
+          return a.kelas.localeCompare(b.kelas);
+        });
+      }
+
+      function cetakRekapSiswa() {
+        const isUserAdmin = isAdminRole(activeUser.role);
+        const supervisorSelect = document.getElementById("filterRekapSiswaSupervisor");
+        const schoolSelect = document.getElementById("filterRekapSiswaSchool");
+        
+        const selectedSv = isUserAdmin && supervisorSelect ? supervisorSelect.value : "ALL";
+        const selectedSchool = schoolSelect ? schoolSelect.value : "ALL";
+        
+        let subTitle = "";
+        if (isUserAdmin) {
+          let svText = selectedSv === "ALL" ? "Semua Pengawas" : selectedSv;
+          if (supervisorSelect && selectedSv !== "ALL") {
+            const opt = supervisorSelect.options[supervisorSelect.selectedIndex];
+            if (opt) svText = opt.text;
+          }
+          let schText = selectedSchool === "ALL" ? "Semua Sekolah" : selectedSchool;
+          subTitle = "Pengawas: " + svText + " | Sekolah: " + schText;
+        } else {
+          let schText = selectedSchool === "ALL" ? "Semua Sekolah Binaan" : selectedSchool;
+          subTitle = "Sekolah Binaan: " + schText;
+        }
+        
+        const printSub = document.getElementById("printRekapSiswaSub");
+        if (printSub) printSub.innerText = subTitle.toUpperCase();
+        
+        const printDate = document.getElementById("printRekapSiswaDate");
+        if (printDate) printDate.innerText = new Date().toLocaleString("id-ID");
+        
+        const area = document.getElementById("printableRekapSiswaArea");
+        if (!area || !document.getElementById("tableRekapSiswaBody").innerHTML) {
+          alert("Tidak ada data rekap siswa untuk dicetak!");
+          return;
+        }
+        
+        const htmlContent = `
+          <style>
+             #mobilePrintArea { 
+               font-family: 'Inter', sans-serif; 
+               font-size: 10px; 
+               text-transform: uppercase; 
+               color: #000; 
+               padding: 20px;
+             }
+             .text-indigo-900 { color: #312e81 !important; }
+             .bg-indigo-50 { background-color: #e0e7ff !important; }
+             .bg-indigo-900 { background-color: #312e81 !important; color: white !important; }
+             .border-indigo-900 { border-color: #312e81 !important; }
+             table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+             th, td { border: 1px solid #312e81 !important; padding: 6px; text-align: left; }
+             th { background-color: #312e81 !important; color: white !important; }
+             .text-center { text-align: center !important; }
+             .text-right { text-align: right !important; }
+             .font-black { font-weight: 900 !important; }
+             .font-bold { font-weight: 700 !important; }
+             .print-only-block { display: block !important; }
+          </style>
+          <div class="print-container">
+            ${area.innerHTML}
+          </div>
+        `;
+        openPrintOverlay(htmlContent);
+      }
 
       function loadDaftarKelasFullManagement() {
         const tableMaster = document.getElementById("listKelasMasterBody");
