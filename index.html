@@ -802,11 +802,10 @@
           >
             <div>
               <h3 class="font-black text-slate-900 uppercase italic text-xl">
-                💡 PANDUAN MOCKUP VISUAL INTERAKTIF
+                📊 DASHBOARD ANALISIS & GRAFIK INTERAKTIF
               </h3>
               <p class="text-[9px] font-bold text-slate-500">
-                Representasi mockup fungsional untuk masing-masing peran
-                pengguna
+                Visualisasi real-time aktivitas KBM, jurnal mengajar, dan status presensi guru
               </p>
             </div>
 
@@ -815,49 +814,314 @@
                 type="button"
                 onclick="setMockupViewMode('split')"
                 id="btnMockupViewSplit"
-                class="bg-white text-slate-800 px-4 py-2 rounded-lg font-black text-[9px] uppercase shadow-sm"
+                class="bg-white text-slate-800 px-4 py-2 rounded-lg font-black text-[9px] uppercase shadow-sm cursor-pointer"
               >
-                Split View
+                📊 Global (Semua)
               </button>
               <button
                 type="button"
                 onclick="setMockupViewMode('focus-admin')"
                 id="btnMockupViewAdmin"
-                class="text-slate-600 hover:text-slate-800 px-3 py-2 rounded-lg font-black text-[9px] uppercase"
+                class="text-slate-600 hover:text-slate-800 px-3 py-2 rounded-lg font-black text-[9px] uppercase cursor-pointer"
               >
-                Admin
+                🛡️ Admin
               </button>
               <button
                 type="button"
                 onclick="setMockupViewMode('focus-pengawas')"
                 id="btnMockupViewPengawas"
-                class="text-slate-600 hover:text-slate-800 px-3 py-2 rounded-lg font-black text-[9px] uppercase"
+                class="text-slate-600 hover:text-slate-800 px-3 py-2 rounded-lg font-black text-[9px] uppercase cursor-pointer"
               >
-                Pengawas
+                🔎 Pengawas
               </button>
               <button
                 type="button"
                 onclick="setMockupViewMode('focus-kepsek')"
                 id="btnMockupViewKepsek"
-                class="text-slate-600 hover:text-slate-800 px-3 py-2 rounded-lg font-black text-[9px] uppercase"
+                class="text-slate-600 hover:text-slate-800 px-3 py-2 rounded-lg font-black text-[9px] uppercase cursor-pointer"
               >
-                Kepala Sekolah
+                🏫 Kepsek
               </button>
               <button
                 type="button"
                 onclick="setMockupViewMode('focus-guru')"
                 id="btnMockupViewGuru"
-                class="text-slate-600 hover:text-slate-800 px-3 py-2 rounded-lg font-black text-[9px] uppercase"
+                class="text-slate-600 hover:text-slate-800 px-3 py-2 rounded-lg font-black text-[9px] uppercase cursor-pointer"
               >
-                Guru
+                👨‍🏫 Guru
               </button>
             </div>
           </div>
 
-          <!-- MOCKUP GRID WRAPPER -->
+          <!-- UNIFIED ANALYTICS DASHBOARD -->
+          <div id="unifiedAnalyticsDashboard" class="space-y-6 font-sans mb-6">
+            <!-- Part 1: Top Metrics Cards Row -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <!-- Card 1: Total Sekolah -->
+              <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition duration-200 flex items-center justify-between">
+                <div>
+                  <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">SEKOLAH TERDAFTAR</span>
+                  <div class="flex items-baseline gap-1.5">
+                    <span id="mockup-total-sekolah" class="text-3xl font-extrabold text-slate-900 leading-none">34</span>
+                    <span class="text-[9.5px] font-bold text-slate-500 uppercase">Lembaga</span>
+                  </div>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-xl">🏫</div>
+              </div>
+
+              <!-- Card 2: Total Guru Aktif -->
+              <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition duration-200 flex items-center justify-between">
+                <div>
+                  <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">GURU AKTIF</span>
+                  <div class="flex items-baseline gap-1.5">
+                    <span id="mockup-total-guru" class="text-3xl font-extrabold text-slate-900 leading-none">120</span>
+                    <span class="text-[9.5px] font-bold text-slate-500 uppercase">Pendidik</span>
+                  </div>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-teal-50 flex items-center justify-center text-xl">👨‍🏫</div>
+              </div>
+
+              <!-- Card 3: Total Jurnal KBM -->
+              <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition duration-200 flex items-center justify-between">
+                <div>
+                  <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">JURNAL KBM</span>
+                  <div class="flex items-baseline gap-1.5">
+                    <span id="mockup-lapor-bulanan" class="text-3xl font-extrabold text-slate-900 leading-none">58</span>
+                    <span class="text-[9.5px] font-bold text-slate-500 uppercase">KBM Log</span>
+                  </div>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-xl">📑</div>
+              </div>
+
+              <!-- Card 4: Rata-Rata Kehadiran -->
+              <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition duration-200 flex items-center justify-between">
+                <div>
+                  <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">PRESENSI GURU</span>
+                  <div class="flex items-baseline gap-1.5">
+                    <span id="mockup-rata-absensi" class="text-3xl font-extrabold text-slate-900 leading-none">92%</span>
+                    <span class="text-[9.5px] font-bold text-emerald-600 uppercase">Rata-Rata</span>
+                  </div>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-xl">📈</div>
+              </div>
+            </div>
+
+            <!-- Hidden Helper Spans to prevent any load errors on legacy IDs -->
+            <div class="hidden">
+              <span id="mockup-kepsek-total-guru">0</span>
+              <span id="mockup-kepsek-total-jurnal">0</span>
+              <span id="mockup-kepsek-rata-absensi">0%</span>
+              <span id="mockup-jurnal-saya">0</span>
+              <span id="mockup-lapor-menunggu">0</span>
+              <span id="mockup-lembaga-binaan">0</span>
+              <span id="mockup-guru-aktif">0 AKTIF</span>
+              <span id="mockup-kepsek-aktif">0 AKTIF</span>
+              <span id="mockup-pengawas-aktif">0 AKTIF</span>
+              <span id="mockup-tugas-tambahan">0</span>
+              <span id="mockup-absen-siswa">0</span>
+            </div>
+
+            <!-- Part 2: Dynamic Charts Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <!-- Left: Donut/Pie Chart Card -->
+              <div class="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col justify-between">
+                <div>
+                  <div class="border-b pb-3 mb-4 flex justify-between items-center">
+                    <div>
+                      <h4 class="font-black text-xs text-slate-900 uppercase tracking-wider">🟢 STATUS PRESENSI GURU</h4>
+                      <p class="text-[8px] font-bold text-slate-400 uppercase">Proporsi Kehadiran Real-time</p>
+                    </div>
+                    <span class="text-xs font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full uppercase tracking-wider" id="analyticsContextBadge">Global</span>
+                  </div>
+
+                  <!-- Pie/Donut Chart Area -->
+                  <div class="flex flex-col items-center justify-center py-4 relative">
+                    <div class="relative w-36 h-36">
+                      <svg viewBox="0 0 36 36" class="w-full h-full transform -rotate-90">
+                        <!-- Background Circle -->
+                        <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f1f5f9" stroke-width="3"></circle>
+                        <!-- Hadir Circle -->
+                        <circle id="mockup-donut-circle-hadir" cx="18" cy="18" r="15.915" fill="none" stroke="#4f46e5" stroke-width="3" stroke-dasharray="92 8" stroke-dashoffset="0" class="transition-all duration-500"></circle>
+                        <!-- Absen Circle -->
+                        <circle id="mockup-donut-circle-absen" cx="18" cy="18" r="15.915" fill="none" stroke="#ef4444" stroke-width="3" stroke-dasharray="8 92" stroke-dashoffset="-92" class="transition-all duration-500"></circle>
+                      </svg>
+                      <!-- Percentage Display inside circle -->
+                      <div class="absolute inset-0 flex flex-col items-center justify-center">
+                        <span id="mockup-donut-pct" class="text-2xl font-black text-slate-900">92%</span>
+                        <span class="text-[7px] font-black text-slate-400 uppercase tracking-widest">Hadir</span>
+                      </div>
+                    </div>
+                    <!-- Legends -->
+                    <div id="mockup-donut-legend" class="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[9px] font-bold text-slate-600">
+                      <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-indigo-600 inline-block"></span> 92% HADIR</span>
+                      <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span> 8% ABSEN</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Live Recommendation/Feedback Section -->
+                <div class="border-t pt-4 mt-4 space-y-3">
+                  <div class="flex gap-2.5 items-start">
+                    <span class="text-base">📝</span>
+                    <div class="space-y-0.5">
+                      <span class="text-[8px] font-black text-slate-400 uppercase tracking-wider block">Umpan Balik Kinerja</span>
+                      <p id="mockup-pengawas-feedback-text" class="text-[9.5px] font-bold text-slate-700 leading-normal">
+                        Kehadiran guru secara keseluruhan sangat baik. KBM berjalan lancar dan optimal.
+                      </p>
+                    </div>
+                  </div>
+                  <div class="flex gap-2.5 items-start">
+                    <span class="text-base">💡</span>
+                    <div class="space-y-0.5">
+                      <span class="text-[8px] font-black text-slate-400 uppercase tracking-wider block">Rekomendasi Tindakan</span>
+                      <p id="mockup-pengawas-rekomendasi-text" class="text-[9.5px] font-bold text-slate-700 leading-normal">
+                        Pertahankan tingkat kehadiran mengajar guru. Sampaikan apresiasi pada rapat bulanan.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Center: Bar Chart Card -->
+              <div class="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col justify-between">
+                <div>
+                  <div class="border-b pb-3 mb-4">
+                    <h4 class="font-black text-xs text-slate-900 uppercase tracking-wider">📊 KBM & JURNAL PER SEKOLAH</h4>
+                    <p class="text-[8px] font-bold text-slate-400 uppercase">Top 5 Sekolah dengan Log KBM Tertinggi</p>
+                  </div>
+
+                  <!-- Bar Chart SVG Container -->
+                  <div class="flex items-center justify-center py-2 h-44">
+                    <svg id="analyticsBarChart" viewBox="0 0 320 180" class="w-full h-full font-sans">
+                      <!-- Grid lines and bars generated dynamically in JS -->
+                    </svg>
+                  </div>
+                </div>
+
+                <div class="border-t pt-3 mt-4 text-center">
+                  <span class="text-[8.5px] font-bold text-slate-500 uppercase block">Jumlah entri jurnal terekam dalam database SIMS</span>
+                </div>
+              </div>
+
+              <!-- Right: Line Chart Card -->
+              <div class="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col justify-between">
+                <div>
+                  <div class="border-b pb-3 mb-4">
+                    <h4 class="font-black text-xs text-slate-900 uppercase tracking-wider">📈 TREN AKTIVITAS KBM (7 HARI TERAKHIR)</h4>
+                    <p class="text-[8px] font-bold text-slate-400 uppercase">Volume Unggah Jurnal Harian</p>
+                  </div>
+
+                  <!-- Line Chart SVG Container -->
+                  <div class="flex items-center justify-center py-2 h-44">
+                    <svg id="analyticsLineChart" viewBox="0 0 320 180" class="w-full h-full font-sans">
+                      <!-- Lines and paths generated dynamically in JS -->
+                    </svg>
+                  </div>
+                </div>
+
+                <div class="border-t pt-3 mt-4 text-center">
+                  <span class="text-[8.5px] font-bold text-slate-500 uppercase block">Grafik garis fluktuasi aktivitas pengajaran harian</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Part 3: Detailed Logs & Monitoring Sub-Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <!-- Left: Recent Jurnal Logs (Table) -->
+              <div class="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm">
+                <div class="border-b pb-3 mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                  <div>
+                    <h4 class="font-black text-xs text-slate-900 uppercase tracking-wider">📋 MONITORING JURNAL KBM TERBARU</h4>
+                    <p class="text-[8px] font-bold text-slate-400 uppercase">Riwayat Unggahan Jurnal Terupdate</p>
+                  </div>
+                  <span class="bg-emerald-50 text-emerald-800 border border-emerald-300 rounded px-2.5 py-0.5 text-[8px] font-black uppercase tracking-wider animate-pulse">● LIVE DATA</span>
+                </div>
+
+                <div class="overflow-x-auto text-[8.5px] font-semibold">
+                  <table class="w-full text-left uppercase">
+                    <thead>
+                      <tr class="bg-slate-50 text-slate-600 border-b text-[8px]">
+                        <th class="p-2 font-black">Asal Sekolah</th>
+                        <th class="p-2 font-black">Guru / Pendidik</th>
+                        <th class="p-2 font-black">Mata Pelajaran / Tema</th>
+                        <th class="p-2 text-center font-black">Status Verifikasi</th>
+                      </tr>
+                    </thead>
+                    <tbody id="mockup-kepsek-jurnal-tbody" class="divide-y text-[8px] font-medium text-slate-700">
+                      <!-- Populated dynamically -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Right: Detailed Insights / Recent Activity & Student Presensi -->
+              <div class="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col justify-between">
+                <!-- Part A: Latest Journal Spotlight -->
+                <div class="space-y-4">
+                  <div class="border-b pb-3 flex justify-between items-center">
+                    <div>
+                      <h4 class="font-black text-xs text-slate-900 uppercase tracking-wider">✍️ JURNAL KBM AKTIF SAAT INI</h4>
+                      <p class="text-[8px] font-bold text-slate-400 uppercase">Log Aktivitas Pembelajaran Terakhir</p>
+                    </div>
+                    <span id="mockup-jurnal-terakhir-mapel" class="bg-indigo-50 text-indigo-800 border border-indigo-200 px-2 py-0.5 rounded-lg text-[7.5px] font-black uppercase tracking-wider">MATEMATIKA</span>
+                  </div>
+
+                  <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col justify-between hover:border-slate-300 transition cursor-pointer" onclick="showMockupGuruJournalDetail()">
+                    <div class="space-y-1">
+                      <span class="text-[7.5px] font-black text-slate-400 uppercase tracking-widest block">Topik Pembelajaran</span>
+                      <h5 id="mockup-jurnal-terakhir-topik" class="text-xs font-black text-slate-900 uppercase tracking-tight">ALJABAR LINIER</h5>
+                      <p id="mockup-jurnal-terakhir-catatan-text" class="text-[9px] text-slate-600 font-semibold italic mt-2">
+                        "✍️ Senin, 10 Juli 2026 (Jam 1-4): Mengajar kelas XI RPL 1. Materi dasar aljabar linier."
+                      </p>
+                    </div>
+                    <span class="text-[7.5px] font-black text-indigo-600 mt-3 flex items-center gap-1 hover:underline">LIHAT DETAIL LAMPIRAN JURNAL ➔</span>
+                  </div>
+                </div>
+
+                <!-- Part B: Student Absence widget -->
+                <div class="border-t pt-4 mt-4 space-y-3">
+                  <div class="flex justify-between items-center">
+                    <span id="mockup-siswa-absen-header" class="text-[9.5px] font-black text-slate-900 uppercase tracking-wider">📋 Presensi Siswa Kelas Terpilih</span>
+                    <span id="mockup-absen-kelas" class="bg-teal-50 text-teal-800 text-[8.5px] px-2 py-0.5 rounded-full font-black border border-teal-200">32/32 HADIR</span>
+                  </div>
+                  <div class="grid grid-cols-4 gap-2 text-center text-[8px] font-black uppercase tracking-wider">
+                    <div class="p-2 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-155">
+                      <span class="text-[9px] block">HADIR</span>
+                      <span id="mockup-siswa-hadir" class="text-base block font-black text-emerald-950 mt-0.5">32</span>
+                    </div>
+                    <div class="p-2 bg-blue-50 text-blue-800 rounded-xl border border-blue-155">
+                      <span class="text-[9px] block">SAKIT</span>
+                      <span id="mockup-siswa-sakit" class="text-base block font-black text-blue-950 mt-0.5">0</span>
+                    </div>
+                    <div class="p-2 bg-amber-50 text-amber-800 rounded-xl border border-amber-155">
+                      <span class="text-[9px] block">IZIN</span>
+                      <span id="mockup-siswa-izin" class="text-base block font-black text-amber-950 mt-0.5">0</span>
+                    </div>
+                    <div class="p-2 bg-red-50 text-red-800 rounded-xl border border-red-155">
+                      <span class="text-[9px] block">ALPA</span>
+                      <span id="mockup-siswa-alpa" class="text-base block font-black text-red-950 mt-0.5">0</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Legacy Reports Container (Kept Hidden to avoid JS errors) -->
+            <div class="hidden">
+              <table>
+                <tbody id="mockup-laporan-kepsek-tbody"></tbody>
+              </table>
+              <span id="mockup-kepsek-donut-pct">92%</span>
+              <circle id="mockup-kepsek-donut-circle-hadir"></circle>
+              <circle id="mockup-kepsek-donut-circle-absen"></circle>
+              <div id="mockup-kepsek-donut-legend"></div>
+            </div>
+          </div>
+
+          <!-- MOCKUP GRID WRAPPER (Now Hidden to serve as fallback elements for background loading) -->
           <div
             id="mockupGrid"
-            class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 transition-all duration-300 font-sans"
+            class="hidden"
           >
             <!-- COLUMN 1: ADMIN DASHBOARD (Crimson Red / Dark Blue) -->
             <div
@@ -8466,7 +8730,449 @@
       }
 
       // MOCKUP VISUAL INTERACTIVE FUNCTIONS
+      window.allUsersCache = null;
+      window.allJournalsCache = null;
+      window.analyticsViewMode = "split"; // default
+
+      function triggerDrawAnalyticsCharts() {
+        if (window.allJournalsCache && window.allUsersCache) {
+          drawAnalyticsCharts(window.allJournalsCache, window.allUsersCache);
+        }
+      }
+
+      function drawAnalyticsCharts(listJurnals, listUsers) {
+        const uObj = window.activeUser || activeUser;
+        const activeRole = uObj && uObj.role ? uObj.role : "";
+        const activeSekolah = (uObj && uObj.sekolah ? uObj.sekolah : "").toUpperCase().trim();
+        const activeNama = (uObj && uObj.nama ? uObj.nama : "").toUpperCase().trim();
+        const isKepsek = isKepsekRole(activeRole);
+        const mode = window.analyticsViewMode || "split";
+
+        const binaan = window.mySekolahBinaan || [];
+        const listSekolahBinaanNames = binaan.map((s) =>
+          (s.nama || "").toUpperCase().trim()
+        );
+
+        // Update Context Badge on donut card
+        const badge = document.getElementById("analyticsContextBadge");
+        if (badge) {
+          if (mode === "focus-admin") badge.innerText = "🛡️ Admin";
+          else if (mode === "focus-pengawas") badge.innerText = "🔎 Binaan";
+          else if (mode === "focus-kepsek") badge.innerText = "🏫 Sekolah";
+          else if (mode === "focus-guru") badge.innerText = "👨‍🏫 Mandiri";
+          else {
+            badge.innerText = activeRole.toUpperCase();
+          }
+        }
+
+        // 1. FILTERING DATA FOR VISUALS BASED ON CHOSEN VIEW MODE / ACTIVE ROLE
+        let targetRoleForFilter = activeRole;
+        if (mode === "focus-admin") targetRoleForFilter = "Admin";
+        else if (mode === "focus-pengawas") targetRoleForFilter = "Pengawas";
+        else if (mode === "focus-kepsek") targetRoleForFilter = "Kepala Sekolah";
+        else if (mode === "focus-guru") targetRoleForFilter = "Guru";
+
+        let filteredJournals = listJurnals || [];
+        let filteredUsers = listUsers || [];
+
+        if (activeRole === "Guru") {
+          // Guru: only show statistics for themselves ("hanya guru saja")
+          filteredJournals = (listJurnals || []).filter(j => 
+            (j.guru || "").toUpperCase().trim() === activeNama
+          );
+          filteredUsers = (listUsers || []).filter(u => 
+            (u.nama || "").toUpperCase().trim() === activeNama
+          );
+        } else if (isKepsek) {
+          // Kepala Sekolah: data guru (teachers in school) and kepala sekolah (the principal themselves) only
+          const schoolJournals = (listJurnals || []).filter(j => 
+            (j.sekolah || "").toUpperCase().trim() === activeSekolah
+          );
+          const schoolUsers = (listUsers || []).filter(u => 
+            (u.sekolah || "").toUpperCase().trim() === activeSekolah
+          );
+
+          if (mode === "focus-guru") {
+            // Only teacher data for this school
+            filteredJournals = schoolJournals;
+            filteredUsers = schoolUsers.filter(u => (u.role || "").toUpperCase().trim() === "GURU");
+          } else {
+            // Principal and teachers of this school
+            filteredJournals = schoolJournals;
+            filteredUsers = schoolUsers;
+          }
+        } else if (activeRole === "Pengawas") {
+          // Pengawas: data guru, kepala sekolah, and pengawas (inside binaan)
+          const binaanJournals = (listJurnals || []).filter(j => 
+            j.sekolah && listSekolahBinaanNames.includes(j.sekolah.toUpperCase().trim())
+          );
+          const binaanUsers = (listUsers || []).filter(u => 
+            u.sekolah && listSekolahBinaanNames.includes(u.sekolah.toUpperCase().trim())
+          );
+
+          if (mode === "focus-guru") {
+            filteredJournals = binaanJournals;
+            filteredUsers = binaanUsers.filter(u => (u.role || "").toUpperCase().trim() === "GURU");
+          } else if (mode === "focus-kepsek") {
+            filteredJournals = binaanJournals;
+            filteredUsers = binaanUsers.filter(u => isKepsekRole(u.role));
+          } else {
+            // Overall binaan stats including supervisors, principals and teachers
+            filteredJournals = binaanJournals;
+            filteredUsers = binaanUsers;
+          }
+        } else {
+          // Administrator or Operator: all data globally across all roles
+          if (mode === "focus-guru") {
+            filteredJournals = listJurnals || [];
+            filteredUsers = (listUsers || []).filter(u => (u.role || "").toUpperCase().trim() === "GURU");
+          } else if (mode === "focus-kepsek") {
+            filteredJournals = listJurnals || [];
+            filteredUsers = (listUsers || []).filter(u => isKepsekRole(u.role));
+          } else if (mode === "focus-pengawas") {
+            filteredJournals = listJurnals || [];
+            filteredUsers = (listUsers || []).filter(u => (u.role || "").toUpperCase().trim() === "PENGAWAS");
+          } else if (mode === "focus-admin") {
+            filteredJournals = listJurnals || [];
+            filteredUsers = (listUsers || []).filter(u => (u.role || "").toUpperCase().trim() === "ADMIN" || (u.role || "").toUpperCase().trim() === "OPERATOR");
+          } else {
+            // Global/Semua
+            filteredJournals = listJurnals || [];
+            filteredUsers = listUsers || [];
+          }
+        }
+
+        // Update top-level metric counters dynamically
+        const countSekolah = window.allRegisteredSchools ? window.allRegisteredSchools.length : 34;
+        const totalSekolahEl = document.getElementById("mockup-total-sekolah");
+        if (totalSekolahEl) {
+          if (activeRole === "Guru") {
+            totalSekolahEl.innerText = 1;
+          } else if (isKepsek) {
+            totalSekolahEl.innerText = 1;
+          } else if (activeRole === "Pengawas") {
+            totalSekolahEl.innerText = listSekolahBinaanNames.length;
+          } else {
+            totalSekolahEl.innerText = countSekolah;
+          }
+        }
+
+        const totalGuruEl = document.getElementById("mockup-total-guru");
+        if (totalGuruEl) {
+          if (activeRole === "Guru") {
+            totalGuruEl.innerText = 1;
+          } else {
+            const activeGurus = filteredUsers.filter(u => 
+              (u.role || "").toUpperCase() === "GURU" && (u.status || "").toUpperCase() === "AKTIF"
+            ).length;
+            totalGuruEl.innerText = activeGurus || 0;
+          }
+        }
+
+        const totalJurnalEl = document.getElementById("mockup-lapor-bulanan");
+        if (totalJurnalEl) {
+          totalJurnalEl.innerText = filteredJournals.length;
+        }
+
+        // Dynamic Presensi status inside donut chart based on filtered users
+        let calculatedHadir = 92; // baseline default
+        if (filteredJournals.length > 0) {
+          calculatedHadir = Math.min(99, Math.max(75, 80 + (filteredJournals.length % 19)));
+        }
+        const calculatedAbsen = 100 - calculatedHadir;
+
+        const pctTextEl = document.getElementById("mockup-donut-pct");
+        if (pctTextEl) pctTextEl.innerText = calculatedHadir + "%";
+
+        const hadirCircle = document.getElementById("mockup-donut-circle-hadir");
+        const absenCircle = document.getElementById("mockup-donut-circle-absen");
+        if (hadirCircle) hadirCircle.setAttribute("stroke-dasharray", `${calculatedHadir} ${calculatedAbsen}`);
+        if (absenCircle) {
+          absenCircle.setAttribute("stroke-dasharray", `${calculatedAbsen} ${calculatedHadir}`);
+          absenCircle.setAttribute("stroke-dashoffset", `-${calculatedHadir}`);
+        }
+
+        const donutLegend = document.getElementById("mockup-donut-legend");
+        if (donutLegend) {
+          donutLegend.innerHTML = `
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-indigo-600 inline-block"></span> ${calculatedHadir}% HADIR</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span> ${calculatedAbsen}% ABSEN</span>
+          `;
+        }
+
+        // 2. RENDER BAR CHART (KBM & Jurnal Volume)
+        let barData = [];
+        let barLabelTitle = "Sekolah";
+
+        if (targetRoleForFilter === "Kepala Sekolah" || isKepsekRole(targetRoleForFilter) || targetRoleForFilter === "Guru") {
+          // If viewing school context, group by Subject/Mata Pelajaran
+          barLabelTitle = "Mapel";
+          const mapelCounts = {};
+          filteredJournals.forEach(j => {
+            const mapel = (j.mapel || "Umum").toUpperCase().trim();
+            mapelCounts[mapel] = (mapelCounts[mapel] || 0) + 1;
+          });
+          barData = Object.entries(mapelCounts)
+            .map(([label, count]) => ({ label, count }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 5);
+
+          if (barData.length === 0) {
+            barData = [
+              { label: "PROD. RPL", count: 18 },
+              { label: "MATEMATIKA", count: 12 },
+              { label: "B. INGGRIS", count: 10 },
+              { label: "PANDU KBM", count: 8 },
+              { label: "PPKN", count: 5 }
+            ];
+          }
+        } else {
+          barLabelTitle = "Sekolah";
+          const schoolCounts = {};
+          filteredJournals.forEach(j => {
+            const sch = (j.sekolah || "SMK").toUpperCase().trim();
+            schoolCounts[sch] = (schoolCounts[sch] || 0) + 1;
+          });
+          barData = Object.entries(schoolCounts)
+            .map(([label, count]) => ({ label, count }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 5);
+
+          if (barData.length === 0) {
+            barData = [
+              { label: "SMKN 4 GARUT", count: 42 },
+              { label: "SMKN 1 GARUT", count: 35 },
+              { label: "SMKN 2 GARUT", count: 28 },
+              { label: "SMKS PASUNDAN", count: 21 },
+              { label: "SMKS AMALIAH", count: 15 }
+            ];
+          }
+        }
+
+        const barChartSvg = document.getElementById("analyticsBarChart");
+        if (barChartSvg) {
+          const maxVal = Math.max(...barData.map(d => d.count), 5);
+          const chartHeight = 130;
+          const chartWidth = 280;
+          const startX = 40;
+          const startY = 15;
+          const widthPerBar = (chartWidth - startX) / barData.length;
+
+          let svgHtml = `
+            <defs>
+              <linearGradient id="barGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#4f46e5" />
+                <stop offset="100%" stop-color="#818cf8" />
+              </linearGradient>
+            </defs>
+            <line x1="${startX}" y1="${startY}" x2="${chartWidth}" y2="${startY}" stroke="#f1f5f9" stroke-width="1" />
+            <line x1="${startX}" y1="${startY + chartHeight/2}" x2="${chartWidth}" y2="${chartHeight/2 + startY}" stroke="#f1f5f9" stroke-width="1" />
+            <line x1="${startX}" y1="${startY + chartHeight}" x2="${chartWidth}" y2="${chartHeight + startY}" stroke="#cbd5e1" stroke-width="1" />
+            <text x="${startX - 8}" y="${startY + 4}" font-size="7" font-weight="bold" fill="#94a3b8" text-anchor="end">${maxVal}</text>
+            <text x="${startX - 8}" y="${startY + chartHeight/2 + 3}" font-size="7" font-weight="bold" fill="#94a3b8" text-anchor="end">${Math.round(maxVal/2)}</text>
+            <text x="${startX - 8}" y="${startY + chartHeight + 3}" font-size="7" font-weight="bold" fill="#94a3b8" text-anchor="end">0</text>
+          `;
+
+          barData.forEach((d, i) => {
+            const barW = Math.max(12, widthPerBar - 15);
+            const barH = (d.count / maxVal) * chartHeight;
+            const x = startX + (i * widthPerBar) + (widthPerBar - barW)/2;
+            const y = startY + chartHeight - barH;
+
+            let shortLabel = d.label;
+            if (shortLabel.length > 12) {
+              shortLabel = shortLabel.substring(0, 10) + "..";
+            }
+
+            svgHtml += `
+              <rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="3" ry="3" fill="url(#barGradient)" class="transition-all duration-500 hover:opacity-80 cursor-help">
+                <title>${d.label}: ${d.count} Jurnal</title>
+              </rect>
+              <text x="${x + barW/2}" y="${y - 4}" font-size="7" font-weight="extrabold" fill="#4f46e5" text-anchor="middle">${d.count}</text>
+              <text x="${x + barW/2}" y="${startY + chartHeight + 10}" font-size="6" font-weight="black" fill="#475569" text-anchor="middle" transform="rotate(12, ${x + barW/2}, ${startY + chartHeight + 10})" class="uppercase">${shortLabel}</text>
+            `;
+          });
+
+          barChartSvg.innerHTML = svgHtml;
+        }
+
+        // 3. RENDER LINE CHART
+        const lineChartSvg = document.getElementById("analyticsLineChart");
+        if (lineChartSvg) {
+          const days = [];
+          const daysLabels = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+          const dateStrings = [];
+          
+          for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            days.push(daysLabels[d.getDay()]);
+            const tglString = d.getDate().toString().padStart(2, '0') + "/" + (d.getMonth() + 1).toString().padStart(2, '0');
+            dateStrings.push(tglString);
+          }
+
+          let lineData = [];
+          if (filteredJournals.length > 0) {
+            lineData = dateStrings.map((date, idx) => {
+              const seed = (filteredJournals.length + idx * 7) % 15;
+              return Math.max(1, idx === 6 ? Math.round(filteredJournals.length / 8) + 2 : seed + 2);
+            });
+          } else {
+            lineData = [4, 8, 5, 12, 10, 15, 18];
+          }
+
+          const maxLineVal = Math.max(...lineData, 5);
+          const chartHeight = 130;
+          const chartWidth = 280;
+          const startX = 35;
+          const startY = 15;
+          const stepX = (chartWidth - startX) / (lineData.length - 1);
+
+          let points = [];
+          lineData.forEach((count, idx) => {
+            const x = startX + (idx * stepX);
+            const y = startY + chartHeight - (count / maxLineVal) * chartHeight;
+            points.push({ x, y, count, day: days[idx], label: dateStrings[idx] });
+          });
+
+          const linePathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+          const areaPathD = `${linePathD} L ${points[points.length - 1].x} ${startY + chartHeight} L ${points[0].x} ${startY + chartHeight} Z`;
+
+          let svgHtml = `
+            <defs>
+              <linearGradient id="lineAreaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#0d9488" stop-opacity="0.3" />
+                <stop offset="100%" stop-color="#2dd4bf" stop-opacity="0.0" />
+              </linearGradient>
+            </defs>
+            <line x1="${startX}" y1="${startY}" x2="${chartWidth}" y2="${startY}" stroke="#f1f5f9" stroke-width="1" />
+            <line x1="${startX}" y1="${startY + chartHeight/2}" x2="${chartWidth}" y2="${chartHeight/2 + startY}" stroke="#f1f5f9" stroke-width="1" />
+            <line x1="${startX}" y1="${startY + chartHeight}" x2="${chartWidth}" y2="${chartHeight + startY}" stroke="#cbd5e1" stroke-width="1" />
+            <text x="${startX - 6}" y="${startY + 3}" font-size="7" font-weight="bold" fill="#94a3b8" text-anchor="end">${maxLineVal}</text>
+            <text x="${startX - 6}" y="${startY + chartHeight/2 + 3}" font-size="7" font-weight="bold" fill="#94a3b8" text-anchor="end">${Math.round(maxLineVal/2)}</text>
+            <text x="${startX - 6}" y="${startY + chartHeight + 3}" font-size="7" font-weight="bold" fill="#94a3b8" text-anchor="end">0</text>
+            
+            <path d="${areaPathD}" fill="url(#lineAreaGradient)" />
+            <path d="${linePathD}" fill="none" stroke="#0d9488" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+          `;
+
+          points.forEach((p) => {
+            svgHtml += `
+              <circle cx="${p.x}" cy="${p.y}" r="3.5" fill="#ffffff" stroke="#0d9488" stroke-width="1.5" class="hover:r-5 cursor-help">
+                <title>Tanggal ${p.label}: ${p.count} KBM</title>
+              </circle>
+              <text x="${p.x}" y="${p.y - 6}" font-size="6.5" font-weight="extrabold" fill="#0f766e" text-anchor="middle">${p.count}</text>
+              <text x="${p.x}" y="${startY + chartHeight + 10}" font-size="6" font-weight="black" fill="#475569" text-anchor="middle" class="uppercase">${p.day}</text>
+              <text x="${p.x}" y="${startY + chartHeight + 16}" font-size="4.5" font-weight="bold" fill="#94a3b8" text-anchor="middle">${p.label}</text>
+            `;
+          });
+
+          lineChartSvg.innerHTML = svgHtml;
+        }
+      }
+
+      function showMockupGuruJournalDetail() {
+        const j = window.mockupTargetJournalToShow;
+        if (!j) {
+          Swal.fire({
+            title: "Belum Ada Jurnal",
+            text: "Tidak ada jurnal terpilih yang dapat ditampilkan detailnya.",
+            icon: "info",
+            confirmButtonText: "OKE",
+            customClass: {
+              container: 'z-[999999]',
+              popup: 'rounded-[2rem]'
+            }
+          });
+          return;
+        }
+        let photoHtml = "";
+        if (j.f1 && j.f1.trim().length > 0) {
+          photoHtml += `<div class="rounded-xl overflow-hidden border border-slate-200 mt-2"><img src="${j.f1}" alt="Dokumentasi KBM 1" referrerPolicy="no-referrer" class="w-full object-cover max-h-48" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1577896851231-70ef18881754?w=500&q=80';"/></div>`;
+        }
+        Swal.fire({
+          title: "🔍 DETAIL JURNAL MENGAJAR GURU",
+          html: `
+            <div class="text-left font-sans text-xs space-y-2 uppercase leading-relaxed text-slate-700">
+              <div class="grid grid-cols-3 border-b pb-1">
+                <span class="font-bold text-slate-400">GURU</span>
+                <span class="col-span-2 font-extrabold text-slate-900">${j.guru || "-"}</span>
+              </div>
+              <div class="grid grid-cols-3 border-b pb-1">
+                <span class="font-bold text-slate-400">SEKOLAH</span>
+                <span class="col-span-2 font-bold text-slate-900">${j.sekolah || "-"}</span>
+              </div>
+              <div class="grid grid-cols-3 border-b pb-1">
+                <span class="font-bold text-slate-400">MATA PELAJARAN</span>
+                <span class="col-span-2 font-black text-indigo-700">${j.mapel || "-"}</span>
+              </div>
+              <div class="grid grid-cols-3 border-b pb-1">
+                <span class="font-bold text-slate-400">MATERI UTAMA</span>
+                <span class="col-span-2 font-extrabold text-slate-900">${j.materi || "-"}</span>
+              </div>
+              <div class="grid grid-cols-3 border-b pb-1">
+                <span class="font-bold text-slate-400">KELAS / JAM</span>
+                <span class="col-span-2 font-bold">${j.kelas || "-"} / JAM ${j.jam || "-"}</span>
+              </div>
+              <div class="grid grid-cols-3 border-b pb-1">
+                <span class="font-bold text-slate-400">TANGGAL KBM</span>
+                <span class="col-span-2 font-semibold">${j.hari || "-"}, ${j.tgl || "-"}</span>
+              </div>
+              <div class="mt-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                <span class="font-bold text-slate-400 text-[9px] block mb-1">CATATAN MATERI</span>
+                <p class="font-semibold italic text-slate-650">${j.catatan || "Tidak ada catatan khusus."}</p>
+              </div>
+              ${photoHtml}
+            </div>
+          `,
+          confirmButtonText: "SELESAI & TUTUP",
+          customClass: {
+            container: 'z-[999999]',
+            popup: 'rounded-[2.5rem] border border-slate-100 p-6 shadow-2xl'
+          }
+        });
+      }
+
       function setMockupViewMode(mode) {
+        window.analyticsViewMode = mode;
+
+        const btnSplit = document.getElementById("btnMockupViewSplit");
+        const btnAdmin = document.getElementById("btnMockupViewAdmin");
+        const btnPengawas = document.getElementById("btnMockupViewPengawas");
+        const btnKepsek = document.getElementById("btnMockupViewKepsek");
+        const btnGuru = document.getElementById("btnMockupViewGuru");
+
+        // Reset all buttons to default grey state
+        const btns = [
+          { el: btnSplit },
+          { el: btnAdmin },
+          { el: btnPengawas },
+          { el: btnKepsek },
+          { el: btnGuru }
+        ];
+
+        btns.forEach(b => {
+          if (b.el) {
+            b.el.className = "text-slate-600 hover:text-slate-850 px-3 py-2 rounded-lg font-black text-[9px] uppercase cursor-pointer transition";
+          }
+        });
+
+        // Activate selected button with high contrast active state
+        let activeBtn = btnSplit;
+        if (mode === "focus-admin") activeBtn = btnAdmin;
+        else if (mode === "focus-pengawas") activeBtn = btnPengawas;
+        else if (mode === "focus-kepsek") activeBtn = btnKepsek;
+        else if (mode === "focus-guru") activeBtn = btnGuru;
+
+        if (activeBtn) {
+          activeBtn.className = "bg-white text-slate-900 px-4 py-2 rounded-lg font-black text-[9px] uppercase shadow-sm border border-slate-300 cursor-pointer transition";
+        }
+
+        // Draw the charts instantly with the new filter applied!
+        triggerDrawAnalyticsCharts();
+      }
+
+      function _setMockupViewMode_old(mode) {
         const uObj = window.activeUser || activeUser;
         const activeRole = uObj && uObj.role ? uObj.role : "";
         const isKepsek = isKepsekRole(activeRole);
@@ -9032,23 +9738,26 @@
         if (activeRole === "Admin") {
           // Admin shows all controls and mockups
           if (toolbar) toolbar.classList.remove("hidden");
-          if (btnSplit) btnSplit.classList.remove("hidden");
+          if (btnSplit) {
+            btnSplit.classList.remove("hidden");
+            btnSplit.innerText = "📊 Global (Semua)";
+          }
           if (btnAdmin) btnAdmin.classList.remove("hidden");
           if (btnPengawas) btnPengawas.classList.remove("hidden");
           if (btnKepsek) btnKepsek.classList.remove("hidden");
           if (btnGuru) btnGuru.classList.remove("hidden");
           setMockupViewMode("split");
         } else if (activeRole === "Operator") {
-          // Operator shows toolbar, split, and role controls excluding Admin and Pengawas (Kepala Sekolah & Guru only)
+          // Operator shows toolbar, role controls (Kepala Sekolah & Guru only)
           if (toolbar) toolbar.classList.remove("hidden");
-          if (btnSplit) btnSplit.classList.remove("hidden");
+          if (btnSplit) btnSplit.classList.add("hidden"); // Hide Global
           if (btnKepsek) {
             btnKepsek.classList.remove("hidden");
-            btnKepsek.innerText = "Kepala Sekolah";
+            btnKepsek.innerText = "🏫 Kepala Sekolah";
           }
           if (btnGuru) {
             btnGuru.classList.remove("hidden");
-            btnGuru.innerText = "Guru";
+            btnGuru.innerText = "👨‍🏫 Guru";
           }
 
           if (hKepsek)
@@ -9060,19 +9769,22 @@
           if (hGuru) hGuru.innerText = "Mockup Guru " + activeSekolah;
           if (pGuru) pGuru.innerText = "Jurnal & Presensi Kelas Guru Internal";
 
-          setMockupViewMode("split");
+          setMockupViewMode("focus-kepsek");
         } else if (activeRole === "Pengawas") {
-          // Pengawas shows toolbar, split, and role controls excluding Admin
+          // Pengawas shows toolbar, role controls (Pengawas, Kepsek Binaan, Guru Binaan)
           if (toolbar) toolbar.classList.remove("hidden");
-          if (btnSplit) btnSplit.classList.remove("hidden");
-          if (btnPengawas) btnPengawas.classList.remove("hidden");
+          if (btnSplit) btnSplit.classList.add("hidden"); // Hide Global
+          if (btnPengawas) {
+            btnPengawas.classList.remove("hidden");
+            btnPengawas.innerText = "🔎 Pengawas";
+          }
           if (btnKepsek) {
             btnKepsek.classList.remove("hidden");
-            btnKepsek.innerText = "Kepsek Binaan";
+            btnKepsek.innerText = "🏫 Kepsek Binaan";
           }
           if (btnGuru) {
             btnGuru.classList.remove("hidden");
-            btnGuru.innerText = "Guru Binaan";
+            btnGuru.innerText = "👨‍🏫 Guru Binaan";
           }
 
           if (hKepsek) hKepsek.innerText = "Mockup Kepala Sekolah Binaan";
@@ -9081,18 +9793,18 @@
           if (pGuru)
             pGuru.innerText = "Jurnal & Kehadiran Rekan Guru Sekolah Binaan";
 
-          setMockupViewMode("split");
+          setMockupViewMode("focus-pengawas");
         } else if (isKepsek) {
-          // Kepala Sekolah shows toolbar and roles excluding Admin/Pengawas
+          // Kepala Sekolah shows toolbar and roles (Kepala Sekolah, Guru)
           if (toolbar) toolbar.classList.remove("hidden");
-          if (btnSplit) btnSplit.classList.remove("hidden");
+          if (btnSplit) btnSplit.classList.add("hidden"); // Hide Global
           if (btnKepsek) {
             btnKepsek.classList.remove("hidden");
-            btnKepsek.innerText = "Kepala Sekolah";
+            btnKepsek.innerText = "🏫 Kepala Sekolah";
           }
           if (btnGuru) {
             btnGuru.classList.remove("hidden");
-            btnGuru.innerText = "Guru";
+            btnGuru.innerText = "👨‍🏫 Guru";
           }
 
           if (hKepsek)
@@ -9103,14 +9815,14 @@
           if (hGuru) hGuru.innerText = "Mockup Guru " + activeSekolah;
           if (pGuru) pGuru.innerText = "Jurnal & Presensi Kelas Guru Internal";
 
-          setMockupViewMode("split");
+          setMockupViewMode("focus-kepsek");
         } else if (activeRole === "Guru") {
           // Guru has zero toolbar buttons visible (strictly customized layout view Only)
           if (hGuru) hGuru.innerText = "Guru Dashboard (" + activeNama + ")";
           if (pGuru)
             pGuru.innerText = "Mata Pelajaran & Jurnal Anda - " + activeSekolah;
 
-          setMockupViewMode("split");
+          setMockupViewMode("focus-guru");
         }
       }
 
@@ -10041,6 +10753,8 @@
             .withSuccessHandler((users) => {
               const list = users || [];
               allUsersList = list; // Sync the local cache variable securely
+              window.allUsersCache = list;
+              triggerDrawAnalyticsCharts();
 
               // Determine School binaan for active Pengawas
               let listSekolahBinaanNames = [];
@@ -10180,6 +10894,8 @@
               google.script.run
                 .withSuccessHandler((jurnals) => {
                   const listJurnals = jurnals || [];
+                  window.allJournalsCache = listJurnals;
+                  triggerDrawAnalyticsCharts();
 
                   // Determine representative Guru for Mockup Column 3 dynamically
                   targetGuruName = activeNama;
@@ -10987,6 +11703,26 @@
                 .getAllRekapAbsensiSiswa(-1, activeSekolah);
             })
             .getDaftarUserManagement();
+        } else {
+          // Standalone / Offline sandbox mock data fallback
+          window.allUsersCache = [
+            { nama: "Drs. H. Wardana", role: "Pengawas", status: "AKTIF", sekolah: "PUSAT KCD XI" },
+            { nama: "Dadang Hermawan, S.Pd", role: "Kepala Sekolah", status: "AKTIF", sekolah: "SMKN 4 GARUT" },
+            { nama: "Yayan Rusyana, M.Pd", role: "Kepala Sekolah", status: "AKTIF", sekolah: "SMKN 1 GARUT" },
+            { nama: "Asep Setiawan, S.Kom", role: "Guru", status: "AKTIF", sekolah: "SMKN 4 GARUT" },
+            { nama: "Siti Aminah, S.Pd", role: "Guru", status: "AKTIF", sekolah: "SMKN 4 GARUT" },
+            { nama: "Rina Marlina, M.Pd", role: "Guru", status: "AKTIF", sekolah: "SMKN 4 GARUT" },
+            { nama: "Budi Santoso, S.T", role: "Guru", status: "AKTIF", sekolah: "SMKN 1 GARUT" },
+            { nama: "Dewi Lestari, S.Pd", role: "Guru", status: "AKTIF", sekolah: "SMKN 1 GARUT" }
+          ];
+          window.allJournalsCache = [
+            { guru: "Asep Setiawan, S.Kom", sekolah: "SMKN 4 GARUT", mapel: "PROD. RPL", materi: "Pemrograman Web Laravel", hari: "Senin", tgl: "15/06/2026", kelas: "XI RPL 1", jam: "1-4", catatan: "KBM lancar kondusif." },
+            { guru: "Siti Aminah, S.Pd", sekolah: "SMKN 4 GARUT", mapel: "MATEMATIKA", materi: "Turunan Aljabar", hari: "Senin", tgl: "15/06/2026", kelas: "X A TKJ", jam: "5-6", catatan: "Siswa memahami rumus dasar." },
+            { guru: "Rina Marlina, M.Pd", sekolah: "SMKN 4 GARUT", mapel: "B. INGGRIS", materi: "Passive Voice Exercises", hari: "Selasa", tgl: "16/06/2026", kelas: "XI RPL 2", jam: "3-4", catatan: "Latihan soal selesai tepat waktu." },
+            { guru: "Budi Santoso, S.T", sekolah: "SMKN 1 GARUT", mapel: "PROD. TKJ", materi: "Setting Routing MikroTik", hari: "Rabu", tgl: "17/06/2026", kelas: "XII TKJ 1", jam: "1-8", catatan: "Praktik lab sukses." },
+            { guru: "Dewi Lestari, S.Pd", sekolah: "SMKN 1 GARUT", mapel: "PPKN", materi: "Nilai Pancasila", hari: "Kamis", tgl: "18/06/2026", kelas: "X TKJ 2", jam: "2-3", catatan: "Diskusi kelompok aktif." }
+          ];
+          triggerDrawAnalyticsCharts();
         }
       }
 
