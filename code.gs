@@ -199,6 +199,15 @@ function bootstrapDatabase(ss) {
       sheetLokasi.getRange(1, 1, 1, headersLokasi.length).setFontWeight("bold").setBackground("#cfe2f3");
     }
 
+    // 14. Data_Nilai_Sikap Sheet
+    var sheetSikap = ss.getSheetByName("Data_Nilai_Sikap");
+    if (!sheetSikap) {
+      sheetSikap = ss.insertSheet("Data_Nilai_Sikap");
+      var headersSikap = ["Timestamp", "Sekolah", "Kelas", "Mata Pelajaran", "Guru", "NIS", "Nama Siswa", "Spiritual", "Disiplin", "Tanggung Jawab", "Kerja Sama", "Integritas", "Catatan Guru", "Kesimpulan Sikap"];
+      sheetSikap.appendRow(headersSikap);
+      sheetSikap.getRange(1, 1, 1, headersSikap.length).setFontWeight("bold").setBackground("#cfe2f3");
+    }
+
   } catch (err) {
     Logger.log("bootstrapDatabase error: " + err.toString());
   }
@@ -2213,4 +2222,199 @@ function normalizeDateToISO(dVal) {
   }
   
   return str;
+}
+
+/* ============================================================
+   PENILAIAN SIKAP SISWA BACKEND
+   ============================================================ */
+
+function simpanNilaiSikap(obj) {
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName("Data_Nilai_Sikap");
+  if (!sheet) {
+    throw new Error("Sheet Data_Nilai_Sikap tidak ditemukan!");
+  }
+  
+  // Ensure we migrate headers if they are old
+  var lastCol = sheet.getLastColumn();
+  if (lastCol < 16) {
+    var headersSikap = ["Timestamp", "Sekolah", "Kelas", "Mata Pelajaran", "Guru", "NIS", "Nama Siswa", "Spiritual", "Disiplin", "Tanggung Jawab", "Kerja Sama", "Integritas", "Catatan Guru", "Kesimpulan Sikap", "Tahun Pelajaran", "Semester"];
+    sheet.getRange(1, 1, 1, headersSikap.length).setValues([headersSikap]).setFontWeight("bold").setBackground("#cfe2f3");
+  }
+  
+  var kls = (obj.kelas || "").toString().trim().toUpperCase();
+  var mapel = (obj.mapel || "").toString().trim().toUpperCase();
+  var guru = (obj.guru || "").toString().trim().toUpperCase();
+  var sekolah = (obj.sekolah || "").toString().trim().toUpperCase();
+  var tahunPelajaran = (obj.tahunPelajaran || "").toString().trim().toUpperCase();
+  var semester = (obj.semester || "").toString().trim().toUpperCase();
+  
+  var data = sheet.getDataRange().getValues();
+  // We go from last row to 2nd row (index 1) to safely delete matches
+  for (var i = data.length - 1; i >= 1; i--) {
+    var dbSekolah = (data[i][1] || "").toString().trim().toUpperCase();
+    var dbKelas = (data[i][2] || "").toString().trim().toUpperCase();
+    var dbMapel = (data[i][3] || "").toString().trim().toUpperCase();
+    var dbGuru = (data[i][4] || "").toString().trim().toUpperCase();
+    var dbTahun = (data[i][14] || "").toString().trim().toUpperCase();
+    var dbSemester = (data[i][15] || "").toString().trim().toUpperCase();
+    
+    if (dbSekolah === sekolah && dbKelas === kls && dbMapel === mapel && dbGuru === guru) {
+      if ((!tahunPelajaran && !dbTahun) || (tahunPelajaran === dbTahun && semester === dbSemester)) {
+        sheet.deleteRow(i + 1);
+      }
+    }
+  }
+  
+  var timestamp = new Date();
+  var rowsToAppend = [];
+  
+  if (obj.dataNilai && obj.dataNilai.length > 0) {
+    for (var j = 0; j < obj.dataNilai.length; j++) {
+      var item = obj.dataNilai[j];
+      rowsToAppend.push([
+        timestamp,
+        sekolah,
+        kls,
+        mapel,
+        guru,
+        (item.nis || "").toString(),
+        (item.nama || "").toString(),
+        (item.spiritual || "").toString(),
+        (item.disiplin || "").toString(),
+        (item.tanggungJawab || item.tanggungjawab || "").toString(),
+        (item.kerjaSama || item.kerjasama || "").toString(),
+        (item.integritas || "").toString(),
+        (item.catatan || "").toString(),
+        (item.kesimpulan || "").toString(),
+        tahunPelajaran,
+        semester
+      ]);
+    }
+  }
+  
+  if (rowsToAppend.length > 0) {
+    var lastRow = sheet.getLastRow();
+    var range = sheet.getRange(lastRow + 1, 1, rowsToAppend.length, 16);
+    range.setValues(rowsToAppend);
+  }
+  
+  return "Data Nilai Sikap Berhasil Disimpan!";
+}
+
+function getNilaiSikap(sekolah, kls, mapel, guru, tahunPelajaran, semester) {
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName("Data_Nilai_Sikap");
+  if (!sheet) return [];
+  
+  var targetSekolah = (sekolah || "").toString().trim().toUpperCase();
+  var targetKls = (kls || "").toString().trim().toUpperCase();
+  var targetMapel = (mapel || "").toString().trim().toUpperCase();
+  var targetGuru = (guru || "").toString().trim().toUpperCase();
+  var targetTahun = (tahunPelajaran || "").toString().trim().toUpperCase();
+  var targetSemester = (semester || "").toString().trim().toUpperCase();
+  
+  var data = sheet.getDataRange().getValues();
+  var results = [];
+  
+  for (var i = 1; i < data.length; i++) {
+    var dbSekolah = (data[i][1] || "").toString().trim().toUpperCase();
+    var dbKelas = (data[i][2] || "").toString().trim().toUpperCase();
+    var dbMapel = (data[i][3] || "").toString().trim().toUpperCase();
+    var dbGuru = (data[i][4] || "").toString().trim().toUpperCase();
+    var dbTahun = (data[i][14] || "").toString().trim().toUpperCase();
+    var dbSemester = (data[i][15] || "").toString().trim().toUpperCase();
+    
+    var match = true;
+    if (targetSekolah && dbSekolah !== targetSekolah) match = false;
+    if (targetKls && dbKelas !== targetKls) match = false;
+    if (targetMapel && dbMapel !== targetMapel) match = false;
+    if (targetGuru && dbGuru !== targetGuru) match = false;
+    if (targetTahun && dbTahun !== targetTahun) match = false;
+    if (targetSemester && dbSemester !== targetSemester) match = false;
+    
+    if (match) {
+      results.push({
+        nis: data[i][5],
+        nama: data[i][6],
+        spiritual: data[i][7],
+        disiplin: data[i][8],
+        tanggungJawab: data[i][9],
+        tanggungjawab: data[i][9],
+        kerjaSama: data[i][10],
+        kerjasama: data[i][10],
+        integritas: data[i][11],
+        catatan: data[i][12],
+        kesimpulan: data[i][13],
+        tahunPelajaran: data[i][14] || "",
+        semester: data[i][15] || ""
+      });
+    }
+  }
+  
+  return results;
+}
+
+function getAllNilaiSikap(sekolah, kls, tahunPelajaran, semester) {
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName("Data_Nilai_Sikap");
+  if (!sheet) return [];
+  
+  var targetSekolah = (sekolah || "").toString().trim().toUpperCase();
+  var targetKls = (kls || "").toString().trim().toUpperCase();
+  var targetTahun = (tahunPelajaran || "").toString().trim().toUpperCase();
+  var targetSemester = (semester || "").toString().trim().toUpperCase();
+  
+  var data = sheet.getDataRange().getValues();
+  var groups = {};
+  
+  for (var i = 1; i < data.length; i++) {
+    var dbSekolah = (data[i][1] || "").toString().trim().toUpperCase();
+    var dbKelas = (data[i][2] || "").toString().trim().toUpperCase();
+    var dbMapel = (data[i][3] || "").toString().trim();
+    var dbGuru = (data[i][4] || "").toString().trim();
+    var dbTahun = (data[i][14] || "").toString().trim().toUpperCase();
+    var dbSemester = (data[i][15] || "").toString().trim().toUpperCase();
+    
+    var match = true;
+    if (targetSekolah && targetSekolah !== "ALL" && dbSekolah !== targetSekolah) match = false;
+    if (targetKls && targetKls !== "ALL" && dbKelas !== targetKls) match = false;
+    if (targetTahun && dbTahun !== targetTahun) match = false;
+    if (targetSemester && dbSemester !== targetSemester) match = false;
+    
+    if (match) {
+      var key = dbSekolah + "||" + dbKelas + "||" + dbMapel.toUpperCase() + "||" + dbGuru.toUpperCase() + "||" + dbTahun + "||" + dbSemester;
+      if (!groups[key]) {
+        groups[key] = {
+          sekolah: dbSekolah,
+          kelas: dbKelas,
+          mapel: dbMapel,
+          guru: dbGuru,
+          tahunPelajaran: dbTahun,
+          semester: dbSemester,
+          dataNilai: []
+        };
+      }
+      
+      groups[key].dataNilai.push({
+        nis: data[i][5],
+        nama: data[i][6],
+        spiritual: data[i][7],
+        disiplin: data[i][8],
+        tanggungJawab: data[i][9],
+        tanggungjawab: data[i][9],
+        kerjaSama: data[i][10],
+        kerjasama: data[i][10],
+        integritas: data[i][11],
+        catatan: data[i][12],
+        kesimpulan: data[i][13]
+      });
+    }
+  }
+  
+  var results = [];
+  for (var k in groups) {
+    results.push(groups[k]);
+  }
+  return results;
 }
