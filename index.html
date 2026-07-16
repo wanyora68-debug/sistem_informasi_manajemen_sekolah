@@ -243,7 +243,7 @@
       <div
         class="mt-8 text-center text-slate-400 font-semibold text-[10px] tracking-widest no-print"
       >
-        Copyright: @ w.yogaswara ps_smk _kcd_xi_2026
+        copyright: @ w.yogaswara ps_smk _kcd_xi_2026
       </div>
     </div>
 
@@ -523,6 +523,13 @@
             class="w-full text-left p-4 text-[10px] font-black uppercase tracking-widest flex items-center hover:bg-blue-700 transition"
           >
             <span class="mr-3 text-lg">📊</span> Nilai Siswa
+          </button>
+          <button
+            onclick="switchTab('nilai-sikap')"
+            id="tab-nilai-sikap"
+            class="w-full text-left p-4 text-[10px] font-black uppercase tracking-widest flex items-center hover:bg-blue-700 transition"
+          >
+            <span class="mr-3 text-lg">❤️</span> Nilai Sikap Siswa
           </button>
 
           <!-- Menu Rekap / Laporan -->
@@ -4710,6 +4717,219 @@
           </div>
         </div>
 
+        <!-- PENILAIAN SIKAP SECTION -->
+        <div id="sec-nilai-sikap" class="hidden bg-white p-8 rounded-3xl shadow-xl">
+          <h3 class="font-black text-blue-900 uppercase italic text-xl border-b pb-4 mb-6 flex items-center gap-2">
+            <span>❤️</span> Penilaian Sikap Siswa
+          </h3>
+
+          <!-- CASCADE FILTERS (Dynamic based on Role) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 bg-gray-50 border border-gray-100 p-6 rounded-2xl mb-8">
+            <!-- Filter Pengawas (Admin Only) -->
+            <div id="wrapperSikapPengawas" class="flex flex-col gap-1 hidden">
+              <label class="text-[8px] font-black text-blue-800 uppercase ml-1">Pilih Pengawas:</label>
+              <select id="selSikapPengawas" onchange="onSikapPengawasChanged()" class="p-3 rounded-xl border font-black text-xs uppercase outline-none bg-white text-blue-950">
+                <option value="">-- SEMUA PENGAWAS --</option>
+              </select>
+            </div>
+
+            <!-- Filter Sekolah (Admin, Pengawas) -->
+            <div id="wrapperSikapSekolah" class="flex flex-col gap-1 hidden">
+              <label class="text-[8px] font-black text-blue-800 uppercase ml-1">Pilih Sekolah:</label>
+              <select id="selSikapSekolah" onchange="onSikapSekolahChanged()" class="p-3 rounded-xl border font-black text-xs uppercase outline-none bg-white text-blue-950">
+                <option value="">-- SEMUA SEKOLAH --</option>
+              </select>
+            </div>
+
+            <!-- Filter Guru (Admin, Pengawas, Kepsek, Operator) -->
+            <div id="wrapperSikapGuru" class="flex flex-col gap-1 hidden">
+              <label class="text-[8px] font-black text-blue-800 uppercase ml-1">Pilih Guru:</label>
+              <select id="selSikapGuru" onchange="onSikapGuruChanged()" class="p-3 rounded-xl border font-black text-xs uppercase outline-none bg-white text-blue-950">
+                <option value="">-- PILIH GURU --</option>
+              </select>
+            </div>
+
+            <!-- Filter Tahun Pelajaran -->
+            <div id="wrapperSikapTahun" class="flex flex-col gap-1">
+              <label class="text-[8px] font-black text-blue-800 uppercase ml-1">Tahun Pelajaran:</label>
+              <select id="selSikapTahun" onchange="onSikapTahunChanged()" class="p-3 rounded-xl border font-black text-xs uppercase outline-none bg-white text-blue-950">
+                <option value="2026/2027">2026/2027</option>
+                <option value="2027/2028">2027/2028</option>
+                <option value="2028/2029">2028/2029</option>
+                <option value="2029/2030">2029/2030</option>
+                <option value="2030/2031">2030/2031</option>
+                <option value="2031/2032">2031/2032</option>
+                <option value="2032/2033">2032/2033</option>
+                <option value="2033/2034">2033/2034</option>
+                <option value="2034/2035">2034/2035</option>
+              </select>
+            </div>
+
+            <!-- Filter Semester -->
+            <div id="wrapperSikapSemester" class="flex flex-col gap-1">
+              <label class="text-[8px] font-black text-blue-800 uppercase ml-1">Semester:</label>
+              <select id="selSikapSemester" onchange="onSikapSemesterChanged()" class="p-3 rounded-xl border font-black text-xs uppercase outline-none bg-white text-blue-950">
+                <option value="GANJIL">GANJIL</option>
+                <option value="GENAP">GENAP</option>
+              </select>
+            </div>
+
+            <!-- Filter Mata Pelajaran (All) -->
+            <div id="wrapperSikapMapel" class="flex flex-col gap-1">
+              <label class="text-[8px] font-black text-blue-800 uppercase ml-1">Pilih Mata Pelajaran:</label>
+              <div class="flex gap-2">
+                <select id="selSikapMapel" onchange="onSikapMapelChanged()" class="flex-1 p-3 rounded-xl border font-black text-xs uppercase outline-none bg-white text-blue-950">
+                  <option value="">-- PILIH MAPEL --</option>
+                </select>
+                <input type="text" id="inputSikapMapelCustom" placeholder="MAPEL LAINNYA..." oninput="onSikapMapelCustomInput()" class="hidden flex-1 p-3 rounded-xl border font-black text-xs uppercase outline-none bg-white text-blue-950">
+                <button id="btnToggleMapelCustom" onclick="toggleSikapMapelCustom()" class="bg-gray-100 hover:bg-gray-200 border text-blue-900 font-black px-3 rounded-xl text-xs uppercase">Custom</button>
+              </div>
+            </div>
+
+            <!-- Filter Kelas (All) -->
+            <div id="wrapperSikapKelas" class="flex flex-col gap-1">
+              <label class="text-[8px] font-black text-blue-800 uppercase ml-1">Pilih Kelas:</label>
+              <select id="selSikapKelas" onchange="onSikapKelasChanged()" class="p-3 rounded-xl border font-black text-xs uppercase outline-none bg-white text-blue-950">
+                <option value="">-- PILIH KELAS --</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- SUB-TABS NAVIGATION -->
+          <div class="flex border-b border-gray-200 mb-6 gap-2">
+            <button id="btnSubTabSikapForm" onclick="switchSikapSubTab('form')" class="py-3 px-6 text-xs font-black uppercase tracking-wider border-b-4 border-blue-600 text-blue-600 transition">
+              📝 Form Penilaian Sikap
+            </button>
+            <button id="btnSubTabSikapRekapMapel" onclick="switchSikapSubTab('rekap-mapel')" class="py-3 px-6 text-xs font-black uppercase tracking-wider border-b-4 border-transparent text-gray-500 hover:text-blue-600 transition">
+              📊 Rekap Per Mapel
+            </button>
+            <button id="btnSubTabSikapRekapLintas" onclick="switchSikapSubTab('rekap-lintas')" class="py-3 px-6 text-xs font-black uppercase tracking-wider border-b-4 border-transparent text-gray-500 hover:text-blue-600 transition">
+              🌍 Rekap Lintas Mapel & Rapor
+            </button>
+          </div>
+
+          <!-- CONTENT SECTIONS -->
+
+          <!-- SUB-TAB A: FORM PENILAIAN SIKAP -->
+          <div id="subTabSikapForm" class="space-y-6">
+            <div id="sikapFormAlert" class="bg-yellow-50 border border-yellow-100 p-4 rounded-xl flex items-center gap-3">
+              <span class="text-2xl">💡</span>
+              <p class="text-xs text-yellow-900 font-medium">
+                Pilih <b>Guru</b>, <b>Mata Pelajaran</b>, dan <b>Kelas</b> pada filter di atas terlebih dahulu untuk mengisi atau mengedit penilaian sikap siswa. Kesimpulan Sikap Mapel akan terisi otomatis, tetapi Anda dapat menyesuaikannya bila perlu.
+              </p>
+            </div>
+
+            <!-- Table Container -->
+            <div id="containerFormSikap" class="hidden overflow-x-auto border rounded-2xl bg-white shadow-sm">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-blue-900 text-white text-[10px] uppercase font-black tracking-wider">
+                    <th class="p-3 border">Nama Siswa / NISN</th>
+                    <th class="p-3 border text-center w-36">Spiritual</th>
+                    <th class="p-3 border text-center w-36">Disiplin</th>
+                    <th class="p-3 border text-center w-36">Tanggung Jawab</th>
+                    <th class="p-3 border text-center w-36">Kerja Sama</th>
+                    <th class="p-3 border text-center w-36">Integritas</th>
+                    <th class="p-3 border">Catatan Guru</th>
+                    <th class="p-3 border">Kesimpulan Sikap Mapel</th>
+                  </tr>
+                </thead>
+                <tbody id="tableFormSikapBody">
+                  <!-- Dynamic rows -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Form Actions -->
+            <div id="formSikapActions" class="hidden flex justify-end gap-3 mt-4">
+              <button onclick="simpanSikapForm()" class="bg-blue-600 hover:bg-blue-700 text-white font-black px-8 py-4 rounded-2xl shadow-lg uppercase transition text-xs tracking-wider">
+                💾 Simpan Penilaian Sikap
+              </button>
+            </div>
+          </div>
+
+          <!-- SUB-TAB B: REKAP PER MAPEL -->
+          <div id="subTabSikapRekapMapel" class="hidden space-y-6">
+            <!-- Table Container -->
+            <div class="overflow-x-auto border rounded-2xl bg-white shadow-sm">
+              <table class="w-full text-left border-collapse" id="tableSikapRekapMapel">
+                <thead>
+                  <tr class="bg-blue-950 text-white text-[10px] uppercase font-black tracking-wider">
+                    <th class="p-3 border w-12 text-center">No</th>
+                    <th class="p-3 border">Nama Siswa</th>
+                    <th class="p-3 border text-center">Spiritual</th>
+                    <th class="p-3 border text-center">Disiplin</th>
+                    <th class="p-3 border text-center">Tanggung Jawab</th>
+                    <th class="p-3 border text-center">Kerja Sama</th>
+                    <th class="p-3 border text-center">Integritas</th>
+                    <th class="p-3 border w-1/3">Kesimpulan Sikap Mapel</th>
+                  </tr>
+                </thead>
+                <tbody id="tableSikapRekapMapelBody">
+                  <tr>
+                    <td colspan="8" class="p-6 text-center text-xs font-black uppercase text-gray-400">
+                      Silakan pilih Guru, Mapel, dan Kelas terlebih dahulu.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Export Buttons -->
+            <div id="rekapMapelActions" class="hidden flex justify-end gap-3">
+              <button onclick="exportRekapMapelExcel()" class="bg-green-600 hover:bg-green-700 text-white font-black px-6 py-4 rounded-2xl shadow-md uppercase transition text-xs tracking-wider flex items-center gap-2">
+                📂 Export Excel
+              </button>
+              <button onclick="cetakRekapMapelPDF()" class="bg-red-600 hover:bg-red-700 text-white font-black px-6 py-4 rounded-2xl shadow-md uppercase transition text-xs tracking-wider flex items-center gap-2">
+                🖨️ Cetak PDF
+              </button>
+            </div>
+          </div>
+
+          <!-- SUB-TAB C: REKAP LINTAS MAPEL & INTEGRASI RAPOR -->
+          <div id="subTabSikapRekapLintas" class="hidden space-y-6">
+            <!-- Summary Dashboard Widgets for Class Attitude Distribution -->
+            <div id="sikapChartsContainer" class="hidden grid grid-cols-1 md:grid-cols-5 gap-4">
+              <!-- Cards with mini bar charts generated via Tailwind/JS -->
+            </div>
+
+            <!-- Table Container -->
+            <div class="overflow-x-auto border rounded-2xl bg-white shadow-sm">
+              <table class="w-full text-left border-collapse" id="tableSikapRekapLintas">
+                <thead>
+                  <tr class="bg-indigo-950 text-white text-[10px] uppercase font-black tracking-wider">
+                    <th class="p-3 border w-12 text-center">No</th>
+                    <th class="p-3 border">Nama Siswa</th>
+                    <th class="p-3 border text-center">Rata-Rata Spiritual</th>
+                    <th class="p-3 border text-center">Rata-Rata Disiplin</th>
+                    <th class="p-3 border text-center">Rata-Rata Tanggung Jawab</th>
+                    <th class="p-3 border text-center">Rata-Rata Kerja Sama</th>
+                    <th class="p-3 border text-center">Rata-Rata Integritas</th>
+                    <th class="p-3 border w-1/3">Kesimpulan Sikap Lintas Mapel (Narasi Rapor)</th>
+                  </tr>
+                </thead>
+                <tbody id="tableSikapRekapLintasBody">
+                  <tr>
+                    <td colspan="8" class="p-6 text-center text-xs font-black uppercase text-gray-400">
+                      Silakan pilih Kelas terlebih dahulu untuk rekap lintas mapel.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Export Buttons -->
+            <div id="rekapLintasActions" class="hidden flex justify-end gap-3">
+              <button onclick="exportRekapLintasExcel()" class="bg-green-600 hover:bg-green-700 text-white font-black px-6 py-4 rounded-2xl shadow-md uppercase transition text-xs tracking-wider flex items-center gap-2">
+                📂 Export Excel
+              </button>
+              <button onclick="cetakRekapLintasPDF()" class="bg-red-600 hover:bg-red-700 text-white font-black px-6 py-4 rounded-2xl shadow-md uppercase transition text-xs tracking-wider flex items-center gap-2">
+                🖨️ Cetak PDF
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- TUGAS TAMBAHAN SECTION -->
         <div
           id="sec-tugas"
@@ -5733,7 +5953,7 @@
       <footer
         class="p-6 text-center text-gray-400 font-bold text-[9px] tracking-widest"
       >
-        Copyright: @ w.yogaswara ps_smk _kcd_xi_2026
+        copyright: @ w.yogaswara ps_smk _kcd_xi_2026
       </footer>
     </div>
 
@@ -6770,6 +6990,123 @@
                 );
               });
               if (this._successHandler) this._successHandler(filtered);
+            }, 20);
+            return this;
+          }
+          simpanNilaiSikap(obj) {
+            setTimeout(() => {
+              let list = JSON.parse(
+                localStorage.getItem("sims_mock_nilai_sikap") || "[]",
+              );
+              var kls = (obj.kelas || "").toString().trim().toUpperCase();
+              var mapel = (obj.mapel || "").toString().trim().toUpperCase();
+              var guru = (obj.guru || "").toString().trim().toUpperCase();
+              var sekolah = (obj.sekolah || "").toString().trim().toUpperCase();
+              var tahunPelajaran = (obj.tahunPelajaran || "").toString().trim().toUpperCase();
+              var semester = (obj.semester || "").toString().trim().toUpperCase();
+              
+              list = list.filter(item => !(
+                item.kelas === kls &&
+                item.mapel === mapel &&
+                item.guru === guru &&
+                item.sekolah === sekolah &&
+                (item.tahunPelajaran || "").toString().trim().toUpperCase() === tahunPelajaran &&
+                (item.semester || "").toString().trim().toUpperCase() === semester
+              ));
+
+              list.push({
+                timestamp: new Date().toISOString(),
+                sekolah: sekolah,
+                kelas: kls,
+                mapel: mapel,
+                guru: guru,
+                tahunPelajaran: tahunPelajaran,
+                semester: semester,
+                dataNilai: obj.dataNilai
+              });
+
+              localStorage.setItem(
+                "sims_mock_nilai_sikap",
+                JSON.stringify(list),
+              );
+              if (this._successHandler)
+                this._successHandler("Data Nilai Sikap Berhasil Disimpan!");
+            }, 20);
+            return this;
+          }
+          getNilaiSikap(sekolah, kls, mapel, guru, tahunPelajaran, semester) {
+            setTimeout(() => {
+              let list = JSON.parse(
+                localStorage.getItem("sims_mock_nilai_sikap") || "[]",
+              );
+              sekolah = (sekolah || "").toString().trim().toUpperCase();
+              kls = (kls || "").toString().trim().toUpperCase();
+              mapel = (mapel || "").toString().trim().toUpperCase();
+              guru = (guru || "").toString().trim().toUpperCase();
+              tahunPelajaran = (tahunPelajaran || "").toString().trim().toUpperCase();
+              semester = (semester || "").toString().trim().toUpperCase();
+
+              for (var i = list.length - 1; i >= 0; i--) {
+                var dbSekolah = (list[i].sekolah || "").toString().trim().toUpperCase();
+                var dbKls = (list[i].kelas || "").toString().trim().toUpperCase();
+                var dbMapel = (list[i].mapel || "").toString().trim().toUpperCase();
+                var dbGuru = (list[i].guru || "").toString().trim().toUpperCase();
+                var dbTahun = (list[i].tahunPelajaran || "").toString().trim().toUpperCase();
+                var dbSemester = (list[i].semester || "").toString().trim().toUpperCase();
+
+                var match = true;
+                if (sekolah && dbSekolah !== sekolah) match = false;
+                if (kls && dbKls !== kls) match = false;
+                if (mapel && dbMapel !== mapel) match = false;
+                if (guru && dbGuru !== guru) match = false;
+                if (tahunPelajaran && dbTahun !== tahunPelajaran) match = false;
+                if (semester && dbSemester !== semester) match = false;
+
+                if (match) {
+                  if (this._successHandler) this._successHandler(list[i].dataNilai);
+                  return;
+                }
+              }
+              if (this._successHandler) this._successHandler([]);
+            }, 20);
+            return this;
+          }
+          getAllNilaiSikap(sekolah, kls, tahunPelajaran, semester) {
+            setTimeout(() => {
+              let list = JSON.parse(
+                localStorage.getItem("sims_mock_nilai_sikap") || "[]",
+              );
+              sekolah = (sekolah || "").toString().trim().toUpperCase();
+              kls = (kls || "").toString().trim().toUpperCase();
+              tahunPelajaran = (tahunPelajaran || "").toString().trim().toUpperCase();
+              semester = (semester || "").toString().trim().toUpperCase();
+
+              var results = [];
+              for (var i = 0; i < list.length; i++) {
+                var dbSekolah = (list[i].sekolah || "").toString().trim().toUpperCase();
+                var dbKls = (list[i].kelas || "").toString().trim().toUpperCase();
+                var dbTahun = (list[i].tahunPelajaran || "").toString().trim().toUpperCase();
+                var dbSemester = (list[i].semester || "").toString().trim().toUpperCase();
+                
+                var match = true;
+                if (sekolah && sekolah !== "ALL" && dbSekolah !== sekolah) match = false;
+                if (kls && kls !== "ALL" && dbKls !== kls) match = false;
+                if (tahunPelajaran && dbTahun !== tahunPelajaran) match = false;
+                if (semester && dbSemester !== semester) match = false;
+
+                if (match) {
+                  results.push({
+                    sekolah: dbSekolah,
+                    kelas: dbKls,
+                    mapel: list[i].mapel,
+                    guru: list[i].guru,
+                    dataNilai: list[i].dataNilai,
+                    tahunPelajaran: dbTahun,
+                    semester: dbSemester
+                  });
+                }
+              }
+              if (this._successHandler) this._successHandler(results);
             }, 20);
             return this;
           }
@@ -7846,6 +8183,12 @@
         return r === "PENGAWAS" || r.includes("PENGAWAS");
       }
 
+      function isGuruRole(role) {
+        if (!role) return false;
+        const r = role.toString().toUpperCase().trim();
+        return r === "GURU" || r.includes("GURU");
+      }
+
       function normalizeDateToISO(dVal) {
         if (!dVal) return "";
         if (dVal instanceof Date) {
@@ -8325,6 +8668,8 @@
         if (typeof initializeNilaiFiltersBasedOnRole === "function") {
           initializeNilaiFiltersBasedOnRole();
         }
+        const btnSikap = document.getElementById("tab-nilai-sikap");
+        if (btnSikap) btnSikap.classList.remove("hidden");
         // Fetch School Config consistently (Normalized)
         google.script.run
           .withSuccessHandler((list) => {
@@ -11924,6 +12269,7 @@
             "rekap-jurnal",
             "rekap-aktivitas",
             "mockup-visual",
+            "nilai-sikap",
           ].forEach((t) => {
             const sec = document.getElementById("sec-" + t);
             const btn = document.getElementById("tab-" + t);
@@ -11979,6 +12325,11 @@
             loadPilihanKelas("filterSiswaKelas");
             loadPilihanKelas("swKelas");
             loadDaftarSiswaUI();
+          }
+          if (id === "nilai-sikap") {
+            if (typeof initPenilaianSikapUI === "function") {
+              initPenilaianSikapUI();
+            }
           }
           if (id === "absensi-siswa") {
             if (typeof initializeAbsenFiltersBasedOnRole === "function") {
@@ -22084,6 +22435,1004 @@
           loadSelfRekapSiswaDetail();
         };
       }, 100);
+
+      // =========================================================================
+      // PENILAIAN SIKAP CONTROLLER FUNCTIONS
+      // =========================================================================
+      var currentSikapSubTab = "form";
+      var currentSikapSiswaList = [];
+      var currentSikapExistingData = [];
+
+      function initPenilaianSikapUI() {
+        if (!activeUser) return;
+        const role = activeUser.role;
+
+        // Hide all cascading filter wrappers initially
+        document.getElementById("wrapperSikapPengawas").classList.add("hidden");
+        document.getElementById("wrapperSikapSekolah").classList.add("hidden");
+        document.getElementById("wrapperSikapGuru").classList.add("hidden");
+
+        // Clear choices
+        document.getElementById("selSikapPengawas").innerHTML = '<option value="">-- SEMUA PENGAWAS --</option>';
+        document.getElementById("selSikapSekolah").innerHTML = '<option value="">-- PILIH SEKOLAH --</option>';
+        document.getElementById("selSikapGuru").innerHTML = '<option value="">-- PILIH GURU --</option>';
+        document.getElementById("selSikapMapel").innerHTML = '<option value="">-- PILIH MAPEL --</option>';
+        document.getElementById("selSikapKelas").innerHTML = '<option value="">-- PILIH KELAS --</option>';
+
+        // Set sub-tab to default
+        switchSikapSubTab("form");
+
+        // Hide form and reports table containers
+        document.getElementById("containerFormSikap").classList.add("hidden");
+        document.getElementById("formSikapActions").classList.add("hidden");
+        document.getElementById("sikapFormAlert").classList.remove("hidden");
+        document.getElementById("tableSikapRekapMapelBody").innerHTML = `
+          <tr>
+            <td colspan="8" class="p-6 text-center text-xs font-black uppercase text-gray-400">
+              Silakan pilih Guru, Mapel, dan Kelas terlebih dahulu.
+            </td>
+          </tr>
+        `;
+        document.getElementById("rekapMapelActions").classList.add("hidden");
+        document.getElementById("tableSikapRekapLintasBody").innerHTML = `
+          <tr>
+            <td colspan="8" class="p-6 text-center text-xs font-black uppercase text-gray-400">
+              Silakan pilih Kelas terlebih dahulu untuk rekap lintas mapel.
+            </td>
+          </tr>
+        `;
+        document.getElementById("rekapLintasActions").classList.add("hidden");
+        document.getElementById("sikapChartsContainer").classList.add("hidden");
+
+        // Retrieve and buffer user cache if not present
+        if (window.allUsersCache && window.allUsersCache.length > 0) {
+          setupSikapFiltersByRole(role);
+        } else {
+          google.script.run.withSuccessHandler((users) => {
+            window.allUsersCache = users || [];
+            setupSikapFiltersByRole(role);
+          }).getDaftarUserManagement();
+        }
+      }
+
+      function setupSikapFiltersByRole(role) {
+        const isUserAdmin = isAdminRole(role);
+        const isUserPengawas = isPengawasRole(role);
+        const isUserKepsek = isKepsekRole(role);
+        const isUserOperator = isOperatorRole(role);
+
+        if (isUserAdmin) {
+          document.getElementById("wrapperSikapPengawas").classList.remove("hidden");
+          document.getElementById("wrapperSikapSekolah").classList.remove("hidden");
+          document.getElementById("wrapperSikapGuru").classList.remove("hidden");
+
+          // Populate Pengawas
+          const selPengawas = document.getElementById("selSikapPengawas");
+          selPengawas.innerHTML = '<option value="">-- SEMUA PENGAWAS --</option>';
+          const supervisors = (window.allUsersCache || []).filter(u => isPengawasRole(u.role));
+          supervisors.forEach(s => {
+            selPengawas.innerHTML += `<option value="${s.email}">${s.nama}</option>`;
+          });
+
+          populateSikapSchools("ALL");
+        } else if (isUserPengawas) {
+          document.getElementById("wrapperSikapSekolah").classList.remove("hidden");
+          document.getElementById("wrapperSikapGuru").classList.remove("hidden");
+
+          if (window.mySekolahBinaan && window.mySekolahBinaan.length > 0) {
+            populateSikapSchoolsFromBinaan(window.mySekolahBinaan);
+          } else {
+            google.script.run.withSuccessHandler((binaan) => {
+              window.mySekolahBinaan = binaan || [];
+              populateSikapSchoolsFromBinaan(window.mySekolahBinaan);
+            }).getSekolahBinaan(activeUser.email);
+          }
+        } else if (isUserKepsek || isUserOperator) {
+          document.getElementById("wrapperSikapGuru").classList.remove("hidden");
+          populateSikapTeachers(activeUser.sekolah);
+          populateSikapKelas(activeUser.sekolah);
+        } else {
+          populateSikapMapelForGuru();
+          populateSikapKelas(activeUser.sekolah);
+        }
+      }
+
+      function populateSikapSchoolsFromBinaan(binaan) {
+        const selSekolah = document.getElementById("selSikapSekolah");
+        selSekolah.innerHTML = '<option value="">-- PILIH SEKOLAH BINAAN --</option>';
+        (binaan || []).forEach(b => {
+          selSekolah.innerHTML += `<option value="${b.namaSekolah || b.nama}">${b.namaSekolah || b.nama}</option>`;
+        });
+      }
+
+      function populateSikapSchools(pengawasEmail) {
+        google.script.run.withSuccessHandler((schools) => {
+          const selSekolah = document.getElementById("selSikapSekolah");
+          selSekolah.innerHTML = '<option value="">-- PILIH SEKOLAH --</option>';
+          (schools || []).forEach(s => {
+            selSekolah.innerHTML += `<option value="${s.nama}">${s.nama}</option>`;
+          });
+        }).getMasterSekolah();
+      }
+
+      function populateSikapTeachers(schoolName) {
+        const selGuru = document.getElementById("selSikapGuru");
+        selGuru.innerHTML = '<option value="">-- PILIH GURU --</option>';
+        
+        let filtered = (window.allUsersCache || []).filter(u => isGuruRole(u.role));
+        if (schoolName && schoolName !== "ALL") {
+          filtered = filtered.filter(u => matchSchool(u.sekolah || "", schoolName));
+        }
+        
+        filtered.forEach(g => {
+          selGuru.innerHTML += `<option value="${g.nama}">${g.nama}</option>`;
+        });
+      }
+
+      function populateSikapKelas(schoolName) {
+        google.script.run.withSuccessHandler((classes) => {
+          const selKelas = document.getElementById("selSikapKelas");
+          selKelas.innerHTML = '<option value="">-- PILIH KELAS --</option>';
+          let filtered = classes || [];
+          if (schoolName && schoolName !== "ALL") {
+            filtered = filtered.filter(c => matchSchool(c.sekolah || "", schoolName));
+          }
+          filtered.forEach(c => {
+            selKelas.innerHTML += `<option value="${c.nama}">${c.nama}</option>`;
+          });
+        }).getDaftarKelasFull();
+      }
+
+      function populateSikapMapelForGuru() {
+        const selMapel = document.getElementById("selSikapMapel");
+        selMapel.innerHTML = '<option value="">-- PILIH MAPEL --</option>';
+        
+        if (activeUser.mapel) {
+          selMapel.innerHTML += `<option value="${activeUser.mapel.toUpperCase()}">${activeUser.mapel.toUpperCase()}</option>`;
+        }
+        
+        const subjects = new Set();
+        if (window.allJournalsCache) {
+          window.allJournalsCache.forEach(j => {
+            if (matchTeacherName(j.guru || "", activeUser.nama)) {
+              if (j.mapel) subjects.add(j.mapel.toUpperCase().trim());
+            }
+          });
+        }
+        subjects.forEach(sub => {
+          if (activeUser.mapel && sub === activeUser.mapel.toUpperCase().trim()) return;
+          selMapel.innerHTML += `<option value="${sub}">${sub}</option>`;
+        });
+      }
+
+      function populateSikapMapelForTeacher(teacherName) {
+        const selMapel = document.getElementById("selSikapMapel");
+        selMapel.innerHTML = '<option value="">-- PILIH MAPEL --</option>';
+        
+        const teacherUser = (window.allUsersCache || []).find(u => matchTeacherName(u.nama || "", teacherName));
+        if (teacherUser && teacherUser.mapel) {
+          selMapel.innerHTML += `<option value="${teacherUser.mapel.toUpperCase()}">${teacherUser.mapel.toUpperCase()}</option>`;
+        }
+
+        const subjects = new Set();
+        if (window.allJournalsCache) {
+          window.allJournalsCache.forEach(j => {
+            if (matchTeacherName(j.guru || "", teacherName)) {
+              if (j.mapel) subjects.add(j.mapel.toUpperCase().trim());
+            }
+          });
+        }
+        subjects.forEach(sub => {
+          if (teacherUser && teacherUser.mapel && sub === teacherUser.mapel.toUpperCase().trim()) return;
+          selMapel.innerHTML += `<option value="${sub}">${sub}</option>`;
+        });
+      }
+
+      function onSikapPengawasChanged() {
+        const pengawasEmail = document.getElementById("selSikapPengawas").value;
+        if (!pengawasEmail) {
+          populateSikapSchools("ALL");
+          return;
+        }
+        google.script.run.withSuccessHandler((binaan) => {
+          populateSikapSchoolsFromBinaan(binaan);
+          document.getElementById("selSikapGuru").innerHTML = '<option value="">-- PILIH GURU --</option>';
+          document.getElementById("selSikapKelas").innerHTML = '<option value="">-- PILIH KELAS --</option>';
+          document.getElementById("selSikapMapel").innerHTML = '<option value="">-- PILIH MAPEL --</option>';
+        }).getSekolahBinaan(pengawasEmail);
+      }
+
+      function onSikapSekolahChanged() {
+        const schoolName = document.getElementById("selSikapSekolah").value;
+        populateSikapTeachers(schoolName);
+        populateSikapKelas(schoolName);
+        document.getElementById("selSikapMapel").innerHTML = '<option value="">-- PILIH MAPEL --</option>';
+      }
+
+      function onSikapGuruChanged() {
+        const teacherName = document.getElementById("selSikapGuru").value;
+        populateSikapMapelForTeacher(teacherName);
+        loadSikapFormAndRekap();
+      }
+
+      function onSikapMapelChanged() {
+        const mapel = document.getElementById("selSikapMapel").value;
+        if (mapel) {
+          document.getElementById("inputSikapMapelCustom").classList.add("hidden");
+          document.getElementById("selSikapMapel").classList.remove("hidden");
+        }
+        loadSikapFormAndRekap();
+      }
+
+      function onSikapKelasChanged() {
+        loadSikapFormAndRekap();
+      }
+
+      function onSikapTahunChanged() {
+        loadSikapFormAndRekap();
+      }
+
+      function onSikapSemesterChanged() {
+        loadSikapFormAndRekap();
+      }
+
+      function toggleSikapMapelCustom() {
+        const sel = document.getElementById("selSikapMapel");
+        const inp = document.getElementById("inputSikapMapelCustom");
+        const btn = document.getElementById("btnToggleMapelCustom");
+
+        if (inp.classList.contains("hidden")) {
+          inp.classList.remove("hidden");
+          sel.classList.add("hidden");
+          btn.innerText = "Select";
+          inp.value = "";
+        } else {
+          inp.classList.add("hidden");
+          sel.classList.remove("hidden");
+          btn.innerText = "Custom";
+          inp.value = "";
+          sel.value = "";
+          loadSikapFormAndRekap();
+        }
+      }
+
+      function onSikapMapelCustomInput() {
+        loadSikapFormAndRekap();
+      }
+
+      function getSelectedSikapMapel() {
+        const inp = document.getElementById("inputSikapMapelCustom");
+        if (inp && !inp.classList.contains("hidden")) {
+          return inp.value.toUpperCase().trim();
+        }
+        return document.getElementById("selSikapMapel").value;
+      }
+
+      function loadSikapFormAndRekap() {
+        const role = activeUser.role;
+        const isUserAdmin = isAdminRole(role);
+        const isUserPengawas = isPengawasRole(role);
+        const isUserKepsek = isKepsekRole(role);
+        const isUserOperator = isOperatorRole(role);
+
+        let sekolah = activeUser.sekolah;
+        if (isUserAdmin || isUserPengawas) {
+          sekolah = document.getElementById("selSikapSekolah").value;
+        }
+
+        let guru = activeUser.nama;
+        if (isUserAdmin || isUserPengawas || isUserKepsek || isUserOperator) {
+          guru = document.getElementById("selSikapGuru").value;
+        }
+
+        const mapel = getSelectedSikapMapel();
+        const kelas = document.getElementById("selSikapKelas").value;
+        const tahunPelajaran = document.getElementById("selSikapTahun").value;
+        const semester = document.getElementById("selSikapSemester").value;
+
+        if (!sekolah || !kelas) {
+          document.getElementById("containerFormSikap").classList.add("hidden");
+          document.getElementById("formSikapActions").classList.add("hidden");
+          document.getElementById("sikapFormAlert").classList.remove("hidden");
+          return;
+        }
+
+        google.script.run.withSuccessHandler((students) => {
+          let filtered = students || [];
+          if (sekolah && sekolah !== "ALL") {
+            filtered = filtered.filter(s => matchSchool(s.sekolah || "", sekolah));
+          }
+          filtered = filtered
+            .filter(s => s.kelas && matchKelasRobust(s.kelas, kelas))
+            .sort((a, b) => a.nama.localeCompare(b.nama));
+
+          currentSikapSiswaList = filtered;
+
+          if (filtered.length === 0) {
+            document.getElementById("tableFormSikapBody").innerHTML = `
+              <tr>
+                <td colspan="8" class="p-4 text-center text-xs font-black uppercase text-gray-500">
+                  Tidak ada siswa di kelas ini.
+                </td>
+              </tr>
+            `;
+            document.getElementById("containerFormSikap").classList.remove("hidden");
+            document.getElementById("sikapFormAlert").classList.add("hidden");
+            return;
+          }
+
+          if (!mapel || !guru) {
+            document.getElementById("containerFormSikap").classList.add("hidden");
+            document.getElementById("formSikapActions").classList.add("hidden");
+            document.getElementById("sikapFormAlert").classList.remove("hidden");
+            return;
+          }
+
+          document.getElementById("sikapFormAlert").classList.add("hidden");
+          document.getElementById("containerFormSikap").classList.remove("hidden");
+
+          const canEdit = (activeUser.role === "Guru" || activeUser.role === "Operator" || activeUser.role === "Admin" || isUserKepsek);
+          if (canEdit) {
+            document.getElementById("formSikapActions").classList.remove("hidden");
+          } else {
+            document.getElementById("formSikapActions").classList.add("hidden");
+          }
+
+          const body = document.getElementById("tableFormSikapBody");
+          body.innerHTML = `
+            <tr>
+              <td colspan="8" class="p-6 text-center text-xs font-black uppercase animate-pulse text-blue-900">
+                Memuat Penilaian Sikap...
+              </td>
+            </tr>
+          `;
+
+          google.script.run.withSuccessHandler((existing) => {
+            currentSikapExistingData = existing || [];
+            body.innerHTML = "";
+
+            filtered.forEach((s, idx) => {
+              const sNis = s.nis || s.nisn || "";
+              const match = currentSikapExistingData.find(d => d.nis === sNis || d.nama.toUpperCase().trim() === s.nama.toUpperCase().trim());
+
+              const spiritual = match ? match.spiritual : "Baik";
+              const disiplin = match ? match.disiplin : "Baik";
+              const tanggungJawab = match ? (match.tanggungJawab || match.tanggungjawab || "Baik") : "Baik";
+              const kerjaSama = match ? (match.kerjaSama || match.kerjasama || "Baik") : "Baik";
+              const integritas = match ? match.integritas : "Baik";
+              const catatan = match ? (match.catatan || "") : "";
+              const kesimpulan = match ? (match.kesimpulan || "") : "";
+
+              const selectOptions = ["Sangat Baik", "Baik", "Cukup", "Perlu Bimbingan"].map(opt => {
+                return `<option value="${opt}" ${opt === spiritual ? 'selected' : ''}>${opt}</option>`;
+              }).join("");
+
+              const disiplinOptions = ["Sangat Baik", "Baik", "Cukup", "Perlu Bimbingan"].map(opt => {
+                return `<option value="${opt}" ${opt === disiplin ? 'selected' : ''}>${opt}</option>`;
+              }).join("");
+
+              const tanggungJawabOptions = ["Sangat Baik", "Baik", "Cukup", "Perlu Bimbingan"].map(opt => {
+                return `<option value="${opt}" ${opt === tanggungJawab ? 'selected' : ''}>${opt}</option>`;
+              }).join("");
+
+              const kerjaSamaOptions = ["Sangat Baik", "Baik", "Cukup", "Perlu Bimbingan"].map(opt => {
+                return `<option value="${opt}" ${opt === kerjaSama ? 'selected' : ''}>${opt}</option>`;
+              }).join("");
+
+              const integritasOptions = ["Sangat Baik", "Baik", "Cukup", "Perlu Bimbingan"].map(opt => {
+                return `<option value="${opt}" ${opt === integritas ? 'selected' : ''}>${opt}</option>`;
+              }).join("");
+
+              const disabledAttr = canEdit ? "" : "disabled";
+
+              body.innerHTML += `
+                <tr class="border-b hover:bg-gray-50 text-xs">
+                  <td class="p-3 font-black border uppercase">
+                    <div>${s.nama}</div>
+                    <div class="text-[9px] text-gray-400 font-mono tracking-wider">${sNis}</div>
+                  </td>
+                  <td class="p-2 border">
+                    <select id="sikap-spiritual-${idx}" onchange="onSikapFieldChanged(${idx})" ${disabledAttr} class="w-full p-2 border rounded-xl font-bold text-xs bg-white text-gray-800">
+                      ${selectOptions}
+                    </select>
+                  </td>
+                  <td class="p-2 border">
+                    <select id="sikap-disiplin-${idx}" onchange="onSikapFieldChanged(${idx})" ${disabledAttr} class="w-full p-2 border rounded-xl font-bold text-xs bg-white text-gray-800">
+                      ${disiplinOptions}
+                    </select>
+                  </td>
+                  <td class="p-2 border">
+                    <select id="sikap-tanggungJawab-${idx}" onchange="onSikapFieldChanged(${idx})" ${disabledAttr} class="w-full p-2 border rounded-xl font-bold text-xs bg-white text-gray-800">
+                      ${tanggungJawabOptions}
+                    </select>
+                  </td>
+                  <td class="p-2 border">
+                    <select id="sikap-kerjaSama-${idx}" onchange="onSikapFieldChanged(${idx})" ${disabledAttr} class="w-full p-2 border rounded-xl font-bold text-xs bg-white text-gray-800">
+                      ${kerjaSamaOptions}
+                    </select>
+                  </td>
+                  <td class="p-2 border">
+                    <select id="sikap-integritas-${idx}" onchange="onSikapFieldChanged(${idx})" ${disabledAttr} class="w-full p-2 border rounded-xl font-bold text-xs bg-white text-gray-800">
+                      ${integritasOptions}
+                    </select>
+                  </td>
+                  <td class="p-2 border">
+                    <input type="text" id="sikap-catatan-${idx}" value="${catatan}" oninput="onSikapFieldChanged(${idx})" placeholder="Catatan khusus..." ${disabledAttr} class="w-full p-2 border rounded-xl text-xs outline-none bg-white font-medium text-gray-800">
+                  </td>
+                  <td class="p-2 border">
+                    <textarea id="sikap-kesimpulan-${idx}" ${disabledAttr} class="w-full p-2 border rounded-xl text-xs outline-none bg-gray-50 font-medium text-gray-700 resize-none h-16">${kesimpulan}</textarea>
+                  </td>
+                </tr>
+              `;
+
+              if (!match) {
+                onSikapFieldChanged(idx);
+              }
+            });
+
+            if (currentSikapSubTab === "rekap-mapel") renderRekapPerMapel();
+            if (currentSikapSubTab === "rekap-lintas") renderRekapLintasMapel();
+          }).getNilaiSikap(sekolah, kelas, mapel, guru, tahunPelajaran, semester);
+        }).getDaftarSiswa();
+      }
+
+      function generateSikapNarasi(spiritual, disiplin, tanggungJawab, kerjaSama, integritas, catatan) {
+        const mapStr = {
+          "Sangat Baik": "sangat baik",
+          "Baik": "baik",
+          "Cukup": "cukup konsisten",
+          "Perlu Bimbingan": "perlu bimbingan"
+        };
+        
+        let parts = [];
+        if (spiritual) parts.push(`sikap spiritual yang ${mapStr[spiritual] || spiritual}`);
+        if (integritas) parts.push(`integritas yang ${mapStr[integritas] || integritas}`);
+        if (disiplin) parts.push(`disiplin yang ${mapStr[disiplin] || disiplin}`);
+        if (tanggungJawab) parts.push(`tanggung jawab yang ${mapStr[tanggungJawab] || tanggungJawab}`);
+        if (kerjaSama) parts.push(`kerja sama kelompok yang ${mapStr[kerjaSama] || kerjaSama}`);
+        
+        if (parts.length === 0) return "Belum terisi.";
+        
+        let narasi = "Menunjukkan " + parts.slice(0, -1).join(", ") + ", serta " + parts[parts.length - 1] + ".";
+        if (catatan && catatan.trim()) {
+          narasi += " " + catatan.trim() + ".";
+        }
+        return narasi;
+      }
+
+      function onSikapFieldChanged(idx) {
+        const spiritual = document.getElementById(`sikap-spiritual-${idx}`).value;
+        const disiplin = document.getElementById(`sikap-disiplin-${idx}`).value;
+        const tanggungJawab = document.getElementById(`sikap-tanggungJawab-${idx}`).value;
+        const kerjaSama = document.getElementById(`sikap-kerjaSama-${idx}`).value;
+        const integritas = document.getElementById(`sikap-integritas-${idx}`).value;
+        const catatan = document.getElementById(`sikap-catatan-${idx}`).value;
+
+        const generated = generateSikapNarasi(spiritual, disiplin, tanggungJawab, kerjaSama, integritas, catatan);
+        document.getElementById(`sikap-kesimpulan-${idx}`).value = generated;
+      }
+
+      function simpanSikapForm() {
+        const role = activeUser.role;
+        const isUserAdmin = isAdminRole(role);
+        const isUserPengawas = isPengawasRole(role);
+        const isUserKepsek = isKepsekRole(role);
+        const isUserOperator = isOperatorRole(role);
+
+        let sekolah = activeUser.sekolah;
+        if (isUserAdmin || isUserPengawas) sekolah = document.getElementById("selSikapSekolah").value;
+
+        let guru = activeUser.nama;
+        if (isUserAdmin || isUserPengawas || isUserKepsek || isUserOperator) guru = document.getElementById("selSikapGuru").value;
+
+        const mapel = getSelectedSikapMapel();
+        const kelas = document.getElementById("selSikapKelas").value;
+        const tahunPelajaran = document.getElementById("selSikapTahun").value;
+        const semester = document.getElementById("selSikapSemester").value;
+
+        if (!sekolah || !kelas || !mapel || !guru || !tahunPelajaran || !semester) {
+          Swal.fire("Gagal", "Filter sekolah, kelas, mapel, guru, tahun pelajaran, dan semester tidak boleh kosong.", "error");
+          return;
+        }
+
+        const dataNilai = currentSikapSiswaList.map((s, idx) => {
+          return {
+            nis: s.nis || s.nisn || "",
+            nama: s.nama,
+            spiritual: document.getElementById(`sikap-spiritual-${idx}`).value,
+            disiplin: document.getElementById(`sikap-disiplin-${idx}`).value,
+            tanggungJawab: document.getElementById(`sikap-tanggungJawab-${idx}`).value,
+            kerjaSama: document.getElementById(`sikap-kerjaSama-${idx}`).value,
+            integritas: document.getElementById(`sikap-integritas-${idx}`).value,
+            catatan: document.getElementById(`sikap-catatan-${idx}`).value,
+            kesimpulan: document.getElementById(`sikap-kesimpulan-${idx}`).value
+          };
+        });
+
+        Swal.fire({
+          title: "Menyimpan Data...",
+          allowOutsideClick: false,
+          didOpen: () => { Swal.showLoading(); }
+        });
+
+        google.script.run
+          .withSuccessHandler((res) => {
+            Swal.fire("Berhasil", res || "Penilaian Sikap berhasil disimpan!", "success");
+            loadSikapFormAndRekap();
+          })
+          .withFailureHandler((err) => {
+            Swal.fire("Gagal", err.toString(), "error");
+          })
+          .simpanNilaiSikap({
+            sekolah: sekolah,
+            kelas: kelas,
+            mapel: mapel,
+            guru: guru,
+            dataNilai: dataNilai,
+            tahunPelajaran: tahunPelajaran,
+            semester: semester
+          });
+      }
+
+      function switchSikapSubTab(tab) {
+        currentSikapSubTab = tab;
+
+        ["form", "rekap-mapel", "rekap-lintas"].forEach(t => {
+          const btn = document.getElementById("btnSubTabSikap" + t.split("-").map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(""));
+          const sec = document.getElementById("subTabSikap" + t.split("-").map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(""));
+          if (btn) {
+            btn.classList.remove("border-blue-600", "text-blue-600");
+            btn.classList.add("border-transparent", "text-gray-500");
+          }
+          if (sec) sec.classList.add("hidden");
+        });
+
+        const activeBtn = document.getElementById("btnSubTabSikap" + tab.split("-").map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(""));
+        const activeSec = document.getElementById("subTabSikap" + tab.split("-").map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(""));
+        
+        if (activeBtn) {
+          activeBtn.classList.add("border-blue-600", "text-blue-600");
+          activeBtn.classList.remove("border-transparent", "text-gray-500");
+        }
+        if (activeSec) activeSec.classList.remove("hidden");
+
+        if (tab === "rekap-mapel") renderRekapPerMapel();
+        if (tab === "rekap-lintas") renderRekapLintasMapel();
+      }
+
+      function renderRekapPerMapel() {
+        const body = document.getElementById("tableSikapRekapMapelBody");
+        const actions = document.getElementById("rekapMapelActions");
+
+        const mapel = getSelectedSikapMapel();
+        const kelas = document.getElementById("selSikapKelas").value;
+        const tahunPelajaran = document.getElementById("selSikapTahun").value;
+        const semester = document.getElementById("selSikapSemester").value;
+
+        if (!kelas || !mapel) {
+          body.innerHTML = `
+            <tr>
+              <td colspan="8" class="p-6 text-center text-xs font-black uppercase text-gray-400">
+                Silakan pilih Mapel dan Kelas terlebih dahulu.
+              </td>
+            </tr>
+          `;
+          actions.classList.add("hidden");
+          return;
+        }
+
+        body.innerHTML = `
+          <tr>
+            <td colspan="8" class="p-6 text-center text-xs font-black uppercase animate-pulse text-blue-950">
+              Memuat Data Rekap Mapel...
+            </td>
+          </tr>
+        `;
+
+        let sekolah = activeUser.sekolah;
+        if (isAdminRole(activeUser.role) || isPengawasRole(activeUser.role)) sekolah = document.getElementById("selSikapSekolah").value;
+
+        let guru = activeUser.nama;
+        if (isAdminRole(activeUser.role) || isPengawasRole(activeUser.role) || isKepsekRole(activeUser.role) || isOperatorRole(activeUser.role)) {
+          guru = document.getElementById("selSikapGuru").value;
+        }
+
+        google.script.run.withSuccessHandler((existing) => {
+          body.innerHTML = "";
+          if (!existing || existing.length === 0) {
+            body.innerHTML = `
+              <tr>
+                <td colspan="8" class="p-6 text-center text-xs font-black uppercase text-gray-500">
+                  Belum ada penilaian sikap untuk kelas ini di mata pelajaran tersebut.
+                </td>
+              </tr>
+            `;
+            actions.classList.add("hidden");
+            return;
+          }
+
+          actions.classList.remove("hidden");
+          existing.forEach((item, idx) => {
+            const tanggungJawabVal = item.tanggungJawab || item.tanggungjawab || "-";
+            const kerjaSamaVal = item.kerjaSama || item.kerjasama || "-";
+            body.innerHTML += `
+              <tr class="border-b hover:bg-gray-50 text-xs">
+                <td class="p-3 text-center border font-bold">${idx + 1}</td>
+                <td class="p-3 border font-black uppercase">${item.nama}</td>
+                <td class="p-3 border text-center font-bold text-gray-800">${item.spiritual}</td>
+                <td class="p-3 border text-center font-bold text-gray-800">${item.disiplin}</td>
+                <td class="p-3 border text-center font-bold text-gray-800">${tanggungJawabVal}</td>
+                <td class="p-3 border text-center font-bold text-gray-800">${kerjaSamaVal}</td>
+                <td class="p-3 border text-center font-bold text-gray-800">${item.integritas}</td>
+                <td class="p-3 border font-medium text-gray-700 italic">${item.kesimpulan}</td>
+              </tr>
+            `;
+          });
+        }).getNilaiSikap(sekolah, kelas, mapel, guru, tahunPelajaran, semester);
+      }
+
+      function renderRekapLintasMapel() {
+        const body = document.getElementById("tableSikapRekapLintasBody");
+        const actions = document.getElementById("rekapLintasActions");
+        const charts = document.getElementById("sikapChartsContainer");
+
+        const kelas = document.getElementById("selSikapKelas").value;
+        const tahunPelajaran = document.getElementById("selSikapTahun").value;
+        const semester = document.getElementById("selSikapSemester").value;
+        let sekolah = activeUser.sekolah;
+        if (isAdminRole(activeUser.role) || isPengawasRole(activeUser.role)) sekolah = document.getElementById("selSikapSekolah").value;
+
+        if (!kelas || !sekolah) {
+          body.innerHTML = `
+            <tr>
+              <td colspan="8" class="p-6 text-center text-xs font-black uppercase text-gray-400">
+                Silakan pilih Kelas terlebih dahulu for rekap lintas mapel.
+              </td>
+            </tr>
+          `;
+          actions.classList.add("hidden");
+          charts.classList.add("hidden");
+          return;
+        }
+
+        body.innerHTML = `
+          <tr>
+            <td colspan="8" class="p-6 text-center text-xs font-black uppercase animate-pulse text-indigo-950">
+              Memuat Rekap Lintas Mapel & Narasi Rapor...
+            </td>
+          </tr>
+        `;
+
+        google.script.run.withSuccessHandler((allSikapRows) => {
+          body.innerHTML = "";
+          
+          if (!allSikapRows || allSikapRows.length === 0) {
+            body.innerHTML = `
+              <tr>
+                <td colspan="8" class="p-6 text-center text-xs font-black uppercase text-gray-500">
+                  Belum ada data penilaian sikap untuk kelas ini dari mata pelajaran mana pun.
+                </td>
+              </tr>
+            `;
+            actions.classList.add("hidden");
+            charts.classList.add("hidden");
+            return;
+          }
+
+          const catMap = { "Sangat Baik": 4, "Baik": 3, "Cukup": 2, "Perlu Bimbingan": 1 };
+          const distribution = {
+            spiritual: { "Sangat Baik": 0, "Baik": 0, "Cukup": 0, "Perlu Bimbingan": 0 },
+            disiplin: { "Sangat Baik": 0, "Baik": 0, "Cukup": 0, "Perlu Bimbingan": 0 },
+            tanggungJawab: { "Sangat Baik": 0, "Baik": 0, "Cukup": 0, "Perlu Bimbingan": 0 },
+            kerjaSama: { "Sangat Baik": 0, "Baik": 0, "Cukup": 0, "Perlu Bimbingan": 0 },
+            integritas: { "Sangat Baik": 0, "Baik": 0, "Cukup": 0, "Perlu Bimbingan": 0 }
+          };
+
+          let totalScoredSiswa = 0;
+
+          const rowsToRender = currentSikapSiswaList.map((s, idx) => {
+            const sNis = s.nis || s.nisn || "";
+            const matchedGrades = [];
+
+            allSikapRows.forEach(row => {
+              const list = row.dataNilai || [];
+              const match = list.find(d => d.nis === sNis || d.nama.toUpperCase().trim() === s.nama.toUpperCase().trim());
+              if (match) {
+                matchedGrades.push({
+                  ...match,
+                  tanggungJawab: match.tanggungJawab || match.tanggungjawab,
+                  kerjaSama: match.kerjaSama || match.kerjasama
+                });
+              }
+            });
+
+            if (matchedGrades.length === 0) {
+              return {
+                idx: idx,
+                nama: s.nama,
+                spiritual: "-",
+                disiplin: "-",
+                tanggungJawab: "-",
+                kerjaSama: "-",
+                integritas: "-",
+                conclusion: "Belum ada penilaian mapel."
+              };
+            }
+
+            totalScoredSiswa++;
+
+            let sumSpiritual = 0, sumDisiplin = 0, sumTanggungJawab = 0, sumKerjaSama = 0, sumIntegritas = 0;
+            let countSpiritual = 0, countDisiplin = 0, countTanggungJawab = 0, countKerjaSama = 0, countIntegritas = 0;
+            let combinedNotes = [];
+
+            matchedGrades.forEach(g => {
+              if (g.spiritual && catMap[g.spiritual]) { sumSpiritual += catMap[g.spiritual]; countSpiritual++; }
+              if (g.disiplin && catMap[g.disiplin]) { sumDisiplin += catMap[g.disiplin]; countDisiplin++; }
+              if (g.tanggungJawab && catMap[g.tanggungJawab]) { sumTanggungJawab += catMap[g.tanggungJawab]; countTanggungJawab++; }
+              if (g.kerjaSama && catMap[g.kerjaSama]) { sumKerjaSama += catMap[g.kerjaSama]; countKerjaSama++; }
+              if (g.integritas && catMap[g.integritas]) { sumIntegritas += catMap[g.integritas]; countIntegritas++; }
+              if (g.catatan && g.catatan.trim()) combinedNotes.push(g.catatan.trim());
+            });
+
+            const avgToCat = (sum, count) => {
+              if (count === 0) return "Baik";
+              const avg = sum / count;
+              if (avg >= 3.5) return "Sangat Baik";
+              if (avg >= 2.5) return "Baik";
+              if (avg >= 1.5) return "Cukup";
+              return "Perlu Bimbingan";
+            };
+
+            const finalSpiritual = avgToCat(sumSpiritual, countSpiritual);
+            const finalDisiplin = avgToCat(sumDisiplin, countDisiplin);
+            const finalTanggungJawab = avgToCat(sumTanggungJawab, countTanggungJawab);
+            const finalKerjaSama = avgToCat(sumKerjaSama, countKerjaSama);
+            const finalIntegritas = avgToCat(sumIntegritas, countIntegritas);
+
+            distribution.spiritual[finalSpiritual]++;
+            distribution.disiplin[finalDisiplin]++;
+            distribution.tanggungJawab[finalTanggungJawab]++;
+            distribution.kerjaSama[finalKerjaSama]++;
+            distribution.integritas[finalIntegritas]++;
+
+            const uniqueNotes = [...new Set(combinedNotes)].join("; ");
+
+            const finalConclusion = generateSikapNarasi(
+              finalSpiritual,
+              finalDisiplin,
+              finalTanggungJawab,
+              finalKerjaSama,
+              finalIntegritas,
+              uniqueNotes
+            );
+
+            return {
+              idx: idx,
+              nama: s.nama,
+              spiritual: finalSpiritual,
+              disiplin: finalDisiplin,
+              tanggungJawab: finalTanggungJawab,
+              kerjaSama: finalKerjaSama,
+              integritas: finalIntegritas,
+              conclusion: finalConclusion
+            };
+          });
+
+          rowsToRender.forEach((row, i) => {
+            body.innerHTML += `
+              <tr class="border-b hover:bg-gray-50 text-xs">
+                <td class="p-3 text-center border font-bold">${i + 1}</td>
+                <td class="p-3 border font-black uppercase">${row.nama}</td>
+                <td class="p-3 border text-center font-black ${row.spiritual === 'Sangat Baik' ? 'text-green-600' : row.spiritual === 'Baik' ? 'text-blue-600' : row.spiritual === 'Cukup' ? 'text-yellow-600' : 'text-red-600'}">${row.spiritual}</td>
+                <td class="p-3 border text-center font-black ${row.disiplin === 'Sangat Baik' ? 'text-green-600' : row.disiplin === 'Baik' ? 'text-blue-600' : row.disiplin === 'Cukup' ? 'text-yellow-600' : 'text-red-600'}">${row.disiplin}</td>
+                <td class="p-3 border text-center font-black ${row.tanggungJawab === 'Sangat Baik' ? 'text-green-600' : row.tanggungJawab === 'Baik' ? 'text-blue-600' : row.tanggungJawab === 'Cukup' ? 'text-yellow-600' : 'text-red-600'}">${row.tanggungJawab}</td>
+                <td class="p-3 border text-center font-black ${row.kerjaSama === 'Sangat Baik' ? 'text-green-600' : row.kerjaSama === 'Baik' ? 'text-blue-600' : row.kerjaSama === 'Cukup' ? 'text-yellow-600' : 'text-red-600'}">${row.kerjaSama}</td>
+                <td class="p-3 border text-center font-black ${row.integritas === 'Sangat Baik' ? 'text-green-600' : row.integritas === 'Baik' ? 'text-blue-600' : row.integritas === 'Cukup' ? 'text-yellow-600' : 'text-red-600'}">${row.integritas}</td>
+                <td class="p-3 border font-medium text-indigo-950 italic bg-indigo-50/50">${row.conclusion}</td>
+              </tr>
+            `;
+          });
+
+          actions.classList.remove("hidden");
+
+          if (totalScoredSiswa > 0) {
+            charts.innerHTML = "";
+            charts.classList.remove("hidden");
+
+            Object.keys(distribution).forEach(aspect => {
+              const data = distribution[aspect];
+              const total = totalScoredSiswa;
+
+              const percentSB = Math.round((data["Sangat Baik"] / total) * 100);
+              const percentB = Math.round((data["Baik"] / total) * 100);
+              const percentC = Math.round((data["Cukup"] / total) * 100);
+              const percentPB = Math.round((data["Perlu Bimbingan"] / total) * 100);
+
+              charts.innerHTML += `
+                <div class="bg-slate-50 border border-slate-100 p-4 rounded-2xl shadow-sm flex flex-col gap-2">
+                  <div class="text-[9px] font-black text-blue-900 uppercase tracking-widest border-b pb-1.5">${aspect.toUpperCase()}</div>
+                  <div class="flex flex-col gap-1 mt-1 text-[10px] font-bold">
+                    <div class="flex items-center justify-between">
+                      <span class="text-green-600">SANGAT BAIK</span>
+                      <span>${percentSB}%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                      <div class="bg-green-500 h-full" style="width: ${percentSB}%"></div>
+                    </div>
+
+                    <div class="flex items-center justify-between mt-1">
+                      <span class="text-blue-600">BAIK</span>
+                      <span>${percentB}%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                      <div class="bg-blue-500 h-full" style="width: ${percentB}%"></div>
+                    </div>
+
+                    <div class="flex items-center justify-between mt-1">
+                      <span class="text-yellow-600">CUKUP</span>
+                      <span>${percentC}%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                      <div class="bg-yellow-500 h-full" style="width: ${percentC}%"></div>
+                    </div>
+
+                    <div class="flex items-center justify-between mt-1">
+                      <span class="text-red-600">PERLU BIMBINGAN</span>
+                      <span>${percentPB}%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                      <div class="bg-red-500 h-full" style="width: ${percentPB}%"></div>
+                    </div>
+                  </div>
+                </div>
+              `;
+            });
+          } else {
+            charts.classList.add("hidden");
+          }
+
+        }).getAllNilaiSikap(sekolah, kelas, tahunPelajaran, semester);
+      }
+
+      function exportRekapMapelExcel() {
+        const tbl = document.getElementById("tableSikapRekapMapel");
+        const wb = XLSX.utils.table_to_book(tbl);
+        const kelas = document.getElementById("selSikapKelas").value;
+        const mapel = getSelectedSikapMapel();
+        XLSX.writeFile(wb, `REKAP_SIKAP_MAPEL_${kelas}_${mapel}.xlsx`);
+      }
+
+      function exportRekapLintasExcel() {
+        const tbl = document.getElementById("tableSikapRekapLintas");
+        const wb = XLSX.utils.table_to_book(tbl);
+        const kelas = document.getElementById("selSikapKelas").value;
+        XLSX.writeFile(wb, `REKAP_SIKAP_LINTAS_MAPEL_${kelas}.xlsx`);
+      }
+
+      function cetakRekapMapelPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF("l", "mm", "a4");
+
+        const kelas = document.getElementById("selSikapKelas").value;
+        const mapel = getSelectedSikapMapel();
+        
+        let sekolah = activeUser.sekolah;
+        if (isAdminRole(activeUser.role) || isPengawasRole(activeUser.role)) sekolah = document.getElementById("selSikapSekolah").value;
+
+        let guru = activeUser.nama;
+        if (isAdminRole(activeUser.role) || isPengawasRole(activeUser.role) || isKepsekRole(activeUser.role) || isOperatorRole(activeUser.role)) {
+          guru = document.getElementById("selSikapGuru").value;
+        }
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.text("REKAP PENILAIAN SIKAP SISWA PER MATA PELAJARAN", 14, 15);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Sekolah: ${sekolah}  |  Kelas: ${kelas}  |  Mata Pelajaran: ${mapel}  |  Guru Pengajar: ${guru}`, 14, 21);
+        doc.line(14, 25, 283, 25);
+
+        const tbl = document.getElementById("tableSikapRekapMapel");
+        const headers = ["No", "Nama Siswa", "Spiritual", "Disiplin", "Tanggung Jawab", "Kerja Sama", "Integritas", "Kesimpulan Sikap Mapel"];
+        const rows = [];
+
+        const trs = document.querySelectorAll("#tableSikapRekapMapelBody tr");
+        trs.forEach(tr => {
+          const tds = tr.querySelectorAll("td");
+          if (tds.length === 8) {
+            rows.push([
+              tds[0].innerText,
+              tds[1].innerText,
+              tds[2].innerText,
+              tds[3].innerText,
+              tds[4].innerText,
+              tds[5].innerText,
+              tds[6].innerText,
+              tds[7].innerText
+            ]);
+          }
+        });
+
+        doc.autoTable({
+          startY: 28,
+          head: [headers],
+          body: rows,
+          theme: "grid",
+          headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontSize: 8, fontStyle: "bold" },
+          styles: { fontSize: 7.5, font: "helvetica", halign: "left" },
+          columnStyles: {
+            0: { halign: "center", width: 10 },
+            1: { fontStyle: "bold", width: 45 },
+            2: { halign: "center", width: 22 },
+            3: { halign: "center", width: 22 },
+            4: { halign: "center", width: 22 },
+            5: { halign: "center", width: 22 },
+            6: { halign: "center", width: 22 }
+          },
+          margin: { left: 14, right: 14 }
+        });
+
+        doc.save(`REKAP_SIKAP_MAPEL_${kelas}_${mapel}.pdf`);
+      }
+
+      function cetakRekapLintasPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF("l", "mm", "a4");
+
+        const kelas = document.getElementById("selSikapKelas").value;
+        let sekolah = activeUser.sekolah;
+        if (isAdminRole(activeUser.role) || isPengawasRole(activeUser.role)) sekolah = document.getElementById("selSikapSekolah").value;
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.text("REKAP PENILAIAN SIKAP LINTAS MATA PELAJARAN (INTEGRASI RAPOR)", 14, 15);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Sekolah: ${sekolah}  |  Kelas: ${kelas}  |  Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, 14, 21);
+        doc.line(14, 25, 283, 25);
+
+        const tbl = document.getElementById("tableSikapRekapLintas");
+        const headers = ["No", "Nama Siswa", "Rerata Spiritual", "Rerata Disiplin", "Rerata Tanggung Jawab", "Rerata Kerja Sama", "Rerata Integritas", "Kesimpulan Sikap Lintas Mapel (Narasi Rapor)"];
+        const rows = [];
+
+        const trs = document.querySelectorAll("#tableSikapRekapLintasBody tr");
+        trs.forEach(tr => {
+          const tds = tr.querySelectorAll("td");
+          if (tds.length === 8) {
+            rows.push([
+              tds[0].innerText,
+              tds[1].innerText,
+              tds[2].innerText,
+              tds[3].innerText,
+              tds[4].innerText,
+              tds[5].innerText,
+              tds[6].innerText,
+              tds[7].innerText
+            ]);
+          }
+        });
+
+        doc.autoTable({
+          startY: 28,
+          head: [headers],
+          body: rows,
+          theme: "grid",
+          headStyles: { fillColor: [49, 46, 129], textColor: [255, 255, 255], fontSize: 8, fontStyle: "bold" },
+          styles: { fontSize: 7.5, font: "helvetica", halign: "left" },
+          columnStyles: {
+            0: { halign: "center", width: 10 },
+            1: { fontStyle: "bold", width: 45 },
+            2: { halign: "center", width: 24 },
+            3: { halign: "center", width: 24 },
+            4: { halign: "center", width: 24 },
+            5: { halign: "center", width: 24 },
+            6: { halign: "center", width: 24 }
+          },
+          margin: { left: 14, right: 14 }
+        });
+
+        doc.save(`REKAP_SIKAP_LINTAS_MAPEL_${kelas}.pdf`);
+      }
 
       function triggerPrintPdf() {
         window.print();
