@@ -243,7 +243,7 @@
       <div
         class="mt-8 text-center text-slate-400 font-semibold text-[10px] tracking-widest no-print"
       >
-        Copyright: @ w.yogaswara ps_smk _kcd_xi_2026
+        copyright: @ w.yogaswara ps_smk _kcd_xi_2026
       </div>
     </div>
 
@@ -5953,7 +5953,7 @@
       <footer
         class="p-6 text-center text-gray-400 font-bold text-[9px] tracking-widest"
       >
-        Copyright: @ w.yogaswara ps_smk _kcd_xi_2026
+        copyright: @ w.yogaswara ps_smk _kcd_xi_2026
       </footer>
     </div>
 
@@ -8074,13 +8074,17 @@
             .replace(/SMKS/g, "SMK")
             .replace(/SMK\s*N/g, "SMK")
             .replace(/SMK\s*S/g, "SMK")
+            .replace(/SMAN/g, "SMA")
+            .replace(/SMAS/g, "SMA")
+            .replace(/SMA\s*N/g, "SMA")
+            .replace(/SMA\s*S/g, "SMA")
             .replace(/\s+/g, "")
             .replace(/[^A-Z0-9]/g, "")
             .trim();
         };
         const c1 = clean(s1);
         const c2 = clean(s2);
-        return c1 === c2 || c1.includes(c2) || c2.includes(c1);
+        return c1 === c2;
       }
 
       // Robust teacher name comparison ignoring academic titles, casing, non-alphabetic characters, and spacing
@@ -8123,7 +8127,7 @@
         };
         const c1 = clean(k1);
         const c2 = clean(k2);
-        return c1 === c2 || c1.includes(c2) || c2.includes(c1);
+        return c1 === c2;
       }
 
       // Robustly select dropdown value by close match/class
