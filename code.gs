@@ -2326,8 +2326,8 @@ function getNilaiSikap(sekolah, kls, mapel, guru, tahunPelajaran, semester) {
     var dbSemester = (data[i][15] || "").toString().trim().toUpperCase();
     
     var match = true;
-    if (targetSekolah && dbSekolah !== targetSekolah) match = false;
-    if (targetKls && dbKelas !== targetKls) match = false;
+    if (targetSekolah && !matchSchool(dbSekolah, targetSekolah)) match = false;
+    if (targetKls && !matchKelasRobust(dbKelas, targetKls)) match = false;
     if (targetMapel && dbMapel !== targetMapel) match = false;
     if (targetGuru && dbGuru !== targetGuru) match = false;
     if (targetTahun && dbTahun !== targetTahun) match = false;
@@ -2377,8 +2377,8 @@ function getAllNilaiSikap(sekolah, kls, tahunPelajaran, semester) {
     var dbSemester = (data[i][15] || "").toString().trim().toUpperCase();
     
     var match = true;
-    if (targetSekolah && targetSekolah !== "ALL" && dbSekolah !== targetSekolah) match = false;
-    if (targetKls && targetKls !== "ALL" && dbKelas !== targetKls) match = false;
+    if (targetSekolah && targetSekolah !== "ALL" && !matchSchool(dbSekolah, targetSekolah)) match = false;
+    if (targetKls && targetKls !== "ALL" && !matchKelasRobust(dbKelas, targetKls)) match = false;
     if (targetTahun && dbTahun !== targetTahun) match = false;
     if (targetSemester && dbSemester !== targetSemester) match = false;
     
@@ -2417,4 +2417,40 @@ function getAllNilaiSikap(sekolah, kls, tahunPelajaran, semester) {
     results.push(groups[k]);
   }
   return results;
+}
+
+function matchSchool(s1, s2) {
+  if (!s1 || !s2) return false;
+  var clean = function(str) {
+    return str
+      .toString()
+      .toUpperCase()
+      .replace(/NEGERI/g, "")
+      .replace(/NEGR/g, "")
+      .replace(/SMKN/g, "SMK")
+      .replace(/SMKS/g, "SMK")
+      .replace(/SMK\s*N/g, "SMK")
+      .replace(/SMK\s*S/g, "SMK")
+      .replace(/SMAN/g, "SMA")
+      .replace(/SMAS/g, "SMA")
+      .replace(/SMA\s*N/g, "SMA")
+      .replace(/SMA\s*S/g, "SMA")
+      .replace(/\s+/g, "")
+      .replace(/[^A-Z0-9]/g, "")
+      .trim();
+  };
+  return clean(s1) === clean(s2);
+}
+
+function matchKelasRobust(k1, k2) {
+  if (!k1 || !k2) return false;
+  var clean = function(str) {
+    return str
+      .toString()
+      .toUpperCase()
+      .replace(/\s+/g, "")
+      .replace(/[^A-Z0-9]/g, "")
+      .trim();
+  };
+  return clean(k1) === clean(k2);
 }
