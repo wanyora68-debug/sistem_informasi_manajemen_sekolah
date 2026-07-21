@@ -10923,8 +10923,7 @@
               (u.role || "").toString().trim().toUpperCase() === "GURU" &&
               (u.status || "").toString().trim().toUpperCase() === "AKTIF" &&
               (!isOperator ||
-                (u.sekolah || "").toString().toUpperCase().trim() ===
-                  opSchoolNorm),
+                matchSchool(u.sekolah, activeUser.sekolah)),
           ).length;
 
           const totalKepsek = users.filter(
@@ -10932,8 +10931,7 @@
               isKepsekRole(u.role) &&
               (u.status || "").toString().trim().toUpperCase() === "AKTIF" &&
               (!isOperator ||
-                (u.sekolah || "").toString().toUpperCase().trim() ===
-                  opSchoolNorm),
+                matchSchool(u.sekolah, activeUser.sekolah)),
           ).length;
 
           const totalPengawas = users.filter(
@@ -10946,31 +10944,27 @@
             (u) =>
               (u.role || "").toString().trim().toUpperCase() === "OPERATOR" &&
               (!isOperator ||
-                (u.sekolah || "").toString().toUpperCase().trim() ===
-                  opSchoolNorm),
+                matchSchool(u.sekolah, activeUser.sekolah)),
           ).length;
 
           const filteredKelas = isOperator
             ? kelas.filter(
                 (k) =>
-                  (k.sekolah || "").toString().toUpperCase().trim() ===
-                  opSchoolNorm,
+                  matchSchool(k.sekolah, activeUser.sekolah),
               )
             : kelas;
 
           const filteredSiswas = isOperator
             ? siswas.filter(
                 (s) =>
-                  (s.sekolah || "").toString().toUpperCase().trim() ===
-                  opSchoolNorm,
+                  matchSchool(s.sekolah, activeUser.sekolah),
               )
             : siswas;
 
           const filteredJurnals = isOperator
             ? jurnals.filter(
                 (j) =>
-                  (j.sekolah || "").toString().toUpperCase().trim() ===
-                  opSchoolNorm,
+                  matchSchool(j.sekolah, activeUser.sekolah),
               )
             : jurnals;
 
@@ -18031,9 +18025,7 @@
                 .toUpperCase()
                 .trim();
               filtered = filtered.filter(
-                (item) =>
-                  (item.sekolah || "").toString().toUpperCase().trim() ===
-                  userSchool,
+                (item) => matchSchool(item.sekolah, activeUser.sekolah),
               );
             }
 
@@ -21224,44 +21216,30 @@
             : "ALL";
           if (["Pengawas", "Admin"].includes(activeUser.role)) {
             if (lapSchoolSel && lapSchoolSel !== "ALL") {
-              const normSchool = lapSchoolSel.toString().toUpperCase().trim();
-              jurnal = jurnal.filter(
-                (item) =>
-                  (item.sekolah || "").toString().toUpperCase().trim() ===
-                  normSchool,
+              jurnal = jurnal.filter((item) =>
+                matchSchool(item.sekolah, lapSchoolSel),
               );
-              aktivitas = aktivitas.filter(
-                (item) =>
-                  (item.sekolah || "").toString().toUpperCase().trim() ===
-                  normSchool,
+              aktivitas = aktivitas.filter((item) =>
+                matchSchool(item.sekolah, lapSchoolSel),
               );
             } else if (activeUser.role === "Pengawas") {
               const allowedSchools = (window.mySekolahBinaan || []).map((s) =>
                 (s.nama || "").toUpperCase().trim(),
               );
               jurnal = jurnal.filter((item) =>
-                allowedSchools.includes(
-                  (item.sekolah || "").toUpperCase().trim(),
-                ),
+                allowedSchools.some((allowed) => matchSchool(item.sekolah, allowed)),
               );
               aktivitas = aktivitas.filter((item) =>
-                allowedSchools.includes(
-                  (item.sekolah || "").toUpperCase().trim(),
-                ),
+                allowedSchools.some((allowed) => matchSchool(item.sekolah, allowed)),
               );
             }
           } else {
-            const normSchool = (activeUser.sekolah || "").toString().toUpperCase().trim();
-            if (normSchool) {
-              jurnal = jurnal.filter(
-                (item) =>
-                  (item.sekolah || "").toString().toUpperCase().trim() ===
-                  normSchool,
+            if (activeUser.sekolah) {
+              jurnal = jurnal.filter((item) =>
+                matchSchool(item.sekolah, activeUser.sekolah),
               );
-              aktivitas = aktivitas.filter(
-                (item) =>
-                  (item.sekolah || "").toString().toUpperCase().trim() ===
-                  normSchool,
+              aktivitas = aktivitas.filter((item) =>
+                matchSchool(item.sekolah, activeUser.sekolah),
               );
             }
           }
