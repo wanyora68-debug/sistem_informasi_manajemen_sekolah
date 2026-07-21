@@ -599,7 +599,7 @@ function getDaftarAktivitas(userNama, role, sekolah) {
            if (dbGuruNorm !== targetNameNorm) continue;
         } else if (roleLow === "kepala sekolah" || roleLow === "operator" || roleLow === "admin") {
            if (roleLow !== "admin" && targetSchoolNorm !== "PUSAT KCD XI" && targetSchoolNorm !== "") {
-              if (guruSekolah[dbGuruNorm] !== targetSchoolNorm && dbGuruNorm !== targetNameNorm) continue;
+              if (!matchSchool(guruSekolah[dbGuruNorm], sekolah) && dbGuruNorm !== targetNameNorm) continue;
            }
         }
 
@@ -1335,7 +1335,7 @@ function getDaftarJurnal(userNama, role, sekolah) {
            if (dbGuruNorm !== targetNameNorm) continue;
         } else if (roleLow === "kepala sekolah" || roleLow === "operator" || roleLow === "admin") {
            if (roleLow !== "admin" && targetSchoolNorm !== "PUSAT KCD XI" && targetSchoolNorm !== "") {
-              if (guruSekolah[dbGuruNorm] !== targetSchoolNorm && dbGuruNorm !== targetNameNorm) continue;
+              if (!matchSchool(guruSekolah[dbGuruNorm], sekolah) && dbGuruNorm !== targetNameNorm) continue;
            }
         }
 
@@ -1744,7 +1744,7 @@ function getRekapAbsenGuru(bulan, sekolah) {
       
       var entGuru = normalizeName(data[i][1]);
       if (targetSchoolNorm !== "PUSAT KCD XI" && targetSchoolNorm !== "") {
-         if (guruSekolah[entGuru] !== targetSchoolNorm) continue;
+         if (!matchSchool(guruSekolah[entGuru], sekolah)) continue;
       }
 
       var d = new Date(ts);
@@ -1798,7 +1798,7 @@ function getAllRekapAbsensiSiswa(bulan, sekolah) {
        
        var entGuru = normalizeName(data[i][2]);
        if (targetSchoolNorm !== "PUSAT KCD XI" && targetSchoolNorm !== "") {
-          if (guruSekolah[entGuru] !== targetSchoolNorm) continue;
+          if (!matchSchool(guruSekolah[entGuru], sekolah)) continue;
        }
 
        var isoTgl = normalizeDateToISO(tglRaw);
