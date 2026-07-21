@@ -243,7 +243,7 @@
       <div
         class="mt-8 text-center text-slate-400 font-semibold text-[10px] tracking-widest no-print"
       >
-        Copyright: @ w.yogaswara ps_smk _kcd_xi_2026
+        copyright: @ w.yogaswara ps_smk _kcd_xi_2026
       </div>
     </div>
 
@@ -5953,7 +5953,7 @@
       <footer
         class="p-6 text-center text-gray-400 font-bold text-[9px] tracking-widest"
       >
-        Copyright: @ w.yogaswara ps_smk _kcd_xi_2026
+        copyright: @ w.yogaswara ps_smk _kcd_xi_2026
       </footer>
     </div>
 
@@ -8583,9 +8583,7 @@
             btnLaporan.innerHTML =
               '<span class="mr-3 text-lg">🖨️</span> Feedback Laporan Jurnal & Aktivitas';
         } else if (isUserKepsek || isUserAdmin) {
-          if (isUserAdmin) {
-            populateSchoolFilters();
-          }
+          populateSchoolFilters();
           if (navGuru) navGuru.classList.add("hidden");
           if (navAdmin) navAdmin.classList.remove("hidden");
 
@@ -8620,6 +8618,7 @@
             // Statically declared now
           }
         } else if (isUserAdmin || isUserOperator) {
+          populateSchoolFilters();
           if (navGuru) navGuru.classList.remove("hidden");
           if (navAdmin) navAdmin.classList.remove("hidden");
 
@@ -9135,10 +9134,10 @@
         } else if (isKepsek) {
           // Kepala Sekolah: data guru (teachers in school) and kepala sekolah (the principal themselves) only
           const schoolJournals = (listJurnals || []).filter(j => 
-            (j.sekolah || "").toUpperCase().trim() === activeSekolah
+            matchSchool(j.sekolah, activeUser.sekolah)
           );
           const schoolUsers = (listUsers || []).filter(u => 
-            (u.sekolah || "").toUpperCase().trim() === activeSekolah
+            matchSchool(u.sekolah, activeUser.sekolah)
           );
 
           if (mode === "focus-guru") {
@@ -9869,9 +9868,8 @@
 
         const schoolTeachers = (allUsersList || []).filter((u) => {
           const r = (u.role || "").toString().toUpperCase().trim();
-          const s = (u.sekolah || "").toString().toUpperCase().trim();
           const status = (u.status || "").toString().toUpperCase().trim();
-          return r === "GURU" && s === schoolName && status === "AKTIF";
+          return r === "GURU" && matchSchool(u.sekolah, schoolName) && status === "AKTIF";
         });
 
         if (schoolTeachers.length > 0) {
@@ -10488,7 +10486,7 @@
             (a) => (a.guru || "").toUpperCase().trim() === uNamaNorm,
           );
           const mySiswaCount = siswas.filter(
-            (s) => (s.sekolah || "").toUpperCase().trim() === uSchoolNorm,
+            (s) => matchSchool(s.sekolah, activeUser.sekolah),
           ).length; /* TEST OK */
 
           htmlStats = `
@@ -10608,17 +10606,16 @@
           const mySchoolGurus = users.filter((u) => {
             const r = (u.role || "").toString().trim().toUpperCase();
             const s = (u.status || "").toString().trim().toUpperCase();
-            const sch = (u.sekolah || "").toString().trim().toUpperCase();
-            return r === "GURU" && s === "AKTIF" && sch === uSchoolNorm;
+            return r === "GURU" && s === "AKTIF" && matchSchool(u.sekolah, activeUser.sekolah);
           });
           const mySchoolJurnals = jurnals.filter(
-            (j) => (j.sekolah || "").toUpperCase().trim() === uSchoolNorm,
+            (j) => matchSchool(j.sekolah, activeUser.sekolah),
           );
           const mySchoolSiswa = siswas.filter(
-            (s) => (s.sekolah || "").toUpperCase().trim() === uSchoolNorm,
+            (s) => matchSchool(s.sekolah, activeUser.sekolah),
           );
           const mySchoolAktivitas = aktivitas.filter(
-            (a) => (a.sekolah || "").toUpperCase().trim() === uSchoolNorm,
+            (a) => matchSchool(a.sekolah, activeUser.sekolah),
           );
 
           htmlStats = `
@@ -11144,16 +11141,12 @@
                 );
               } else if (isKepsek) {
                 filteredList = list.filter(
-                  (u) =>
-                    (u.sekolah || "").toString().toUpperCase().trim() ===
-                    activeSekolah.toUpperCase().trim(),
+                  (u) => matchSchool(u.sekolah, activeUser.sekolah),
                 );
               } else if (activeRole === "Guru") {
                 // For the mockup view, run on active school context to show statistics of peers/school context
                 filteredList = list.filter(
-                  (u) =>
-                    (u.sekolah || "").toString().toUpperCase().trim() ===
-                    activeSekolah.toUpperCase().trim(),
+                  (u) => matchSchool(u.sekolah, activeUser.sekolah),
                 );
               }
 
@@ -11354,9 +11347,7 @@
                     );
                   } else if (isKepsek) {
                     filteredJournals = listJurnals.filter(
-                      (j) =>
-                        (j.sekolah || "").toString().toUpperCase().trim() ===
-                        activeSekolah.toUpperCase().trim(),
+                      (j) => matchSchool(j.sekolah, activeUser.sekolah),
                     );
                   } else if (activeRole === "Guru") {
                     filteredJournals = listJurnals.filter(
@@ -11382,9 +11373,7 @@
                       .toUpperCase()
                       .trim();
                     let kSchoolJournals = listJurnals.filter(
-                      (j) =>
-                        (j.sekolah || "").toString().toUpperCase().trim() ===
-                        targetSchoolForKepsek,
+                      (j) => matchSchool(j.sekolah, targetSchoolForKepsek),
                     ).length;
                     kepsekTotalJurnalEl.innerText = kSchoolJournals;
                   }
@@ -11413,9 +11402,7 @@
                         .toUpperCase()
                         .trim();
                       let kSchoolJournals = listJurnals.filter(
-                        (j) =>
-                          (j.sekolah || "").toString().toUpperCase().trim() ===
-                          targetSchoolForKepsek,
+                        (j) => matchSchool(j.sekolah, targetSchoolForKepsek),
                       ).length;
                       laporMenungguEl.innerText = kSchoolJournals;
                     }
@@ -11532,15 +11519,11 @@
                     );
                   } else if (isKepsek) {
                     filteredSiswa = totalSiswaList.filter(
-                      (s) =>
-                        (s.sekolah || "").toString().toUpperCase().trim() ===
-                        activeSekolah.toUpperCase().trim(),
+                      (s) => matchSchool(s.sekolah, activeUser.sekolah),
                     );
                   } else if (activeRole === "Guru") {
                     filteredSiswa = totalSiswaList.filter(
-                      (s) =>
-                        (s.sekolah || "").toString().toUpperCase().trim() ===
-                        activeSekolah.toUpperCase().trim(),
+                      (s) => matchSchool(s.sekolah, activeUser.sekolah),
                     );
                   }
 
@@ -11587,9 +11570,7 @@
                     );
                   } else if (isKepsek) {
                     filteredReports = listReports.filter(
-                      (r) =>
-                        (r.sekolah || "").toString().toUpperCase().trim() ===
-                        activeSekolah.toUpperCase().trim(),
+                      (r) => matchSchool(r.sekolah, activeUser.sekolah),
                     );
                   }
 
@@ -11865,9 +11846,7 @@
                             .toUpperCase()
                             .trim();
                           const schoolClasses = allClasses.filter(
-                            (k) =>
-                              (k.sekolah || "").toUpperCase().trim() ===
-                              targetSchoolNorm,
+                            (k) => matchSchool(k.sekolah, targetSchool),
                           );
 
                           const sList = mySchedules || [];
@@ -12761,17 +12740,14 @@
         google.script.run
           .withSuccessHandler((list) => {
             const filtered = (list || []).filter((u) => {
-              if (u.role !== "Guru") return false;
+              if ((u.role || "").toString().toUpperCase().trim() !== "GURU") return false;
               if (schoolFilterVal && schoolFilterVal !== "ALL") {
-                return (
-                  (u.sekolah || "").toString().toUpperCase().trim() ===
-                  schoolFilterVal.toUpperCase().trim()
-                );
+                return matchSchool(u.sekolah, schoolFilterVal);
               }
               return (
                 activeUser.role === "Admin" ||
                 activeUser.role === "Pengawas" ||
-                u.sekolah === activeUser.sekolah
+                matchSchool(u.sekolah, activeUser.sekolah)
               );
             });
             filtered.forEach((u) => {
@@ -12993,7 +12969,7 @@
         const filtered = allUsersList.filter(
           (u) =>
             (u.role || "").toString().toUpperCase().trim() === "GURU" &&
-            (schoolName === "ALL" || (u.sekolah || "").toString().toUpperCase().trim() === schoolName.toString().toUpperCase().trim()),
+            (schoolName === "ALL" || matchSchool(u.sekolah, schoolName)),
         );
         filtered.forEach((u) => {
           let opt = document.createElement("option");
@@ -13221,7 +13197,7 @@
               selectedSchool &&
               selectedSchool !== "ALL"
             ) {
-              filtered = filtered.filter((j) => j.sekolah === selectedSchool);
+              filtered = filtered.filter((j) => matchSchool(j.sekolah, selectedSchool));
             } else if (!isAdminRole(activeUser.role) && !isPengawasRole(activeUser.role)) {
               filtered = filtered.filter((j) => j.sekolah && matchSchool(j.sekolah, activeUser.sekolah));
             }
@@ -13405,7 +13381,7 @@
               selectedSchool &&
               selectedSchool !== "ALL"
             ) {
-              filtered = filtered.filter((a) => a.sekolah === selectedSchool);
+              filtered = filtered.filter((a) => matchSchool(a.sekolah, selectedSchool));
             } else if (!isAdminRole(activeUser.role) && !isPengawasRole(activeUser.role)) {
               filtered = filtered.filter((a) => a.sekolah && matchSchool(a.sekolah, activeUser.sekolah));
             }
@@ -14640,9 +14616,7 @@
                 : "ALL";
               if (selSchool && selSchool !== "ALL") {
                 list = (list || []).filter(
-                  (j) =>
-                    (j.sekolah || "").toString().toUpperCase().trim() ===
-                    selSchool.toUpperCase().trim(),
+                  (j) => matchSchool(j.sekolah, selSchool),
                 );
               }
             }
@@ -14866,9 +14840,7 @@
       function getSchoolTeachingDaysConfig(sekolahName) {
         let hasSaturday = false;
         const schoolScheds = (allScheduleList || []).filter(
-          (s) =>
-            (s.sekolah || "").toString().toUpperCase().trim() ===
-            (sekolahName || "").toString().toUpperCase().trim(),
+          (s) => matchSchool(s.sekolah, sekolahName),
         );
         const filteredScheds =
           schoolScheds.length > 0
@@ -14879,8 +14851,7 @@
                 );
                 return (
                   gObj &&
-                  (gObj.sekolah || "").toString().toUpperCase().trim() ===
-                    (sekolahName || "").toString().toUpperCase().trim()
+                  matchSchool(gObj.sekolah, sekolahName)
                 );
               });
 
@@ -18749,8 +18720,7 @@
             (u) =>
               (u.role || "").toString().toUpperCase().trim() === "GURU" &&
               u.sekolah &&
-              u.sekolah.toString().toUpperCase().trim() ===
-                activeUser.sekolah.toString().toUpperCase().trim(),
+              matchSchool(u.sekolah, activeUser.sekolah),
           );
           teachers.forEach((t) => {
             let opt = document.createElement("option");
@@ -18872,8 +18842,7 @@
         const teachers = allUsersList.filter(
           (u) =>
             (u.role || "").toString().toUpperCase().trim() === "GURU" &&
-            (u.sekolah || "").toString().toUpperCase().trim() ===
-              schoolName.toUpperCase().trim(),
+            matchSchool(u.sekolah, schoolName),
         );
         teachers.forEach((t) => {
           let opt = document.createElement("option");
@@ -18961,7 +18930,7 @@
                 .trim()
             : "";
           if (chosenSchool) {
-            if ((k.sekolah || "").toUpperCase().trim() !== chosenSchool)
+            if (!matchSchool(k.sekolah, chosenSchool))
               return false;
           } else if (activeUser.role === "Pengawas") {
             const allowedSchools = (window.mySekolahBinaan || []).map((s) =>
@@ -19046,8 +19015,7 @@
         const teachers = allUsersList.filter(
           (u) =>
             (u.role || "").toString().toUpperCase().trim() === "GURU" &&
-            (u.sekolah || "").toString().toUpperCase().trim() ===
-              schoolName.toUpperCase().trim(),
+            matchSchool(u.sekolah, schoolName),
         );
         teachers.forEach((t) => {
           let opt = document.createElement("option");
@@ -23057,18 +23025,23 @@
 
           actions.classList.remove("hidden");
           existing.forEach((item, idx) => {
+            const namaVal = item.nama || "-";
+            const spiritualVal = item.spiritual || "-";
+            const disiplinVal = item.disiplin || "-";
             const tanggungJawabVal = item.tanggungJawab || item.tanggungjawab || "-";
             const kerjaSamaVal = item.kerjaSama || item.kerjasama || "-";
+            const integritasVal = item.integritas || "-";
+            const kesimpulanVal = item.kesimpulan || "-";
             body.innerHTML += `
               <tr class="border-b hover:bg-gray-50 text-xs">
                 <td class="p-3 text-center border font-bold">${idx + 1}</td>
-                <td class="p-3 border font-black uppercase">${item.nama}</td>
-                <td class="p-3 border text-center font-bold text-gray-800">${item.spiritual}</td>
-                <td class="p-3 border text-center font-bold text-gray-800">${item.disiplin}</td>
+                <td class="p-3 border font-black uppercase">${namaVal}</td>
+                <td class="p-3 border text-center font-bold text-gray-800">${spiritualVal}</td>
+                <td class="p-3 border text-center font-bold text-gray-800">${disiplinVal}</td>
                 <td class="p-3 border text-center font-bold text-gray-800">${tanggungJawabVal}</td>
                 <td class="p-3 border text-center font-bold text-gray-800">${kerjaSamaVal}</td>
-                <td class="p-3 border text-center font-bold text-gray-800">${item.integritas}</td>
-                <td class="p-3 border font-medium text-gray-700 italic">${item.kesimpulan}</td>
+                <td class="p-3 border text-center font-bold text-gray-800">${integritasVal}</td>
+                <td class="p-3 border font-medium text-gray-700 italic">${kesimpulanVal}</td>
               </tr>
             `;
           });
