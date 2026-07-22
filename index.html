@@ -243,7 +243,7 @@
       <div
         class="mt-8 text-center text-slate-400 font-semibold text-[10px] tracking-widest no-print"
       >
-        copyright: @ w.yogaswara ps_smk _kcd_xi_2026
+        Copyright: @ w.yogaswara ps_smk _kcd_xi_2026
       </div>
     </div>
 
@@ -2494,6 +2494,18 @@
               >
                 Impor Excel
               </button>
+              <button
+                onclick="cetakDataSiswaPDF()"
+                class="bg-rose-600 hover:bg-rose-700 text-white px-5 py-3 rounded-xl font-black text-[9px] uppercase shadow-lg transition flex items-center gap-2"
+              >
+                <span>🖨️</span> Cetak PDF Siswa
+              </button>
+              <button
+                onclick="exportDataSiswaExcel()"
+                class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl font-black text-[9px] uppercase shadow-lg transition flex items-center gap-2"
+              >
+                <span>💾</span> Simpan Excel Siswa
+              </button>
               <input
                 type="file"
                 id="excelInput"
@@ -3899,7 +3911,7 @@
                 </div>
               </div>
             </div>
-            <div class="flex gap-2">
+            <div class="flex gap-2 flex-wrap">
               <button
                 onclick="openFormUserManagement()"
                 class="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-lg hover:bg-blue-700 transition"
@@ -3916,7 +3928,13 @@
                 onclick="cetakUserManagementPDF()"
                 class="bg-rose-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-lg flex items-center gap-2 hover:bg-rose-700 transition"
               >
-                <span>Cetak PDF</span> <span>🖨️</span>
+                <span>🖨️</span> <span>Cetak PDF Data Guru</span>
+              </button>
+              <button
+                onclick="exportUserManagementExcel()"
+                class="bg-emerald-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-lg flex items-center gap-2 hover:bg-emerald-700 transition"
+              >
+                <span>💾</span> <span>Simpan Excel Data Guru</span>
               </button>
             </div>
           </div>
@@ -5672,12 +5690,20 @@
                 Laporan rekapitulasi jumlah siswa seluruh sekolah binaan dan terdaftar
               </p>
             </div>
-            <button
-              onclick="cetakRekapSiswa()"
-              class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-3 rounded-2xl font-black text-[9px] uppercase shadow-md transition flex items-center gap-2"
-            >
-              <span>🖨️</span> Cetak PDF / Print
-            </button>
+            <div class="flex flex-wrap gap-2">
+              <button
+                onclick="cetakRekapSiswa()"
+                class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-3 rounded-2xl font-black text-[9px] uppercase shadow-md transition flex items-center gap-2"
+              >
+                <span>🖨️</span> Cetak PDF
+              </button>
+              <button
+                onclick="exportRekapSiswaExcel()"
+                class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-2xl font-black text-[9px] uppercase shadow-md transition flex items-center gap-2"
+              >
+                <span>💾</span> Simpan Excel
+              </button>
+            </div>
           </div>
 
           <!-- FILTERS PANEL -->
@@ -5685,7 +5711,7 @@
             <h4 class="font-black text-[10px] text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-1">
               <span>🔍</span> Filter Pencarian Rekap
             </h4>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <!-- Admin Only: Supervisor Filter -->
               <div id="filterRekapSiswaSupervisorWrapper" class="hidden">
                 <label class="text-[8px] font-black text-slate-500 uppercase ml-1 block mb-1">Pilih Pengawas Sekolah</label>
@@ -5703,10 +5729,22 @@
                 <label id="lblFilterRekapSiswaSchool" class="text-[8px] font-black text-slate-500 uppercase ml-1 block mb-1">Pilih Sekolah Binaan</label>
                 <select
                   id="filterRekapSiswaSchool"
-                  onchange="loadRekapSiswaData()"
+                  onchange="onRekapSiswaSchoolChanged()"
                   class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-[10px] font-bold uppercase tracking-wider focus:outline-none focus:border-indigo-500 transition shadow-sm"
                 >
                   <option value="ALL">-- SEMUA SEKOLAH BINAAN --</option>
+                </select>
+              </div>
+
+              <!-- Class Filter -->
+              <div id="filterRekapSiswaClassWrapper">
+                <label id="lblFilterRekapSiswaClass" class="text-[8px] font-black text-slate-500 uppercase ml-1 block mb-1">Pilih Kelas</label>
+                <select
+                  id="filterRekapSiswaClass"
+                  onchange="loadRekapSiswaData()"
+                  class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-[10px] font-bold uppercase tracking-wider focus:outline-none focus:border-indigo-500 transition shadow-sm"
+                >
+                  <option value="ALL">-- SEMUA KELAS --</option>
                 </select>
               </div>
             </div>
@@ -5953,7 +5991,7 @@
       <footer
         class="p-6 text-center text-gray-400 font-bold text-[9px] tracking-widest"
       >
-        copyright: @ w.yogaswara ps_smk _kcd_xi_2026
+        Copyright: @ w.yogaswara ps_smk _kcd_xi_2026
       </footer>
     </div>
 
@@ -13795,6 +13833,66 @@
         doc.save(`DATA_USER_GURU_${schoolNameClean}.pdf`);
       }
 
+      function exportUserManagementExcel() {
+        if (!currentUsers || currentUsers.length === 0) {
+          return alert("Tidak ada data user/guru yang tersedia untuk disimpan!");
+        }
+
+        const selSchool = document.getElementById("filterUserSekolah")
+          ? document.getElementById("filterUserSekolah").value
+          : "ALL";
+        const filterSupervisor = document.getElementById("filterUserSupervisor")
+          ? document.getElementById("filterUserSupervisor").value
+          : "ALL";
+
+        let filterText = `SEKOLAH: ${selSchool === "ALL" ? "SEMUA SEKOLAH" : selSchool.toUpperCase()}`;
+        if (filterSupervisor !== "ALL") {
+          filterText += ` | PENGAWAS: ${filterSupervisor.toUpperCase()}`;
+        }
+
+        const headers = [
+          "NO",
+          "NAMA GURU / USER",
+          "NIP / NUPTK",
+          "EMAIL",
+          "ROLE",
+          "SEKOLAH",
+          "MATA PELAJARAN",
+          "PANGKAT / GOLONGAN",
+          "STATUS"
+        ];
+
+        let ws_data = [
+          ["LAPORAN DATA USER & MANAJEMEN GURU"],
+          [filterText],
+          [`WAKTU UNDUH: ${new Date().toLocaleString("id-ID")}`],
+          [],
+          headers
+        ];
+
+        currentUsers.forEach((u, idx) => {
+          const pangkatGol = [u.pangkat, u.golongan].filter(Boolean).join(" - ") || "-";
+          ws_data.push([
+            idx + 1,
+            u.nama || "-",
+            u.nip || "-",
+            u.email || "-",
+            u.role || "-",
+            u.sekolah || "-",
+            u.mapel || "-",
+            pangkatGol,
+            u.status || "-"
+          ]);
+        });
+
+        let wb = XLSX.utils.book_new();
+        let ws = XLSX.utils.aoa_to_sheet(ws_data);
+        XLSX.utils.book_append_sheet(wb, ws, "Data Guru & User");
+
+        const schoolNameClean = selSchool === "ALL" ? "SEMUA_SEKOLAH" : selSchool.toUpperCase().replace(/[^A-Z0-9]/g, "_");
+        XLSX.writeFile(wb, `DATA_USER_GURU_${schoolNameClean}.xlsx`);
+      }
+
       function openEditUserManagemen(idx) {
         const u = currentUsers[idx];
         document.getElementById("manageUserRow").value = u.row;
@@ -19921,6 +20019,7 @@
         }
         
         populateRekapSchoolDropdown();
+        populateRekapClassDropdown();
         loadRekapSiswaData();
       }
 
@@ -19976,18 +20075,65 @@
         }
       }
 
+      function populateRekapClassDropdown() {
+        const classSelect = document.getElementById("filterRekapSiswaClass");
+        if (!classSelect) return;
+        
+        const oldVal = classSelect.value || "ALL";
+        classSelect.innerHTML = '<option value="ALL">-- SEMUA KELAS --</option>';
+        
+        const allowedSchools = getRekapAllowedSchools();
+        const allowedSchoolsUpper = (allowedSchools || []).map(s => s.toUpperCase().trim());
+        
+        const classSet = new Set();
+        
+        (window.rekapSiswaData.classes || []).forEach(c => {
+          const sch = (c.sekolah || "").toUpperCase().trim();
+          const kls = (c.nama || "").toUpperCase().trim();
+          if (kls) {
+            if (allowedSchoolsUpper.length === 0 || allowedSchoolsUpper.includes(sch)) {
+              classSet.add(kls);
+            }
+          }
+        });
+        
+        (window.rekapSiswaData.students || []).forEach(s => {
+          const sch = (s.sekolah || "").toUpperCase().trim();
+          const kls = (s.kelas || "").toUpperCase().trim();
+          if (kls) {
+            if (allowedSchoolsUpper.length === 0 || allowedSchoolsUpper.includes(sch)) {
+              classSet.add(kls);
+            }
+          }
+        });
+        
+        const classesToChoose = Array.from(classSet).sort();
+        classesToChoose.forEach(kls => {
+          const opt = document.createElement("option");
+          opt.value = kls;
+          opt.text = kls;
+          classSelect.add(opt);
+        });
+        
+        if (classesToChoose.includes(oldVal)) {
+          classSelect.value = oldVal;
+        } else {
+          classSelect.value = "ALL";
+        }
+      }
+
       function onRekapSiswaSupervisorChanged() {
         populateRekapSchoolDropdown();
+        populateRekapClassDropdown();
         loadRekapSiswaData();
       }
 
-      function loadRekapSiswaData() {
-        const loadingEl = document.getElementById("loadingRekapSiswa");
-        const emptyEl = document.getElementById("emptyRekapSiswa");
-        
-        if (loadingEl) loadingEl.classList.remove("hidden");
-        if (emptyEl) emptyEl.classList.add("hidden");
-        
+      function onRekapSiswaSchoolChanged() {
+        populateRekapClassDropdown();
+        loadRekapSiswaData();
+      }
+
+      function getRekapAllowedSchools() {
         const isUserAdmin = isAdminRole(activeUser.role);
         const supervisorSelect = document.getElementById("filterRekapSiswaSupervisor");
         const schoolSelect = document.getElementById("filterRekapSiswaSchool");
@@ -20032,11 +20178,25 @@
             allowedSchools = [selectedSchool.toUpperCase().trim()];
           }
         }
+        return allowedSchools;
+      }
+
+      function loadRekapSiswaData() {
+        const loadingEl = document.getElementById("loadingRekapSiswa");
+        const emptyEl = document.getElementById("emptyRekapSiswa");
+        
+        if (loadingEl) loadingEl.classList.remove("hidden");
+        if (emptyEl) emptyEl.classList.add("hidden");
+        
+        const allowedSchools = getRekapAllowedSchools();
+        const classSelect = document.getElementById("filterRekapSiswaClass");
+        const selectedClass = classSelect ? classSelect.value : "ALL";
         
         const aggregated = aggregateRekapSiswa(
           window.rekapSiswaData.students,
           window.rekapSiswaData.classes,
-          allowedSchools
+          allowedSchools,
+          selectedClass
         );
         
         const tbody = document.getElementById("tableRekapSiswaBody");
@@ -20105,10 +20265,11 @@
         document.getElementById("tableRekapSiswaTotalGrand").innerText = totalGrand;
       }
 
-      function aggregateRekapSiswa(students, classes, allowedSchools) {
+      function aggregateRekapSiswa(students, classes, allowedSchools, selectedClass) {
         const rowMap = {};
         
         const allowedSchoolsUpper = (allowedSchools || []).map(s => s.toUpperCase().trim());
+        const targetClassUpper = selectedClass && selectedClass !== "ALL" ? selectedClass.toUpperCase().trim() : null;
         
         classes.forEach(c => {
           const sch = (c.sekolah || "").toUpperCase().trim();
@@ -20116,6 +20277,7 @@
           if (!sch || !kls) return;
           
           if (allowedSchoolsUpper.length > 0 && !allowedSchoolsUpper.includes(sch)) return;
+          if (targetClassUpper && kls !== targetClassUpper) return;
           
           const key = sch + "|" + kls;
           rowMap[key] = {
@@ -20133,6 +20295,7 @@
           if (!sch || !kls) return;
           
           if (allowedSchoolsUpper.length > 0 && !allowedSchoolsUpper.includes(sch)) return;
+          if (targetClassUpper && kls !== targetClassUpper) return;
           
           const key = sch + "|" + kls;
           if (!rowMap[key]) {
@@ -20166,9 +20329,11 @@
         const isUserAdmin = isAdminRole(activeUser.role);
         const supervisorSelect = document.getElementById("filterRekapSiswaSupervisor");
         const schoolSelect = document.getElementById("filterRekapSiswaSchool");
+        const classSelect = document.getElementById("filterRekapSiswaClass");
         
         const selectedSv = isUserAdmin && supervisorSelect ? supervisorSelect.value : "ALL";
         const selectedSchool = schoolSelect ? schoolSelect.value : "ALL";
+        const selectedClass = classSelect ? classSelect.value : "ALL";
         
         let subTitle = "";
         if (isUserAdmin) {
@@ -20178,10 +20343,12 @@
             if (opt) svText = opt.text;
           }
           let schText = selectedSchool === "ALL" ? "Semua Sekolah" : selectedSchool;
-          subTitle = "Pengawas: " + svText + " | Sekolah: " + schText;
+          let klsText = selectedClass === "ALL" ? "Semua Kelas" : selectedClass;
+          subTitle = "Pengawas: " + svText + " | Sekolah: " + schText + " | Kelas: " + klsText;
         } else {
           let schText = selectedSchool === "ALL" ? "Semua Sekolah Binaan" : selectedSchool;
-          subTitle = "Sekolah Binaan: " + schText;
+          let klsText = selectedClass === "ALL" ? "Semua Kelas" : selectedClass;
+          subTitle = "Sekolah Binaan: " + schText + " | Kelas: " + klsText;
         }
         
         const printSub = document.getElementById("printRekapSiswaSub");
@@ -20223,6 +20390,243 @@
           </div>
         `;
         openPrintOverlay(htmlContent);
+      }
+
+      function exportRekapSiswaExcel() {
+        const allowedSchools = getRekapAllowedSchools();
+        const classSelect = document.getElementById("filterRekapSiswaClass");
+        const selectedClass = classSelect ? classSelect.value : "ALL";
+        const aggregated = aggregateRekapSiswa(
+          window.rekapSiswaData.students,
+          window.rekapSiswaData.classes,
+          allowedSchools,
+          selectedClass
+        );
+
+        if (!aggregated || aggregated.length === 0) {
+          return alert("Tidak ada data rekap siswa untuk disimpan!");
+        }
+
+        const schoolSelect = document.getElementById("filterRekapSiswaSchool");
+        const selectedSchool = schoolSelect ? schoolSelect.value : "ALL";
+
+        const headers = ["NO", "NAMA SEKOLAH", "NAMA KELAS", "LAKI-LAKI (L)", "PEREMPUAN (P)", "TOTAL SISWA"];
+        let ws_data = [
+          ["REKAPITULASI DATA SISWA SEKOLAH BINAAN"],
+          [`SEKOLAH: ${selectedSchool === "ALL" ? "SEMUA SEKOLAH" : selectedSchool.toUpperCase()}`],
+          [`KELAS: ${selectedClass === "ALL" ? "SEMUA KELAS" : selectedClass.toUpperCase()}`],
+          [`WAKTU UNDUH: ${new Date().toLocaleString("id-ID")}`],
+          [],
+          headers
+        ];
+
+        let totalMale = 0, totalFemale = 0, totalGrand = 0;
+        aggregated.forEach((row, idx) => {
+          totalMale += row.male;
+          totalFemale += row.female;
+          totalGrand += row.total;
+          ws_data.push([
+            idx + 1,
+            row.sekolah,
+            row.kelas,
+            row.male,
+            row.female,
+            row.total
+          ]);
+        });
+
+        ws_data.push([]);
+        ws_data.push(["", "", "TOTAL KESELURUHAN:", totalMale, totalFemale, totalGrand]);
+
+        let wb = XLSX.utils.book_new();
+        let ws = XLSX.utils.aoa_to_sheet(ws_data);
+        XLSX.utils.book_append_sheet(wb, ws, "Rekap Siswa");
+        XLSX.writeFile(wb, `REKAP_SISWA_${selectedSchool === "ALL" ? "SEMUA" : selectedSchool.replace(/[^a-zA-Z0-9]/g, "_")}.xlsx`);
+      }
+
+      function getFilteredStudentsForRekap() {
+        const allowedSchools = getRekapAllowedSchools();
+        const allowedUpper = allowedSchools.map(s => s.toUpperCase().trim());
+        const classSelect = document.getElementById("filterRekapSiswaClass");
+        const selectedClass = classSelect ? classSelect.value : "ALL";
+        const targetClassUpper = selectedClass && selectedClass !== "ALL" ? selectedClass.toUpperCase().trim() : null;
+        
+        return (window.rekapSiswaData.students || []).filter(s => {
+          const sch = (s.sekolah || "").toUpperCase().trim();
+          const kls = (s.kelas || "").toUpperCase().trim();
+          if (!sch) return false;
+          if (allowedUpper.length > 0 && !allowedUpper.includes(sch)) return false;
+          if (targetClassUpper && kls !== targetClassUpper) return false;
+          return true;
+        });
+      }
+
+      function exportDetailSiswaExcel() {
+        const studentsList = getFilteredStudentsForRekap();
+        if (!studentsList || studentsList.length === 0) {
+          return alert("Tidak ada data detail siswa untuk disimpan!");
+        }
+
+        const schoolSelect = document.getElementById("filterRekapSiswaSchool");
+        const selectedSchool = schoolSelect ? schoolSelect.value : "ALL";
+
+        const headers = ["NO", "NAMA LENGKAP SISWA", "NIS / NISN", "JENIS KELAMIN", "KELAS", "SEKOLAH", "TGL LAHIR", "ALAMAT", "KONTAK"];
+        let ws_data = [
+          ["LAPORAN DETAIL DATA SISWA SEKOLAH BINAAN"],
+          [`SEKOLAH: ${selectedSchool === "ALL" ? "SEMUA SEKOLAH" : selectedSchool.toUpperCase()}`],
+          [`WAKTU UNDUH: ${new Date().toLocaleString("id-ID")}`],
+          [],
+          headers
+        ];
+
+        studentsList.forEach((s, idx) => {
+          ws_data.push([
+            idx + 1,
+            s.nama || "-",
+            s.nis || "-",
+            s.gender || "-",
+            s.kelas || "-",
+            s.sekolah || "-",
+            s.tglLahir || "-",
+            s.alamat || "-",
+            s.kontak || "-"
+          ]);
+        });
+
+        let wb = XLSX.utils.book_new();
+        let ws = XLSX.utils.aoa_to_sheet(ws_data);
+        XLSX.utils.book_append_sheet(wb, ws, "Detail Data Siswa");
+        XLSX.writeFile(wb, `DATA_DETAIL_SISWA_${selectedSchool === "ALL" ? "SEMUA" : selectedSchool.replace(/[^a-zA-Z0-9]/g, "_")}.xlsx`);
+      }
+
+      function cetakDetailSiswaPDF() {
+        const studentsList = getFilteredStudentsForRekap();
+        if (!studentsList || studentsList.length === 0) {
+          return alert("Tidak ada data detail siswa untuk dicetak!");
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF("l", "mm", "a4");
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.text("LAPORAN DATA DETAIL SISWA SEKOLAH BINAAN", 14, 20);
+        doc.setFontSize(10);
+        
+        const schoolSelect = document.getElementById("filterRekapSiswaSchool");
+        const selectedSchool = schoolSelect ? schoolSelect.value : "ALL";
+
+        doc.text(`SEKOLAH: ${selectedSchool === "ALL" ? "SEMUA SEKOLAH" : selectedSchool.toUpperCase()}`, 14, 26);
+        doc.text(`WAKTU CETAK: ${new Date().toLocaleString("id-ID")}`, 14, 32);
+
+        const headers = ["NO", "NAMA LENGKAP SISWA", "NIS / NISN", "JK", "KELAS", "SEKOLAH", "KONTAK"];
+        const body = studentsList.map((s, idx) => [
+          idx + 1,
+          s.nama || "-",
+          s.nis || "-",
+          (s.gender || "-").substring(0, 1).toUpperCase(),
+          s.kelas || "-",
+          s.sekolah || "-",
+          s.kontak || "-"
+        ]);
+
+        doc.autoTable({
+          startY: 38,
+          head: [headers],
+          body: body,
+          theme: "grid",
+          headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontSize: 8, fontStyle: "bold" },
+          styles: { fontSize: 7, font: "helvetica" },
+          columnStyles: {
+            0: { halign: "center", width: 10 },
+            1: { fontStyle: "bold" },
+            3: { halign: "center" },
+            4: { halign: "center" }
+          }
+        });
+
+        doc.save(`DATA_DETAIL_SISWA_${selectedSchool === "ALL" ? "SEMUA" : selectedSchool.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`);
+      }
+
+      function exportDataSiswaExcel() {
+        const studentsList = window.currentSiswaManagementList || [];
+        if (!studentsList || studentsList.length === 0) {
+          return alert("Tidak ada data siswa untuk disimpan!");
+        }
+
+        const headers = ["NO", "NAMA LENGKAP SISWA", "NIS / NISN", "JENIS KELAMIN", "KELAS", "SEKOLAH", "TGL LAHIR", "ALAMAT", "KONTAK"];
+        let ws_data = [
+          ["LAPORAN DATA SISWA"],
+          [`SEKOLAH: ${(activeUser.sekolah || "SEMUA SEKOLAH").toUpperCase()}`],
+          [`WAKTU UNDUH: ${new Date().toLocaleString("id-ID")}`],
+          [],
+          headers
+        ];
+
+        studentsList.forEach((s, idx) => {
+          ws_data.push([
+            idx + 1,
+            s.nama || "-",
+            s.nis || "-",
+            s.gender || "-",
+            s.kelas || "-",
+            s.sekolah || "-",
+            s.tglLahir || "-",
+            s.alamat || "-",
+            s.kontak || "-"
+          ]);
+        });
+
+        let wb = XLSX.utils.book_new();
+        let ws = XLSX.utils.aoa_to_sheet(ws_data);
+        XLSX.utils.book_append_sheet(wb, ws, "Data Siswa");
+        XLSX.writeFile(wb, `DATA_SISWA_${(activeUser.sekolah || "ALL").replace(/[^a-zA-Z0-9]/g, "_")}.xlsx`);
+      }
+
+      function cetakDataSiswaPDF() {
+        const studentsList = window.currentSiswaManagementList || [];
+        if (!studentsList || studentsList.length === 0) {
+          return alert("Tidak ada data siswa untuk dicetak!");
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF("l", "mm", "a4");
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.text("LAPORAN DATA MANAJEMEN SISWA", 14, 20);
+        doc.setFontSize(10);
+
+        doc.text(`SEKOLAH: ${(activeUser.sekolah || "SEMUA SEKOLAH").toUpperCase()}`, 14, 26);
+        doc.text(`WAKTU CETAK: ${new Date().toLocaleString("id-ID")}`, 14, 32);
+
+        const headers = ["NO", "NAMA LENGKAP SISWA", "NIS / NISN", "JK", "KELAS", "SEKOLAH", "KONTAK"];
+        const body = studentsList.map((s, idx) => [
+          idx + 1,
+          s.nama || "-",
+          s.nis || "-",
+          (s.gender || "-").substring(0, 1).toUpperCase(),
+          s.kelas || "-",
+          s.sekolah || "-",
+          s.kontak || "-"
+        ]);
+
+        doc.autoTable({
+          startY: 38,
+          head: [headers],
+          body: body,
+          theme: "grid",
+          headStyles: { fillColor: [16, 185, 129], textColor: [255, 255, 255], fontSize: 8, fontStyle: "bold" },
+          styles: { fontSize: 7, font: "helvetica" },
+          columnStyles: {
+            0: { halign: "center", width: 10 },
+            1: { fontStyle: "bold" },
+            3: { halign: "center" },
+            4: { halign: "center" }
+          }
+        });
+
+        doc.save(`DATA_SISWA_${(activeUser.sekolah || "ALL").replace(/[^a-zA-Z0-9]/g, "_")}.pdf`);
       }
 
       function loadDaftarKelasFullManagement() {
@@ -20850,6 +21254,8 @@
                       s.nama.toUpperCase().includes(cari) ||
                       s.nis.includes(cari),
                   );
+
+                window.currentSiswaManagementList = filtered;
 
                 if (filtered.length === 0) {
                   table.innerHTML =
