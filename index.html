@@ -7757,7 +7757,62 @@
           }
           getRekapAbsenGuru(bulan, sekolah) {
             setTimeout(() => {
-              if (this._successHandler) this._successHandler([]);
+              const reqSch = (sekolah || "").toUpperCase().trim();
+              const userList = (typeof allUsersList !== "undefined" && allUsersList && allUsersList.length > 0) ? allUsersList : (window.allUsersList || []);
+              
+              const teachers = userList.filter(u => {
+                if (isGuruRole(u.role) || isKepsekRole(u.role)) {
+                  if (reqSch === "PUSAT KCD XI" || reqSch === "ALL" || !reqSch) return true;
+                  return matchSchool(u.sekolah, reqSch);
+                }
+                return false;
+              });
+
+              const list = [];
+              const year = new Date().getFullYear();
+              const monthIdx = parseInt(bulan) || 0;
+              const dateStr = `${year}-${String(monthIdx + 1).padStart(2, "0")}-15`;
+
+              if (teachers.length > 0) {
+                teachers.forEach(t => {
+                  list.push({
+                    timestamp: `${dateStr} 07:12:00`,
+                    guru: t.nama,
+                    tipe: "DATANG",
+                    waktu: "07:12",
+                    status: "TEPAT WAKTU",
+                    sekolah: t.sekolah || reqSch
+                  });
+                  list.push({
+                    timestamp: `${dateStr} 15:30:00`,
+                    guru: t.nama,
+                    tipe: "PULANG",
+                    waktu: "15:30",
+                    status: "TEPAT WAKTU",
+                    sekolah: t.sekolah || reqSch
+                  });
+                });
+              } else {
+                const sampleSch = (reqSch && reqSch !== "PUSAT KCD XI") ? reqSch : (activeUser.sekolah || "SMAN 15 GARUT");
+                list.push({
+                  timestamp: `${dateStr} 07:10:00`,
+                  guru: "ASRI RAHAYU NINGSIH",
+                  tipe: "DATANG",
+                  waktu: "07:10",
+                  status: "TEPAT WAKTU",
+                  sekolah: sampleSch
+                });
+                list.push({
+                  timestamp: `${dateStr} 11:51:00`,
+                  guru: "ASRI RAHAYU NINGSIH",
+                  tipe: "PULANG",
+                  waktu: "11:51",
+                  status: "PULANG AWAL",
+                  sekolah: sampleSch
+                });
+              }
+
+              if (this._successHandler) this._successHandler(list);
             }, 20);
             return this;
           }
@@ -12072,7 +12127,9 @@
         } else {
           // Standalone / Offline sandbox mock data fallback
           window.allUsersCache = [
-            { nama: "Drs. H. Wardana", role: "Pengawas", status: "AKTIF", sekolah: "PUSAT KCD XI" },
+            { nama: "H. Wawan Yogaswara, S.Pd, M.Pd", role: "Pengawas", status: "AKTIF", sekolah: "PUSAT KCD XI", nip: "197205101998031002", email: "wawanyogaswara@gmail.com" },
+            { nama: "Drs. H. Wardana", role: "Pengawas", status: "AKTIF", sekolah: "PUSAT KCD XI", nip: "196803151994031001", email: "wardana@gmail.com" },
+            { nama: "Uloh Saepulloh", role: "Kepala Sekolah", status: "AKTIF", sekolah: "SMKS IT MUHAJIRIN", nip: "197503122005011004" },
             { nama: "Dadang Hermawan, S.Pd", role: "Kepala Sekolah", status: "AKTIF", sekolah: "SMKN 4 GARUT" },
             { nama: "Yayan Rusyana, M.Pd", role: "Kepala Sekolah", status: "AKTIF", sekolah: "SMKN 1 GARUT" },
             { nama: "Asep Setiawan, S.Kom", role: "Guru", status: "AKTIF", sekolah: "SMKN 4 GARUT" },
@@ -15340,10 +15397,41 @@
         doc.setFont("helvetica", "normal");
 
         // Metadata
-        const schoolTitle =
-          activeUser.sekolah && activeUser.sekolah !== "-"
-            ? activeUser.sekolah
-            : "KANTOR CABANG DINAS WILAYAH XI";
+        const sFilter = document.getElementById("schoolFilterRekapGuru");
+        let targetSchool = "";
+        
+        // 1. Check filter dropdown value if selected (and not ALL)
+        if (sFilter && sFilter.value && sFilter.value !== "ALL" && sFilter.value !== "") {
+          targetSchool = sFilter.value;
+        }
+
+        // 2. Check loaded rekap data list to see if records belong to a specific school
+        if (!targetSchool && window.lastLoadedRekapAbsenGuruList && window.lastLoadedRekapAbsenGuruList.length > 0) {
+          const schoolsInList = window.lastLoadedRekapAbsenGuruList.map(a => a.sekolah).filter(Boolean);
+          if (schoolsInList.length > 0) {
+            const counts = {};
+            schoolsInList.forEach(s => {
+              const norm = s.toUpperCase().trim();
+              counts[norm] = (counts[norm] || 0) + 1;
+            });
+            let maxCount = 0;
+            let topSchool = "";
+            Object.keys(counts).forEach(s => {
+              if (counts[s] > maxCount) {
+                maxCount = counts[s];
+                topSchool = s;
+              }
+            });
+            if (topSchool) targetSchool = topSchool;
+          }
+        }
+
+        // 3. Fallback to activeUser.sekolah if valid and not PUSAT KCD XI or -
+        if (!targetSchool && activeUser.sekolah && activeUser.sekolah !== "-" && activeUser.sekolah !== "PUSAT KCD XI") {
+          targetSchool = activeUser.sekolah;
+        }
+
+        const schoolTitle = targetSchool || (activeUser.sekolah && activeUser.sekolah !== "-" && activeUser.sekolah !== "PUSAT KCD XI" ? activeUser.sekolah : "KANTOR CABANG DINAS WILAYAH XI");
         doc.text(`SEKOLAH: ${schoolTitle.toUpperCase()}`, 14, 26);
         doc.text(`BULAN: ${blnNames[bln]} ${new Date().getFullYear()}`, 14, 32);
         doc.text(
@@ -15354,8 +15442,9 @@
 
         const Y = new Date().getFullYear();
         let weekdaysCount = 0;
-        const isSw = checkIfSMKSwasta(activeUser.sekolah);
-        const schoolConfig = getSchoolTeachingDaysConfig(activeUser.sekolah);
+        const schoolForConfig = targetSchool || activeUser.sekolah;
+        const isSw = checkIfSMKSwasta(schoolForConfig);
+        const schoolConfig = getSchoolTeachingDaysConfig(schoolForConfig);
         const hasSat = isSw ? schoolConfig.hasSaturday : false;
         const lastDay = new Date(Y, parseInt(bln) + 1, 0).getDate();
         for (let d = 1; d <= lastDay; d++) {
@@ -15387,7 +15476,7 @@
                   (a.guru || "").toUpperCase().trim() ===
                   tName.toUpperCase().trim(),
               ) || {}
-            ).sekolah || activeUser.sekolah;
+            ).sekolah || targetSchool || activeUser.sekolah;
           const daysInfo = getTeacherExpectedAndActualDays(
             tName,
             bln,
@@ -15481,37 +15570,149 @@
           year: "numeric",
         });
 
-        // Signatures
-        doc.text("MENGETAHUI,", 14, sigY);
-        doc.text("KEPALA SEKOLAH,", 14, sigY + 5);
+        // Determine Signatures based on activeUser.role and targetSchool
+        const searchPool = [
+          ...(typeof allUsersList !== "undefined" && Array.isArray(allUsersList) ? allUsersList : []),
+          ...(Array.isArray(window.allUsersList) ? window.allUsersList : []),
+          ...(Array.isArray(window.allUsersCache) ? window.allUsersCache : []),
+          ...(window.rekapSiswaData && Array.isArray(window.rekapSiswaData.users) ? window.rekapSiswaData.users : [])
+        ];
 
-        doc.text(`Garut, ${tanggalUnduh}`, 130, sigY - 6);
-        doc.text("PENGAWAS / OPERATOR,", 130, sigY);
+        let leftTitle = "MENGETAHUI,";
+        let leftRole = "KEPALA SEKOLAH,";
+        let leftName = "____________________";
+        let leftNip = "____________________";
+
+        let rightTitle = `Garut, ${tanggalUnduh}`;
+        let rightRole = "PENGAWAS / OPERATOR,";
+        let rightName = activeUser.nama ? activeUser.nama.toUpperCase() : "____________________";
+        let rightNip = activeUser.nip || "____________________";
+
+        // Find Kepsek matching targetSchool
+        const kepsekObj = searchPool.find(
+          (u) => u && isKepsekRole(u.role) && targetSchool && matchSchool(u.sekolah || "", targetSchool),
+        );
+
+        // Helper to find Pengawas Pembina for targetSchool
+        function findPengawasPembina(sch) {
+          if (!sch) return null;
+          
+          // 1. Check direct user matching in searchPool
+          let found = searchPool.find((u) => {
+            if (!u || !isPengawasRole(u.role)) return false;
+            if (u.sekolah && matchSchool(u.sekolah, sch)) return true;
+            if (u.sekolahBinaan && Array.isArray(u.sekolahBinaan)) {
+              return u.sekolahBinaan.some((s) => matchSchool(typeof s === 'string' ? s : (s.nama || s.sekolah || ''), sch));
+            }
+            return false;
+          });
+          if (found) return found;
+
+          // 2. Check global / cached sekolah binaan arrays
+          const binaanSources = [
+            window.mySekolahBinaan,
+            window.selectedSupervisorSchools,
+            window.rekapSiswaData ? window.rekapSiswaData.binaan : null
+          ];
+
+          for (const list of binaanSources) {
+            if (list && Array.isArray(list)) {
+              const match = list.find((b) => matchSchool(typeof b === 'string' ? b : (b.nama || b.sekolah || ''), sch));
+              if (match) {
+                const pEmail = (match.pengawas || match.email || "").toLowerCase().trim();
+                const pName = (match.pengawasNama || match.nama || "").toLowerCase().trim();
+                const pObj = searchPool.find((u) => u && isPengawasRole(u.role) && (
+                  (pEmail && u.email && u.email.toLowerCase().trim() === pEmail) ||
+                  (pName && u.nama && u.nama.toLowerCase().trim().includes(pName))
+                ));
+                if (pObj) return pObj;
+                if (match.pengawasNama || match.pengawas) {
+                  return {
+                    nama: (match.pengawasNama || match.pengawas).toUpperCase(),
+                    nip: match.nip || "____________________"
+                  };
+                }
+              }
+            }
+          }
+
+          // 3. If active user is Pengawas, return active user
+          if (isPengawasRole(activeUser.role)) return activeUser;
+
+          // 4. Look for "H. Wawan Yogaswara, S.Pd, M.Pd" or any Pengawas in pool
+          const wawan = searchPool.find((u) => u && isPengawasRole(u.role) && u.nama && u.nama.toUpperCase().includes("WAWAN"));
+          if (wawan) return wawan;
+
+          const anyPengawas = searchPool.find((u) => u && isPengawasRole(u.role));
+          if (anyPengawas) return anyPengawas;
+
+          // 5. Default fallback Pengawas Pembina for KCD XI
+          return {
+            nama: "H. WAWAN YOGASWARA, S.Pd, M.Pd",
+            nip: "197205101998031002"
+          };
+        }
+
+        const pengawasObj = findPengawasPembina(targetSchool);
+
+        if (isKepsekRole(activeUser.role)) {
+          // Logged in as Kepala Sekolah: Kepsek on RIGHT side, Pengawas on LEFT side
+          rightRole = "KEPALA SEKOLAH,";
+          rightName = activeUser.nama.toUpperCase();
+          rightNip = activeUser.nip || "____________________";
+
+          leftRole = "PENGAWAS PEMBINA,";
+          if (pengawasObj) {
+            leftName = (pengawasObj.nama || "").toUpperCase();
+            leftNip = pengawasObj.nip || "____________________";
+          }
+        } else if (isPengawasRole(activeUser.role)) {
+          // Logged in as Pengawas: Pengawas on RIGHT side, Kepsek on LEFT side
+          leftRole = "KEPALA SEKOLAH,";
+          if (kepsekObj) {
+            leftName = (kepsekObj.nama || "").toUpperCase();
+            leftNip = kepsekObj.nip || "____________________";
+          }
+
+          rightRole = "PENGAWAS PEMBINA,";
+          rightName = activeUser.nama.toUpperCase();
+          rightNip = activeUser.nip || "____________________";
+        } else {
+          // Logged in as Admin, Operator, or Guru
+          leftRole = "KEPALA SEKOLAH,";
+          if (kepsekObj) {
+            leftName = (kepsekObj.nama || "").toUpperCase();
+            leftNip = kepsekObj.nip || "____________________";
+          }
+
+          if (isAdminRole(activeUser.role)) {
+            rightRole = "ADMINISTRATOR,";
+          } else if (activeUser.role === "Guru") {
+            rightRole = "GURU MATA PELAJARAN,";
+          } else {
+            rightRole = "OPERATOR / PETUGAS,";
+          }
+          rightName = activeUser.nama ? activeUser.nama.toUpperCase() : "____________________";
+          rightNip = activeUser.nip || "____________________";
+        }
+
+        // Print Signatures
+        doc.text(leftTitle, 14, sigY);
+        doc.text(leftRole, 14, sigY + 5);
+
+        doc.text(rightTitle, 130, sigY - 6);
+        doc.text(rightRole, 130, sigY);
 
         let nameY = sigY + 28;
 
-        let kepsekNama = "____________________";
-        let kepsekNip = "_";
-        const kepsekObj = allUsersList.find(
-          (u) => u.role === "Kepsek" || u.role === "Kepala Sekolah",
-        );
-        if (kepsekObj) {
-          kepsekNama = kepsekObj.nama.toUpperCase();
-          kepsekNip = kepsekObj.nip || "";
-        }
-
         doc.setFont("helvetica", "bold");
-        doc.text(kepsekNama, 14, nameY);
-        doc.text(activeUser.nama.toUpperCase(), 130, nameY);
+        doc.text(leftName, 14, nameY);
+        doc.text(rightName, 130, nameY);
 
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8);
-        doc.text(`NIP. ${kepsekNip}`, 14, nameY + 4);
-        doc.text(
-          `NIP. ${activeUser.nip || "____________________"}`,
-          130,
-          nameY + 4,
-        );
+        doc.text(`NIP. ${leftNip}`, 14, nameY + 4);
+        doc.text(`NIP. ${rightNip}`, 130, nameY + 4);
 
         doc.save(
           `REKAP_ABSENSI_GURU_${blnNames[bln]}_${new Date().getFullYear()}.pdf`,
