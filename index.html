@@ -4859,9 +4859,15 @@
             </div>
 
             <!-- Form Actions -->
-            <div id="formSikapActions" class="hidden flex justify-end gap-3 mt-4">
-              <button onclick="simpanSikapForm()" class="bg-blue-600 hover:bg-blue-700 text-white font-black px-8 py-4 rounded-2xl shadow-lg uppercase transition text-xs tracking-wider">
-                💾 Simpan Penilaian Sikap
+            <div id="formSikapActions" class="hidden flex flex-wrap justify-end gap-3 mt-4">
+              <button onclick="simpanSikapForm()" class="bg-blue-600 hover:bg-blue-700 text-white font-black px-6 py-3.5 rounded-2xl shadow-lg uppercase transition text-xs tracking-wider flex items-center gap-2">
+                <span>💾</span> Simpan Penilaian Sikap
+              </button>
+              <button onclick="exportSikapFormExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6 py-3.5 rounded-2xl shadow-lg uppercase transition text-xs tracking-wider flex items-center gap-2">
+                <span>📁</span> Simpan Excel
+              </button>
+              <button onclick="cetakSikapFormPDF()" class="bg-rose-600 hover:bg-rose-700 text-white font-black px-6 py-3.5 rounded-2xl shadow-lg uppercase transition text-xs tracking-wider flex items-center gap-2">
+                <span>🖨️</span> Cetak PDF
               </button>
             </div>
           </div>
@@ -23328,6 +23334,131 @@
             tahunPelajaran: tahunPelajaran,
             semester: semester
           });
+      }
+
+      function exportSikapFormExcel() {
+        const kelas = document.getElementById("selSikapKelas").value;
+        const mapel = getSelectedSikapMapel();
+        const tahun = document.getElementById("selSikapTahun").value;
+        const semester = document.getElementById("selSikapSemester").value;
+
+        if (!currentSikapSiswaList || currentSikapSiswaList.length === 0) {
+          Swal.fire("Info", "Tidak ada data nilai sikap untuk diunduh.", "info");
+          return;
+        }
+
+        const headers = ["No", "Nama Siswa", "NISN/NIS", "Spiritual", "Disiplin", "Tanggung Jawab", "Kerja Sama", "Integritas", "Catatan Guru", "Kesimpulan Sikap Mapel"];
+        const rows = currentSikapSiswaList.map((s, idx) => {
+          const sNis = s.nis || s.nisn || "";
+          const spiritualEl = document.getElementById(`sikap-spiritual-${idx}`);
+          const disiplinEl = document.getElementById(`sikap-disiplin-${idx}`);
+          const tjEl = document.getElementById(`sikap-tanggungJawab-${idx}`);
+          const ksEl = document.getElementById(`sikap-kerjaSama-${idx}`);
+          const integritasEl = document.getElementById(`sikap-integritas-${idx}`);
+          const catatanEl = document.getElementById(`sikap-catatan-${idx}`);
+          const kesimpulanEl = document.getElementById(`sikap-kesimpulan-${idx}`);
+
+          return [
+            idx + 1,
+            s.nama,
+            sNis,
+            spiritualEl ? spiritualEl.value : "",
+            disiplinEl ? disiplinEl.value : "",
+            tjEl ? tjEl.value : "",
+            ksEl ? ksEl.value : "",
+            integritasEl ? integritasEl.value : "",
+            catatanEl ? catatanEl.value : "",
+            kesimpulanEl ? kesimpulanEl.value : ""
+          ];
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet([
+          ["FORM PENILAIAN SIKAP SISWA"],
+          [`KELAS: ${kelas} | MAPEL: ${mapel} | TP: ${tahun} | SEMESTER: ${semester}`],
+          [],
+          headers,
+          ...rows
+        ]);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Penilaian Sikap");
+        XLSX.writeFile(wb, `PENILAIAN_SIKAP_${kelas}_${mapel}.xlsx`);
+      }
+
+      function cetakSikapFormPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF("l", "mm", "a4");
+
+        const kelas = document.getElementById("selSikapKelas").value;
+        const mapel = getSelectedSikapMapel();
+        const tahun = document.getElementById("selSikapTahun").value;
+        const semester = document.getElementById("selSikapSemester").value;
+
+        let sekolah = activeUser.sekolah;
+        if (isAdminRole(activeUser.role) || isPengawasRole(activeUser.role)) sekolah = document.getElementById("selSikapSekolah").value;
+
+        let guru = activeUser.nama;
+        if (isAdminRole(activeUser.role) || isPengawasRole(activeUser.role) || isKepsekRole(activeUser.role) || isOperatorRole(activeUser.role)) {
+          guru = document.getElementById("selSikapGuru").value;
+        }
+
+        if (!currentSikapSiswaList || currentSikapSiswaList.length === 0) {
+          Swal.fire("Info", "Tidak ada data nilai sikap untuk dicetak.", "info");
+          return;
+        }
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.text("FORM PENILAIAN SIKAP SISWA", 14, 15);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Sekolah: ${sekolah || '-'}  |  Kelas: ${kelas}  |  Mapel: ${mapel}  |  Guru: ${guru}  |  TP: ${tahun} (${semester})`, 14, 21);
+        doc.line(14, 25, 283, 25);
+
+        const headers = ["No", "Nama Siswa", "Spiritual", "Disiplin", "Tanggung Jawab", "Kerja Sama", "Integritas", "Catatan Guru", "Kesimpulan Sikap Mapel"];
+        const rows = currentSikapSiswaList.map((s, idx) => {
+          const spiritualEl = document.getElementById(`sikap-spiritual-${idx}`);
+          const disiplinEl = document.getElementById(`sikap-disiplin-${idx}`);
+          const tjEl = document.getElementById(`sikap-tanggungJawab-${idx}`);
+          const ksEl = document.getElementById(`sikap-kerjaSama-${idx}`);
+          const integritasEl = document.getElementById(`sikap-integritas-${idx}`);
+          const catatanEl = document.getElementById(`sikap-catatan-${idx}`);
+          const kesimpulanEl = document.getElementById(`sikap-kesimpulan-${idx}`);
+
+          return [
+            idx + 1,
+            s.nama,
+            spiritualEl ? spiritualEl.value : "",
+            disiplinEl ? disiplinEl.value : "",
+            tjEl ? tjEl.value : "",
+            ksEl ? ksEl.value : "",
+            integritasEl ? integritasEl.value : "",
+            catatanEl ? catatanEl.value : "",
+            kesimpulanEl ? kesimpulanEl.value : ""
+          ];
+        });
+
+        doc.autoTable({
+          startY: 28,
+          head: [headers],
+          body: rows,
+          theme: "grid",
+          headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontSize: 8, fontStyle: "bold" },
+          styles: { fontSize: 7.5, font: "helvetica", halign: "left" },
+          columnStyles: {
+            0: { halign: "center", width: 10 },
+            1: { fontStyle: "bold", width: 40 },
+            2: { halign: "center", width: 20 },
+            3: { halign: "center", width: 20 },
+            4: { halign: "center", width: 22 },
+            5: { halign: "center", width: 20 },
+            6: { halign: "center", width: 20 },
+            7: { width: 40 },
+            8: { width: 75 }
+          },
+          margin: { left: 14, right: 14 }
+        });
+
+        doc.save(`FORM_PENILAIAN_SIKAP_${kelas}_${mapel}.pdf`);
       }
 
       function switchSikapSubTab(tab) {
