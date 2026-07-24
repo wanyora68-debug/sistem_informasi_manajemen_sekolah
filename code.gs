@@ -53,7 +53,8 @@ function bootstrapDatabase(ss) {
         [new Date(), "Guru Demo", "guru@demo.com", "guru", "Guru", "SMKN 4 GARUT", "https://www.w3schools.com/howto/img_avatar.png", "Aktif", "TEKNOLOGI INFORMASI", "198504122010121003", "Penata", "III/c"],
         [new Date(), "Kepala Sekolah Demo", "kepsek@demo.com", "kepsek", "Kepala Sekolah", "SMKN 4 GARUT", "https://www.w3schools.com/howto/img_avatar.png", "Aktif", "", "", "", ""],
         [new Date(), "Operator Demo", "operator@demo.com", "operator", "Operator", "SMKN 4 GARUT", "https://www.w3schools.com/howto/img_avatar.png", "Aktif", "", "", "", ""],
-        [new Date(), "Pengawas Demo", "pengawas@demo.com", "pengawas", "Pengawas", "PUSAT KCD XI", "https://www.w3schools.com/howto/img_avatar.png", "Aktif", "", "", "", ""]
+        [new Date(), "Pengawas Demo", "pengawas@demo.com", "pengawas", "Pengawas", "PUSAT KCD XI", "https://www.w3schools.com/howto/img_avatar.png", "Aktif", "", "", "", ""],
+        [new Date(), "H. Wawan Yogaswara, S.Pd, M.Pd", "wawanyogaswara@gmail.com", "pengawas", "Pengawas", "PUSAT KCD XI", "https://www.w3schools.com/howto/img_avatar.png", "Aktif", "", "197205101998031002", "Pembina Utama Muda", "IV/c"]
       ];
       for (var f = 0; f < defaultUsers.length; f++) {
         sheetUser.appendRow(defaultUsers[f]);
@@ -71,7 +72,8 @@ function bootstrapDatabase(ss) {
           [new Date(), "Guru Demo", "guru@demo.com", "guru", "Guru", "SMKN 4 GARUT", "https://www.w3schools.com/howto/img_avatar.png", "Aktif", "TEKNOLOGI INFORMASI", "198504122010121003", "Penata", "III/c"],
           [new Date(), "Kepala Sekolah Demo", "kepsek@demo.com", "kepsek", "Kepala Sekolah", "SMKN 4 GARUT", "https://www.w3schools.com/howto/img_avatar.png", "Aktif", "", "", "", ""],
           [new Date(), "Operator Demo", "operator@demo.com", "operator", "Operator", "SMKN 4 GARUT", "https://www.w3schools.com/howto/img_avatar.png", "Aktif", "", "", "", ""],
-          [new Date(), "Pengawas Demo", "pengawas@demo.com", "pengawas", "Pengawas", "PUSAT KCD XI", "https://www.w3schools.com/howto/img_avatar.png", "Aktif", "", "", "", ""]
+          [new Date(), "Pengawas Demo", "pengawas@demo.com", "pengawas", "Pengawas", "PUSAT KCD XI", "https://www.w3schools.com/howto/img_avatar.png", "Aktif", "", "", "", ""],
+          [new Date(), "H. Wawan Yogaswara, S.Pd, M.Pd", "wawanyogaswara@gmail.com", "pengawas", "Pengawas", "PUSAT KCD XI", "https://www.w3schools.com/howto/img_avatar.png", "Aktif", "", "197205101998031002", "Pembina Utama Muda", "IV/c"]
         ];
         for (var f = 0; f < defaultUsers.length; f++) {
           sheetUser.appendRow(defaultUsers[f]);
@@ -2093,7 +2095,7 @@ function getSekolahBinaan(pengawasEmail) {
       var row = data[i];
       if (row.length > 2 && row[1]) {
         var rowEmail = row[1].toString().toLowerCase().trim();
-        if (rowEmail === emailLower || emailLower === "wanyora68@gmail.com") {
+        if (emailLower === "" || emailLower === "all" || emailLower === "wanyora68@gmail.com" || rowEmail === emailLower) {
           list.push({
             row: i + 1,
             timestamp: row[0] ? row[0].toString() : "",
