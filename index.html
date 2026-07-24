@@ -10400,23 +10400,31 @@
                 sekolah: uObj.sekolah || "SMKN 4 GARUT",
               },
             ];
-            const simSiswa = [
-              {
-                nama: "Alif Prasetyo",
-                sekolah: uObj.sekolah || "SMKN 4 GARUT",
-                kelas: "XI PPLG 1",
-              },
-              {
-                nama: "Budi Setiawan",
-                sekolah: uObj.sekolah || "SMKN 4 GARUT",
-                kelas: "XI PPLG 1",
-              },
-              {
-                nama: "Citra Lestari",
-                sekolah: uObj.sekolah || "SMKN 4 GARUT",
-                kelas: "XI PPLG 2",
-              },
-            ];
+            let simSiswa = JSON.parse(
+              localStorage.getItem("sims_mock_students") || "null",
+            );
+            if (!simSiswa || simSiswa.length === 0) {
+              simSiswa = [
+                {
+                  nama: "ADI WIJAYA",
+                  sekolah: uObj.sekolah || "SMKN 4 GARUT",
+                  kelas: "XI-PPLG-2",
+                  gender: "LAKI-LAKI",
+                },
+                {
+                  nama: "BELLA CITRA",
+                  sekolah: uObj.sekolah || "SMKN 4 GARUT",
+                  kelas: "XI-PPLG-2",
+                  gender: "PEREMPUAN",
+                },
+                {
+                  nama: "CHANDRA ADI",
+                  sekolah: uObj.sekolah || "SMKN 4 GARUT",
+                  kelas: "X-PPLG-1",
+                  gender: "LAKI-LAKI",
+                },
+              ];
+            }
             const simKelas = [
               { kelas: "XI PPLG 1", sekolah: uObj.sekolah || "SMKN 4 GARUT" },
               { kelas: "XI PPLG 2", sekolah: uObj.sekolah || "SMKN 4 GARUT" },
@@ -20352,17 +20360,7 @@
         if (isUserAdmin) {
           if (selectedSv === "ALL") {
             if (selectedSchool === "ALL") {
-              const schoolSet = new Set();
-              (window.rekapSiswaData.binaan || []).forEach(b => {
-                if (b.nama) schoolSet.add(b.nama.toUpperCase().trim());
-              });
-              (window.rekapSiswaData.classes || []).forEach(c => {
-                if (c.sekolah) schoolSet.add(c.sekolah.toUpperCase().trim());
-              });
-              (window.rekapSiswaData.students || []).forEach(s => {
-                if (s.sekolah) schoolSet.add(s.sekolah.toUpperCase().trim());
-              });
-              allowedSchools = Array.from(schoolSet);
+              allowedSchools = []; // empty means ALL schools allowed without filtering out
             } else {
               allowedSchools = [selectedSchool.toUpperCase().trim()];
             }
@@ -20377,10 +20375,16 @@
               allowedSchools = [selectedSchool.toUpperCase().trim()];
             }
           }
-        } else {
+        } else if (isPengawasRole(activeUser.role)) {
           const mySchools = (window.rekapSiswaData.binaan || []).map(b => (b.nama || "").toUpperCase().trim());
           if (selectedSchool === "ALL") {
             allowedSchools = mySchools;
+          } else {
+            allowedSchools = [selectedSchool.toUpperCase().trim()];
+          }
+        } else {
+          if (selectedSchool === "ALL") {
+            allowedSchools = activeUser.sekolah ? [activeUser.sekolah.toUpperCase().trim()] : [];
           } else {
             allowedSchools = [selectedSchool.toUpperCase().trim()];
           }
@@ -20483,7 +20487,7 @@
           const kls = (c.nama || "").toUpperCase().trim();
           if (!sch || !kls) return;
           
-          if (allowedSchoolsUpper.length > 0 && !allowedSchoolsUpper.includes(sch)) return;
+          if (allowedSchoolsUpper.length > 0 && !allowedSchoolsUpper.some(allowed => matchSchool(sch, allowed))) return;
           if (targetClassUpper && kls !== targetClassUpper) return;
           
           const key = sch + "|" + kls;
@@ -20498,10 +20502,10 @@
         
         students.forEach(s => {
           const sch = (s.sekolah || "").toUpperCase().trim();
-          const kls = (s.kelas || "").toUpperCase().trim();
-          if (!sch || !kls) return;
+          const kls = (s.kelas || "").toUpperCase().trim() || "TANPA KELAS";
+          if (!sch) return;
           
-          if (allowedSchoolsUpper.length > 0 && !allowedSchoolsUpper.includes(sch)) return;
+          if (allowedSchoolsUpper.length > 0 && !allowedSchoolsUpper.some(allowed => matchSchool(sch, allowed))) return;
           if (targetClassUpper && kls !== targetClassUpper) return;
           
           const key = sch + "|" + kls;
@@ -20660,9 +20664,9 @@
         
         return (window.rekapSiswaData.students || []).filter(s => {
           const sch = (s.sekolah || "").toUpperCase().trim();
-          const kls = (s.kelas || "").toUpperCase().trim();
+          const kls = (s.kelas || "").toUpperCase().trim() || "TANPA KELAS";
           if (!sch) return false;
-          if (allowedUpper.length > 0 && !allowedUpper.includes(sch)) return false;
+          if (allowedUpper.length > 0 && !allowedUpper.some(allowed => matchSchool(sch, allowed))) return false;
           if (targetClassUpper && kls !== targetClassUpper) return false;
           return true;
         });
