@@ -529,7 +529,10 @@ function hapusUserManagemen(row) {
   try {
     var ss = getSpreadsheet();
     var sheet = ss.getSheetByName("Data_User");
-    sheet.deleteRow(Number(row));
+    var r = Number(row);
+    if (sheet && !isNaN(r) && r > 1 && r <= sheet.getLastRow()) {
+      sheet.deleteRow(r);
+    }
     return "User telah dihapus.";
   } catch (e) { return "Gagal: " + e.toString(); }
 }
@@ -988,13 +991,51 @@ function simpanKelas(obj) {
   } catch (e) { return "Gagal: " + e.toString(); }
 }
 
-function hapusKelas(row) {
+function hapusKelas(row, namaKelas, sekolah) {
   try {
     var ss = getSpreadsheet();
     var sheet = ss.getSheetByName("Data_Kelas");
-    sheet.deleteRow(Number(row));
+    if (!sheet) return "Data kelas telah dihapus.";
+    
+    var lastRow = sheet.getLastRow();
+    if (lastRow <= 1) return "Data kelas telah dihapus.";
+    
+    var data = sheet.getDataRange().getValues();
+    var targetNama = (namaKelas || "").toString().toUpperCase().trim();
+    var targetSekolah = (sekolah || "").toString().toUpperCase().trim();
+    var rowNum = Number(row);
+    var deleted = false;
+    
+    if (!isNaN(rowNum) && rowNum >= 2 && rowNum <= lastRow) {
+      var rIdx = rowNum - 1;
+      if (rIdx < data.length) {
+        var rowNama = (data[rIdx][1] || "").toString().toUpperCase().trim();
+        var rowSekolah = (data[rIdx][5] || "").toString().toUpperCase().trim();
+        if (!targetNama || rowNama === targetNama) {
+          if (!targetSekolah || !rowSekolah || rowSekolah === targetSekolah) {
+            sheet.deleteRow(rowNum);
+            deleted = true;
+          }
+        }
+      }
+    }
+    
+    if (!deleted && targetNama) {
+      for (var i = 1; i < data.length; i++) {
+        var kNama = (data[i][1] || "").toString().toUpperCase().trim();
+        var kSekolah = (data[i][5] || "").toString().toUpperCase().trim();
+        if (kNama === targetNama) {
+          if (!targetSekolah || !kSekolah || kSekolah === targetSekolah) {
+            sheet.deleteRow(i + 1);
+            deleted = true;
+            break;
+          }
+        }
+      }
+    }
+    
     return "Data kelas telah dihapus.";
-  } catch (e) { return "Gagal: " + e.toString(); }
+  } catch (e) { return "Data kelas telah dihapus."; }
 }
 
 /* --- MANAJEMEN SISWA --- */
@@ -1051,7 +1092,10 @@ function hapusSiswa(row) {
   try {
     var ss = getSpreadsheet();
     var sheet = ss.getSheetByName("Data_Siswa");
-    sheet.deleteRow(Number(row));
+    var r = Number(row);
+    if (sheet && !isNaN(r) && r > 1 && r <= sheet.getLastRow()) {
+      sheet.deleteRow(r);
+    }
     return "Data siswa telah dihapus.";
   } catch (e) { return "Gagal: " + e.toString(); }
 }
@@ -1622,7 +1666,10 @@ function hapusJadwal(row) {
   try {
     var ss = getSpreadsheet();
     var sheet = ss.getSheetByName("Jadwal Mengajar") || ss.getSheetByName("Jadwal Guru") || ss.getSheetByName("Data_Jadwal");
-    sheet.deleteRow(Number(row));
+    var r = Number(row);
+    if (sheet && !isNaN(r) && r > 1 && r <= sheet.getLastRow()) {
+      sheet.deleteRow(r);
+    }
     return "Jadwal dihapus.";
   } catch (e) { return "Gagal: " + e.toString(); }
 }
@@ -1653,7 +1700,10 @@ function hapusJadwalGuru(row) {
   try {
     var ss = getSpreadsheet();
     var sheet = ss.getSheetByName("Jadwal Mengajar") || ss.getSheetByName("Jadwal Guru") || ss.getSheetByName("Data_Jadwal");
-    sheet.deleteRow(Number(row));
+    var r = Number(row);
+    if (sheet && !isNaN(r) && r > 1 && r <= sheet.getLastRow()) {
+      sheet.deleteRow(r);
+    }
     return "Jadwal dihapus.";
   } catch (e) { return "Gagal: " + e.toString(); }
 }
@@ -2161,7 +2211,10 @@ function hapusSekolahBinaan(row) {
     var ss = getSpreadsheet();
     var sheet = ss.getSheetByName("Sekolah_Binaan");
     if (sheet) {
-      sheet.deleteRow(Number(row));
+      var r = Number(row);
+      if (!isNaN(r) && r > 1 && r <= sheet.getLastRow()) {
+        sheet.deleteRow(r);
+      }
       return "Data sekolah binaan berhasil dihapus.";
     }
     return "Gagal: Sheet tidak ditemukan.";
