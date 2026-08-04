@@ -915,7 +915,7 @@ function getDaftarKelasFull() {
   try {
     var ss = getSpreadsheet();
     var list = [];
-    var seen = {};
+    var seenList = [];
     
     // 1. Ambil dari Data_Kelas
     var sheet = ss.getSheetByName("Data_Kelas");
@@ -928,9 +928,8 @@ function getDaftarKelasFull() {
         var kWali = data[i][4] || "Belum Diatur";
         var kSekolah = (data[i][5] || "").toString().toUpperCase().trim();
         
-        var key = kNama + "|" + kSekolah;
         if (kNama) {
-          seen[key] = true;
+          seenList.push({ nama: kNama, sekolah: kSekolah });
           list.push({
             id: data[i][0] || ("KL-" + (i + 1)),
             nama: kNama,
@@ -953,9 +952,15 @@ function getDaftarKelasFull() {
         var sKelas = (dataSiswa[j][7] || "").toString().toUpperCase().trim();
         var sSekolah = (dataSiswa[j][8] || "").toString().toUpperCase().trim();
         if (sNama && sKelas) {
-          var key2 = sKelas + "|" + sSekolah;
-          if (!seen[key2]) {
-            seen[key2] = true;
+          var isAlreadySeen = false;
+          for (var k = 0; k < seenList.length; k++) {
+            if (matchKelasRobust(seenList[k].nama, sKelas) && matchSchool(seenList[k].sekolah, sSekolah)) {
+              isAlreadySeen = true;
+              break;
+            }
+          }
+          if (!isAlreadySeen) {
+            seenList.push({ nama: sKelas, sekolah: sSekolah });
             list.push({
               id: "DYNC-" + j,
               nama: sKelas,
@@ -995,40 +1000,58 @@ function hapusKelas(row, namaKelas, sekolah) {
   try {
     var ss = getSpreadsheet();
     var sheet = ss.getSheetByName("Data_Kelas");
-    if (!sheet) return "Data kelas telah dihapus.";
-    
-    var lastRow = sheet.getLastRow();
-    if (lastRow <= 1) return "Data kelas telah dihapus.";
-    
-    var data = sheet.getDataRange().getValues();
     var targetNama = (namaKelas || "").toString().toUpperCase().trim();
     var targetSekolah = (sekolah || "").toString().toUpperCase().trim();
     var rowNum = Number(row);
     var deleted = false;
     
-    if (!isNaN(rowNum) && rowNum >= 2 && rowNum <= lastRow) {
-      var rIdx = rowNum - 1;
-      if (rIdx < data.length) {
-        var rowNama = (data[rIdx][1] || "").toString().toUpperCase().trim();
-        var rowSekolah = (data[rIdx][5] || "").toString().toUpperCase().trim();
-        if (!targetNama || rowNama === targetNama) {
-          if (!targetSekolah || !rowSekolah || rowSekolah === targetSekolah) {
-            sheet.deleteRow(rowNum);
-            deleted = true;
+    if (sheet) {
+      var lastRow = sheet.getLastRow();
+      if (lastRow >= 2) {
+        var data = sheet.getDataRange().getValues();
+        
+        if (!isNaN(rowNum) && rowNum >= 2 && rowNum <= lastRow) {
+          var rIdx = rowNum - 1;
+          if (rIdx < data.length) {
+            var rowNama = (data[rIdx][1] || "").toString().toUpperCase().trim();
+            var rowSekolah = (data[rIdx][5] || "").toString().toUpperCase().trim();
+            if (!targetNama || matchKelasRobust(rowNama, targetNama)) {
+              if (!targetSekolah || !rowSekolah || matchSchool(rowSekolah, targetSekolah)) {
+                sheet.deleteRow(rowNum);
+                deleted = true;
+              }
+            }
+          }
+        }
+        
+        if (!deleted && targetNama) {
+          for (var i = 1; i < data.length; i++) {
+            var kNama = (data[i][1] || "").toString().toUpperCase().trim();
+            var kSekolah = (data[i][5] || "").toString().toUpperCase().trim();
+            if (matchKelasRobust(kNama, targetNama)) {
+              if (!targetSekolah || !kSekolah || matchSchool(kSekolah, targetSekolah)) {
+                sheet.deleteRow(i + 1);
+                deleted = true;
+                break;
+              }
+            }
           }
         }
       }
     }
     
-    if (!deleted && targetNama) {
-      for (var i = 1; i < data.length; i++) {
-        var kNama = (data[i][1] || "").toString().toUpperCase().trim();
-        var kSekolah = (data[i][5] || "").toString().toUpperCase().trim();
-        if (kNama === targetNama) {
-          if (!targetSekolah || !kSekolah || kSekolah === targetSekolah) {
-            sheet.deleteRow(i + 1);
-            deleted = true;
-            break;
+    // Juga bersihkan penugasan kelas siswa di Data_Siswa jika ada
+    if (targetNama) {
+      var sheetSiswa = ss.getSheetByName("Data_Siswa");
+      if (sheetSiswa) {
+        var dataSiswa = sheetSiswa.getDataRange().getValues();
+        for (var j = 1; j < dataSiswa.length; j++) {
+          var sKelas = (dataSiswa[j][7] || "").toString().toUpperCase().trim();
+          var sSekolah = (dataSiswa[j][8] || "").toString().toUpperCase().trim();
+          if (matchKelasRobust(sKelas, targetNama)) {
+            if (!targetSekolah || !sSekolah || matchSchool(sSekolah, targetSekolah)) {
+              sheetSiswa.getRange(j + 1, 8).setValue("");
+            }
           }
         }
       }
