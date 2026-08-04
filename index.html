@@ -7931,7 +7931,7 @@
           return this;
         };
 
-        GoogleScriptRunSimulation.prototype.hapusKelas = function (row) {
+        GoogleScriptRunSimulation.prototype.hapusKelas = function (row, namaKelas, sekolah) {
           setTimeout(() => {
             let classes = JSON.parse(
               localStorage.getItem("sims_mock_classes") || "null",
@@ -7964,8 +7964,31 @@
                 },
               ];
             }
-            classes = classes.filter((c) => c.row != row);
+            const targetNama = (namaKelas || "").toString().toUpperCase().trim();
+            const targetSekolah = (sekolah || "").toString().toUpperCase().trim();
+            classes = classes.filter((c) => {
+              if (c.row == row) return false;
+              if (targetNama && matchKelasRobust(c.nama || "", targetNama)) {
+                if (!targetSekolah || matchSchool(c.sekolah || "", targetSekolah)) {
+                  return false;
+                }
+              }
+              return true;
+            });
             localStorage.setItem("sims_mock_classes", JSON.stringify(classes));
+
+            let students = JSON.parse(localStorage.getItem("sims_mock_students") || "[]");
+            if (Array.isArray(students) && targetNama) {
+              students.forEach((s) => {
+                if (matchKelasRobust(s.kelas || "", targetNama)) {
+                  if (!targetSekolah || matchSchool(s.sekolah || "", targetSekolah)) {
+                    s.kelas = "";
+                  }
+                }
+              });
+              localStorage.setItem("sims_mock_students", JSON.stringify(students));
+            }
+
             if (this._successHandler)
               this._successHandler("Sukses menghapus data kelas!");
           }, 20);
@@ -18725,15 +18748,17 @@
           .simpanKelas(obj);
       }
 
-      function doHapusKelas(row) {
+      function doHapusKelas(row, nama, sekolah) {
         if (!confirm("Yakin ingin menghapus data kelas ini?")) return;
         google.script.run
           .withSuccessHandler((list) => {
-            const k = (list || []).find((item) => item.row == row);
-            if (k && activeUser && activeUser.role === "Guru") {
+            const k = (list || []).find((item) => item.row == row || (nama && item.nama === nama));
+            const targetNama = nama || (k ? k.nama : "");
+            const targetSekolah = sekolah || (k ? k.sekolah : "");
+            if (activeUser && activeUser.role === "Guru" && targetNama) {
               const key = `sims_guru_classes_added_${activeUser.nama.toString().toUpperCase().trim()}`;
               let added = JSON.parse(localStorage.getItem(key) || "[]");
-              const classUpper = (k.nama || "").toString().toUpperCase().trim();
+              const classUpper = targetNama.toString().toUpperCase().trim();
               added = added.filter(
                 (c) => c.toUpperCase().trim() !== classUpper,
               );
@@ -18744,7 +18769,7 @@
                 alert(res);
                 loadDaftarKelasFullManagement();
               })
-              .hapusKelas(row);
+              .hapusKelas(row, targetNama, targetSekolah);
           })
           .getDaftarKelasFull();
       }
@@ -21020,7 +21045,7 @@
                          <td class="p-4 text-center">
                             <div class="flex justify-center gap-2">
                                <button onclick='openEditKelas(${JSON.stringify(k)})' class="bg-blue-100 text-blue-600 px-3 py-1 rounded text-[9px] font-black uppercase">Edit</button>
-                               <button onclick="deleteKelas(${k.row})" class="bg-red-100 text-red-600 px-3 py-1 rounded text-[9px] font-black uppercase">Hapus</button>
+                               <button onclick='deleteKelas(${k.row}, ${JSON.stringify(k.nama || "")}, ${JSON.stringify(k.sekolah || "")})' class="bg-red-100 text-red-600 px-3 py-1 rounded text-[9px] font-black uppercase">Hapus</button>
                             </div>
                          </td>
                       </tr>
@@ -21159,31 +21184,24 @@
           .simpanKelas(obj);
       }
 
-      function deleteKelas(row) {
+      function deleteKelas(row, nama, sekolah) {
         if (confirm("Hapus data kelas ini?")) {
+          const targetNama = (nama || "").toString().toUpperCase().trim();
+          const targetSekolah = (sekolah || "").toString().toUpperCase().trim();
+          if (activeUser && activeUser.role === "Guru" && targetNama) {
+            const key = `sims_guru_classes_added_${activeUser.nama.toString().toUpperCase().trim()}`;
+            let added = JSON.parse(localStorage.getItem(key) || "[]");
+            added = added.filter(
+              (c) => c.toUpperCase().trim() !== targetNama,
+            );
+            localStorage.setItem(key, JSON.stringify(added));
+          }
           google.script.run
-            .withSuccessHandler((list) => {
-              const k = (list || []).find((item) => item.row == row);
-              if (k && activeUser && activeUser.role === "Guru") {
-                const key = `sims_guru_classes_added_${activeUser.nama.toString().toUpperCase().trim()}`;
-                let added = JSON.parse(localStorage.getItem(key) || "[]");
-                const classUpper = (k.nama || "")
-                  .toString()
-                  .toUpperCase()
-                  .trim();
-                added = added.filter(
-                  (c) => c.toUpperCase().trim() !== classUpper,
-                );
-                localStorage.setItem(key, JSON.stringify(added));
-              }
-              google.script.run
-                .withSuccessHandler((res) => {
-                  alert(res);
-                  loadDaftarKelasFullManagement();
-                })
-                .hapusKelas(row);
+            .withSuccessHandler((res) => {
+              alert(res);
+              loadDaftarKelasFullManagement();
             })
-            .getDaftarKelasFull();
+            .hapusKelas(row, targetNama, targetSekolah);
         }
       }
 
