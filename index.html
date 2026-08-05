@@ -7213,9 +7213,10 @@
                   targetSchoolNorm !== "PUSAT KCD XI" &&
                   targetSchoolNorm !== ""
                 ) {
-                  if (targetSchoolNorm !== "SMKN 4 GARUT") return false;
+                  let sch = (item.sekolah || "SMKN 4 GARUT").toString().toUpperCase().trim();
+                  if (!matchSchool(sch, targetSchoolNorm)) return false;
                 }
-                if (targetBln !== -1) {
+                if (targetBln !== -1 && !isNaN(targetBln)) {
                   let d = new Date(item.tanggal);
                   if (isNaN(d.getTime()) || d.getMonth() !== targetBln)
                     return false;
@@ -13331,24 +13332,56 @@
               filtered = filtered.filter((j) => j.guru === userFilter);
             }
 
-            const displayGuruObj =
-              filtered.length > 0 && userFilter !== "ALL"
-                ? allUsersList.find((u) => u.nama === filtered[0].guru)
-                : activeUser;
-            const displayGuru = displayGuruObj
-              ? displayGuruObj.nama
-              : activeUser.nama;
-            const displayNipGuru = displayGuruObj
-              ? displayGuruObj.nip || "....................................."
-              : activeUser.nip || ".....................................";
-            const displayMapel =
-              filtered.length > 0 && userFilter !== "ALL"
-                ? filtered[0].mapel
-                : activeUser.mapel || "-";
-            const displaySchool =
-              filtered.length > 0 && userFilter !== "ALL" && displayGuruObj
-                ? displayGuruObj.sekolah
-                : activeUser.sekolah;
+            let displaySchool = "";
+            if (selectedSchool && selectedSchool !== "ALL") {
+              displaySchool = selectedSchool;
+            } else if (filtered.length > 0 && filtered[0].sekolah) {
+              displaySchool = filtered[0].sekolah;
+            } else {
+              displaySchool = activeUser.sekolah || "PUSAT KCD XI";
+            }
+
+            let displayGuru = "";
+            let displayNipGuru = ".....................................";
+            let displayMapel = "-";
+
+            if (userFilter && userFilter !== "ALL") {
+              const foundUser = (allUsersList || []).find(
+                (u) => u.nama === userFilter,
+              );
+              displayGuru = userFilter;
+              if (foundUser) {
+                if (foundUser.nip) displayNipGuru = foundUser.nip;
+                if (foundUser.mapel) displayMapel = foundUser.mapel;
+                if (
+                  (!selectedSchool || selectedSchool === "ALL") &&
+                  foundUser.sekolah
+                ) {
+                  displaySchool = foundUser.sekolah;
+                }
+              } else if (filtered.length > 0) {
+                if (filtered[0].mapel) displayMapel = filtered[0].mapel;
+                if (
+                  (!selectedSchool || selectedSchool === "ALL") &&
+                  filtered[0].sekolah
+                ) {
+                  displaySchool = filtered[0].sekolah;
+                }
+              }
+            } else {
+              if (
+                isAdminRole(activeUser.role) ||
+                isPengawasRole(activeUser.role)
+              ) {
+                displayGuru = "SEMUA GURU";
+                displayNipGuru = "-";
+                displayMapel = "SEMUA MATA PELAJARAN";
+              } else {
+                displayGuru = activeUser.nama;
+                if (activeUser.nip) displayNipGuru = activeUser.nip;
+                if (activeUser.mapel) displayMapel = activeUser.mapel;
+              }
+            }
 
             let html = `
              <div class="text-center mb-8 border-b-4 border-blue-900 pb-4">
@@ -13515,24 +13548,56 @@
               filtered = filtered.filter((a) => a.guru === userFilter);
             }
 
-            const displayGuruObj =
-              filtered.length > 0 && userFilter !== "ALL"
-                ? allUsersList.find((u) => u.nama === filtered[0].guru)
-                : activeUser;
-            const displayGuru = displayGuruObj
-              ? displayGuruObj.nama
-              : activeUser.nama;
-            const displayNipGuru = displayGuruObj
-              ? displayGuruObj.nip || "....................................."
-              : activeUser.nip || ".....................................";
-            const displayRole =
-              filtered.length > 0 && userFilter !== "ALL"
-                ? "GURU"
-                : activeUser.role;
-            const displaySchool =
-              filtered.length > 0 && userFilter !== "ALL" && displayGuruObj
-                ? displayGuruObj.sekolah
-                : activeUser.sekolah;
+            let displaySchool = "";
+            if (selectedSchool && selectedSchool !== "ALL") {
+              displaySchool = selectedSchool;
+            } else if (filtered.length > 0 && filtered[0].sekolah) {
+              displaySchool = filtered[0].sekolah;
+            } else {
+              displaySchool = activeUser.sekolah || "PUSAT KCD XI";
+            }
+
+            let displayGuru = "";
+            let displayNipGuru = ".....................................";
+            let displayRole = "-";
+
+            if (userFilter && userFilter !== "ALL") {
+              const foundUser = (allUsersList || []).find(
+                (u) => u.nama === userFilter,
+              );
+              displayGuru = userFilter;
+              displayRole = "GURU";
+              if (foundUser) {
+                if (foundUser.nip) displayNipGuru = foundUser.nip;
+                if (foundUser.role) displayRole = foundUser.role;
+                if (
+                  (!selectedSchool || selectedSchool === "ALL") &&
+                  foundUser.sekolah
+                ) {
+                  displaySchool = foundUser.sekolah;
+                }
+              } else if (filtered.length > 0) {
+                if (
+                  (!selectedSchool || selectedSchool === "ALL") &&
+                  filtered[0].sekolah
+                ) {
+                  displaySchool = filtered[0].sekolah;
+                }
+              }
+            } else {
+              if (
+                isAdminRole(activeUser.role) ||
+                isPengawasRole(activeUser.role)
+              ) {
+                displayGuru = "SEMUA GURU";
+                displayNipGuru = "-";
+                displayRole = "SEMUA GURU / PEGAWAI";
+              } else {
+                displayGuru = activeUser.nama;
+                if (activeUser.nip) displayNipGuru = activeUser.nip;
+                displayRole = activeUser.role;
+              }
+            }
 
             let html = `
              <div class="text-center mb-8 border-b-4 border-green-700 pb-4">
@@ -14912,8 +14977,9 @@
         loadPilihanKelas("selKelasSelfRekapSiswa");
       }
 
-      function loadRekapAbsenSiswa() {
-        const bln = document.getElementById("selBlnRekapSiswa").value;
+      function fetchRekapAbsenSiswaLogs() {
+        const blnEl = document.getElementById("selBlnRekapSiswa");
+        const bln = blnEl ? blnEl.value : new Date().getMonth().toString();
         const filterGuru = document.getElementById("selGuruRekapSiswa")
           ? document.getElementById("selGuruRekapSiswa").value
           : "ALL";
@@ -14924,19 +14990,24 @@
         const table = document.getElementById("tableRekapAbsenSiswa");
         if (!table) return;
         table.innerHTML =
-          "<tr><td colspan='4' class='p-10 text-center font-black animate-pulse uppercase'>Memuat Rekap Absensi Siswa...</td></tr>";
+          "<tr><td colspan='4' class='p-10 text-center font-black animate-pulse uppercase text-[10px]'>Memuat Rekap Absensi Siswa...</td></tr>";
 
-        let querySchool = activeUser.sekolah;
+        let querySchool = activeUser ? activeUser.sekolah : "";
         const sFilter = document.getElementById("schoolFilterRekapSiswa");
-        const canSelectSchool = isAdminRole(activeUser.role) || isPengawasRole(activeUser.role);
+        const canSelectSchool = activeUser && (isAdminRole(activeUser.role) || isPengawasRole(activeUser.role));
         if (canSelectSchool && sFilter && sFilter.value) {
           querySchool =
             sFilter.value === "ALL" ? "PUSAT KCD XI" : sFilter.value;
-        } else {
+        } else if (activeUser) {
           querySchool = activeUser.sekolah;
         }
 
         google.script.run
+          .withFailureHandler((err) => {
+            console.error("Gagal loadRekapAbsenSiswa:", err);
+            table.innerHTML =
+              "<tr><td colspan='4' class='p-10 text-center text-red-500 font-black uppercase text-[10px]'>Gagal memuat rekap absensi siswa. Silakan coba lagi.</td></tr>";
+          })
           .withSuccessHandler((list) => {
             table.innerHTML = "";
 
@@ -14944,27 +15015,29 @@
 
             // Filter by Supervisor Schools (Pengawas Binaan) client-side if "ALL" is selected
             if (
+              activeUser &&
               activeUser.role === "Pengawas" &&
               (!sFilter || sFilter.value === "ALL")
             ) {
               const allowedSchools = (window.mySekolahBinaan || []).map((s) =>
                 (s.nama || "").toUpperCase().trim(),
               );
-              filteredList = filteredList.filter((a) => {
-                const gObj = (allUsersList || []).find(
-                  (u) => u.nama === a.guru,
-                );
-                return (
-                  gObj &&
-                  allowedSchools.includes(
-                    (gObj.sekolah || "").toUpperCase().trim(),
-                  )
-                );
-              });
+              if (allowedSchools.length > 0) {
+                const userList = (typeof allUsersList !== "undefined" && allUsersList && allUsersList.length > 0)
+                  ? allUsersList
+                  : (window.allUsersList || window.allUsersCache || []);
+                filteredList = filteredList.filter((a) => {
+                  const gObj = userList.find(
+                    (u) => (u.nama || "").toUpperCase().trim() === (a.guru || "").toUpperCase().trim(),
+                  );
+                  const teacherSchool = gObj ? (gObj.sekolah || "").toUpperCase().trim() : (a.sekolah || "").toUpperCase().trim();
+                  return allowedSchools.some((as) => matchSchool(teacherSchool, as));
+                });
+              }
             }
 
             // Filter by Guru
-            if (filterGuru !== "ALL") {
+            if (filterGuru && filterGuru !== "ALL") {
               const normFilterGuru = filterGuru.toUpperCase().trim();
               filteredList = filteredList.filter((a) => {
                 return (a.guru || "").toUpperCase().trim() === normFilterGuru;
@@ -14972,7 +15045,7 @@
             }
 
             // Filter by Kelas
-            if (filterKelas !== "ALL") {
+            if (filterKelas && filterKelas !== "ALL") {
               const normFilterKelas = filterKelas.toUpperCase().trim();
               filteredList = filteredList.filter((a) => {
                 return (a.kelas || "").toUpperCase().trim() === normFilterKelas;
@@ -14981,23 +15054,29 @@
 
             if (filteredList.length === 0) {
               table.innerHTML =
-                "<tr><td colspan='4' class='p-10 text-center text-gray-400 font-black italic uppercase'>Tidak ada data absensi siswa yang sesuai kriteria filter.</td></tr>";
+                "<tr><td colspan='4' class='p-10 text-center text-gray-400 font-black italic uppercase text-[10px]'>Tidak ada data absensi siswa yang sesuai kriteria filter.</td></tr>";
               return;
             }
 
-            filteredList.forEach((a) => {
+            const rowsHtml = filteredList.map((a) => {
               const tglStr = a.tanggal
                 ? new Date(a.tanggal).toLocaleDateString("id-ID")
                 : "-";
-              table.innerHTML += `<tr class="border-b transition hover:bg-gray-50 uppercase text-[9px] font-black">
+              return `<tr class="border-b transition hover:bg-gray-50 uppercase text-[9px] font-black">
                  <td class="p-4">${tglStr}</td>
-                 <td class="p-4">${a.guru}</td>
-                 <td class="p-4">${a.kelas}</td>
-                 <td class="p-4">${a.mapel}</td>
+                 <td class="p-4">${a.guru || "-"}</td>
+                 <td class="p-4">${a.kelas || "-"}</td>
+                 <td class="p-4">${a.mapel || "-"}</td>
               </tr>`;
-            });
+            }).join("");
+            table.innerHTML = rowsHtml;
           })
           .getAllRekapAbsensiSiswa(bln, querySchool);
+      }
+
+      function loadRekapAbsenSiswa() {
+        fetchRekapAbsenSiswaLogs();
+        loadRekapSiswaDetail();
       }
 
       function checkIfSMKSwasta(sekolahName) {
@@ -15906,7 +15985,7 @@
         });
       }
 
-      function loadSelfRekapAbsenSiswa() {
+      function fetchSelfRekapAbsenSiswaLogs() {
         const sel = document.getElementById("selBlnSelfRekapSiswa");
         if (!sel) return;
         const bln = sel.value;
@@ -15916,9 +15995,14 @@
           "<tr><td colspan='5' class='p-10 text-center font-black animate-pulse text-green-600 uppercase'>Memuat Rekap Presensi Siswa...</td></tr>";
 
         google.script.run
+          .withFailureHandler((err) => {
+            console.error("Gagal loadSelfRekapAbsenSiswa:", err);
+            table.innerHTML =
+              "<tr><td colspan='5' class='p-10 text-center text-red-500 font-black uppercase'>Gagal memuat rekap presensi siswa.</td></tr>";
+          })
           .withSuccessHandler((list) => {
             table.innerHTML = "";
-            const myName = (activeUser.nama || "").toUpperCase().trim();
+            const myName = activeUser ? (activeUser.nama || "").toUpperCase().trim() : "";
             const myList = (list || []).filter(
               (a) => (a.guru || "").toUpperCase().trim() === myName,
             );
@@ -15936,9 +16020,9 @@
               const tglRawStr = a.tanggal;
               table.innerHTML += `<tr class="border-b transition hover:bg-gray-50 uppercase text-[9px] font-black">
                 <td class="p-4">${tglStr}</td>
-                <td class="p-4">${a.guru}</td>
-                <td class="p-4">${a.kelas}</td>
-                <td class="p-4">${a.mapel}</td>
+                <td class="p-4">${a.guru || "-"}</td>
+                <td class="p-4">${a.kelas || "-"}</td>
+                <td class="p-4">${a.mapel || "-"}</td>
                 <td class="p-4 text-center">
                    <div class="flex justify-center gap-2">
                       <button onclick="muatLaporanPresensiDariLog('${tglRawStr}', '${a.kelas}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-[8px] font-black tracking-widest uppercase transition">📂 LIHAT</button>
@@ -15948,7 +16032,12 @@
              </tr>`;
             });
           })
-          .getAllRekapAbsensiSiswa(bln, activeUser.sekolah);
+          .getAllRekapAbsensiSiswa(bln, activeUser ? activeUser.sekolah : "");
+      }
+
+      function loadSelfRekapAbsenSiswa() {
+        fetchSelfRekapAbsenSiswaLogs();
+        loadSelfRekapSiswaDetail();
       }
 
       function muatLaporanPresensiDariLog(tglRaw, kls) {
@@ -20214,30 +20303,44 @@
           if (lbl) lbl.innerText = "Pilih Sekolah Binaan";
         }
         
-        google.script.run.withSuccessHandler((studentsList) => {
-          google.script.run.withSuccessHandler((classesList) => {
-            const emailForBinaan = isUserAdmin ? "wanyora68@gmail.com" : activeUser.email;
-            google.script.run.withSuccessHandler((binaanList) => {
-              
-              window.rekapSiswaData = {
-                students: studentsList || [],
-                classes: classesList || [],
-                binaan: binaanList || [],
-                users: []
-              };
-              
-              if (isUserAdmin) {
-                google.script.run.withSuccessHandler((usersList) => {
-                  window.rekapSiswaData.users = usersList || [];
-                  populateRekapFilters();
-                }).getDaftarUserManagement();
-              } else {
-                populateRekapFilters();
-              }
-              
-            }).getSekolahBinaan(emailForBinaan);
-          }).getDaftarKelasFull();
-        }).getDaftarSiswa();
+        const handleFail = (err) => {
+          console.error("Gagal initRekapSiswaPage:", err);
+          if (loadingEl) loadingEl.classList.add("hidden");
+          if (tbody) tbody.innerHTML = "<tr><td colspan='7' class='p-8 text-center text-red-500 font-bold'>Gagal memuat data rekap siswa. Silakan muat ulang halaman.</td></tr>";
+        };
+
+        google.script.run
+          .withFailureHandler(handleFail)
+          .withSuccessHandler((studentsList) => {
+            google.script.run
+              .withFailureHandler(handleFail)
+              .withSuccessHandler((classesList) => {
+                const emailForBinaan = isUserAdmin ? "wanyora68@gmail.com" : activeUser.email;
+                google.script.run
+                  .withFailureHandler(handleFail)
+                  .withSuccessHandler((binaanList) => {
+                    
+                    window.rekapSiswaData = {
+                      students: studentsList || [],
+                      classes: classesList || [],
+                      binaan: binaanList || [],
+                      users: []
+                    };
+                    
+                    if (isUserAdmin) {
+                      google.script.run
+                        .withFailureHandler(handleFail)
+                        .withSuccessHandler((usersList) => {
+                          window.rekapSiswaData.users = usersList || [];
+                          populateRekapFilters();
+                        }).getDaftarUserManagement();
+                    } else {
+                      populateRekapFilters();
+                    }
+                    
+                  }).getSekolahBinaan(emailForBinaan);
+              }).getDaftarKelasFull();
+          }).getDaftarSiswa();
       }
 
       function populateRekapFilters() {
@@ -22297,8 +22400,10 @@
       }
 
       function loadRekapSiswaDetail() {
-        const bln = document.getElementById("selBlnRekapSiswa").value;
-        const kelas = document.getElementById("selKelasRekapSiswa").value;
+        const blnEl = document.getElementById("selBlnRekapSiswa");
+        const bln = blnEl ? blnEl.value : "0";
+        const kelasEl = document.getElementById("selKelasRekapSiswa");
+        const kelas = kelasEl ? kelasEl.value : "ALL";
         const tblBody = document.getElementById("tableRekapSiswaDetailBody");
         const titleSpan = document.getElementById("titleDetailedSiswa");
 
@@ -22328,11 +22433,12 @@
           "November",
           "Desember",
         ];
+        const monthNameStr = (blnNames[bln] || "").toUpperCase();
         if (titleSpan) {
           titleSpan.innerText =
             kelas === "ALL"
-              ? `KEHADIRAN SISWA SELURUH GURU - BULAN ${blnNames[bln].toUpperCase()}`
-              : `KEHADIRAN SISWA KELAS ${kelas} - BULAN ${blnNames[bln].toUpperCase()}`;
+              ? `KEHADIRAN SISWA SELURUH GURU - BULAN ${monthNameStr}`
+              : `KEHADIRAN SISWA KELAS ${kelas} - BULAN ${monthNameStr}`;
         }
 
         // Update header row dynamically to include Kelas if ALL is selected
@@ -22369,7 +22475,7 @@
           }
         }
 
-        let querySchool = activeUser.sekolah;
+        let querySchool = activeUser ? activeUser.sekolah : "";
         const sFilter = document.getElementById("schoolFilterRekapSiswa");
         if (sFilter && sFilter.value) {
           querySchool =
@@ -22377,6 +22483,10 @@
         }
 
         google.script.run
+          .withFailureHandler((err) => {
+            console.error("Gagal loadRekapSiswaDetail:", err);
+            tblBody.innerHTML = `<tr><td colspan="${isAllClass ? "10" : "9"}" class="p-10 text-center text-red-500 font-black uppercase text-[10px]">Gagal menghitung statistik kehadiran siswa.</td></tr>`;
+          })
           .withSuccessHandler((data) => {
             currentRekapSiswaDetailData = data || [];
 
@@ -22416,7 +22526,7 @@
               return;
             }
 
-            currentRekapSiswaDetailData.forEach((s, idx) => {
+            const rowsHtml = currentRekapSiswaDetailData.map((s, idx) => {
               let pctColor = "bg-green-600 text-white rounded-lg px-2 py-1";
               if (s.persen < 75) {
                 pctColor = "bg-red-600 text-white rounded-lg px-2 py-1";
@@ -22428,7 +22538,7 @@
                 ? `<td class="p-3 text-center bg-gray-50 text-blue-900 font-extrabold text-[9px]">${s.kelas || "-"}</td>`
                 : "";
 
-              tblBody.innerHTML += `
+              return `
                   <tr class="border-b transition hover:bg-gray-50 uppercase text-[9px] font-black divide-x divide-gray-200">
                      <td class="p-3 text-center text-gray-500">${idx + 1}</td>
                      <td class="p-3 text-center font-mono text-gray-600">${s.nisn || "-"}</td>
@@ -22438,18 +22548,21 @@
                      <td class="p-3 text-center text-yellow-700 bg-yellow-50 font-black">${s.S}</td>
                      <td class="p-3 text-center text-blue-700 bg-blue-50 font-black">${s.I}</td>
                      <td class="p-3 text-center text-red-600 bg-red-50 font-black">${s.A}</td>
-                     <td class="p-3 text-center bg-gray-50 font-black text-gray-655 text-gray-600">${s.totalHari}</td>
+                     <td class="p-3 text-center bg-gray-50 font-black text-gray-600">${s.totalHari}</td>
                      <td class="p-3 text-center"><span class="${pctColor}">${s.persen}%</span></td>
                   </tr>
                `;
-            });
+            }).join("");
+            tblBody.innerHTML = rowsHtml;
           })
           .getRekapSiswaBulanan(kelas, bln, querySchool);
       }
 
       function loadSelfRekapSiswaDetail() {
-        const bln = document.getElementById("selBlnSelfRekapSiswa").value;
-        const kelas = document.getElementById("selKelasSelfRekapSiswa").value;
+        const blnEl = document.getElementById("selBlnSelfRekapSiswa");
+        const bln = blnEl ? blnEl.value : "0";
+        const kelasEl = document.getElementById("selKelasSelfRekapSiswa");
+        const kelas = kelasEl ? kelasEl.value : "";
         const tblBody = document.getElementById(
           "tableSelfRekapSiswaDetailBody",
         );
@@ -22481,13 +22594,18 @@
           "November",
           "Desember",
         ];
+        const monthNameStr = (blnNames[bln] || "").toUpperCase();
         if (titleSpan) {
-          titleSpan.innerText = `KEHADIRAN SISWA KELAS ${kelas.toUpperCase()} - BULAN ${blnNames[bln].toUpperCase()}`;
+          titleSpan.innerText = `KEHADIRAN SISWA KELAS ${(kelas || "").toUpperCase()} - BULAN ${monthNameStr}`;
         }
 
-        let querySchool = activeUser.sekolah;
+        let querySchool = activeUser ? activeUser.sekolah : "";
 
         google.script.run
+          .withFailureHandler((err) => {
+            console.error("Gagal loadSelfRekapSiswaDetail:", err);
+            tblBody.innerHTML = "<tr><td colspan='9' class='p-10 text-center text-red-500 font-black uppercase text-[10px]'>Gagal menghitung statistik kehadiran siswa.</td></tr>";
+          })
           .withSuccessHandler((data) => {
             currentSelfRekapSiswaDetailData = data || [];
 
@@ -22520,14 +22638,12 @@
                 .localeCompare((b.nama || "").toString().toUpperCase().trim());
             });
 
-            tblBody.innerHTML = "";
-
             if (currentSelfRekapSiswaDetailData.length === 0) {
               tblBody.innerHTML = `<tr><td colspan="9" class="p-10 text-center text-gray-400 font-black italic uppercase text-[10px]">Tidak ada data siswa ditemukan untuk kriteria ini atau belum ada entri absensi.</td></tr>`;
               return;
             }
 
-            currentSelfRekapSiswaDetailData.forEach((s, idx) => {
+            const rowsHtml = currentSelfRekapSiswaDetailData.map((s, idx) => {
               let pctColor = "bg-green-600 text-white rounded-lg px-2 py-1";
               if (s.persen < 75) {
                 pctColor = "bg-red-600 text-white rounded-lg px-2 py-1";
@@ -22535,7 +22651,7 @@
                 pctColor = "bg-yellow-500 text-black rounded-lg px-2 py-1";
               }
 
-              tblBody.innerHTML += `
+              return `
                   <tr class="border-b transition hover:bg-gray-50 uppercase text-[9px] font-black divide-x divide-gray-200">
                      <td class="p-3 text-center text-gray-500">${idx + 1}</td>
                      <td class="p-3 text-center font-mono text-gray-600">${s.nisn || "-"}</td>
@@ -22544,11 +22660,12 @@
                      <td class="p-3 text-center text-yellow-700 bg-yellow-50 font-black">${s.S}</td>
                      <td class="p-3 text-center text-blue-700 bg-blue-50 font-black">${s.I}</td>
                      <td class="p-3 text-center text-red-600 bg-red-50 font-black">${s.A}</td>
-                     <td class="p-3 text-center bg-gray-50 font-black text-gray-655 text-gray-600">${s.totalHari}</td>
+                     <td class="p-3 text-center bg-gray-50 font-black text-gray-600">${s.totalHari}</td>
                      <td class="p-3 text-center"><span class="${pctColor}">${s.persen}%</span></td>
                   </tr>
                `;
-            });
+            }).join("");
+            tblBody.innerHTML = rowsHtml;
           })
           .getRekapSiswaBulanan(kelas, bln, querySchool);
       }
@@ -23005,21 +23122,7 @@
         );
       }
 
-      setTimeout(() => {
-        const orig_loadRekapAbsenSiswa = window.loadRekapAbsenSiswa;
-        window.loadRekapAbsenSiswa = function () {
-          if (typeof orig_loadRekapAbsenSiswa === "function")
-            orig_loadRekapAbsenSiswa();
-          loadRekapSiswaDetail();
-        };
 
-        const orig_loadSelfRekapAbsenSiswa = window.loadSelfRekapAbsenSiswa;
-        window.loadSelfRekapAbsenSiswa = function () {
-          if (typeof orig_loadSelfRekapAbsenSiswa === "function")
-            orig_loadSelfRekapAbsenSiswa();
-          loadSelfRekapSiswaDetail();
-        };
-      }, 100);
 
       // =========================================================================
       // PENILAIAN SIKAP CONTROLLER FUNCTIONS
