@@ -1856,33 +1856,39 @@ function getAllRekapAbsensiSiswa(bulan, sekolah) {
     var sheet = ss.getSheetByName("Absensi_Siswa");
     if (!sheet) return [];
     var data = sheet.getDataRange().getValues();
+    if (data.length < 2) return [];
     
     var userSheet = ss.getSheetByName("Data_User");
     var userData = userSheet ? userSheet.getDataRange().getValues() : [];
     var guruSekolah = {};
     for (var k = 1; k < userData.length; k++) {
-      guruSekolah[normalizeName(userData[k][1])] = (userData[k][5] || "").toString().toUpperCase().trim();
+      var gName = normalizeName(userData[k][1]);
+      if (gName) {
+        guruSekolah[gName] = (userData[k][5] || "").toString().toUpperCase().trim();
+      }
     }
 
     var list = [];
-    var targetSchoolNorm = (sekolah || "").toUpperCase().trim();
+    var targetSchoolNorm = (sekolah || "").toString().toUpperCase().trim();
+    var targetBlnNum = parseInt(bulan);
 
     for (var i = 1; i < data.length; i++) {
        var tglRaw = data[i][0];
        if (!tglRaw) continue;
        
        var entGuru = normalizeName(data[i][2]);
+       var gSch = guruSekolah[entGuru] || "";
        if (targetSchoolNorm !== "PUSAT KCD XI" && targetSchoolNorm !== "") {
-          if (!matchSchool(guruSekolah[entGuru], sekolah)) continue;
+          if (gSch && !matchSchool(gSch, targetSchoolNorm)) continue;
        }
 
        var isoTgl = normalizeDateToISO(tglRaw);
        var d = new Date(isoTgl);
        var matchBln = false;
-       if (bulan == -1) {
+       if (bulan == -1 || bulan == "-1" || isNaN(targetBlnNum)) {
           matchBln = true;
        } else if (!isNaN(d.getTime())) {
-          matchBln = (d.getMonth() == parseInt(bulan));
+          matchBln = (d.getMonth() === targetBlnNum);
        }
 
        if (matchBln) {
@@ -1892,7 +1898,8 @@ function getAllRekapAbsensiSiswa(bulan, sekolah) {
              hari: data[i][1],
              guru: data[i][2],
              kelas: data[i][3],
-             mapel: data[i][4]
+             mapel: data[i][4],
+             sekolah: gSch
           });
        }
     }
@@ -1907,7 +1914,7 @@ function getRekapSiswaBulanan(kelas, bulan, sekolah) {
     // 1. Dapatkan daftar siswa di kelas & sekolah terpilih
     var siswaSheet = ss.getSheetByName("Data_Siswa");
     if (!siswaSheet) return [];
-    var siswaData = siswaSheet.getDataRange().getDisplayValues();
+    var siswaData = siswaSheet.getDataRange().getValues();
     if (siswaData.length < 2) return [];
     
     var allSiswa = [];
@@ -1920,14 +1927,14 @@ function getRekapSiswaBulanan(kelas, bulan, sekolah) {
        var sKelas = (siswaData[i][7] || "").toString().toUpperCase().trim();
        var sSch = (siswaData[i][8] || "").toString().toUpperCase().trim();
        
-       var matchSchool = true;
+       var matchSch = true;
        if (targetSchoolNorm !== "PUSAT KCD XI" && targetSchoolNorm !== "" && sSch !== "") {
-          if (sSch !== targetSchoolNorm) matchSchool = false;
+          if (!matchSchool(sSch, targetSchoolNorm)) matchSch = false;
        }
        
-       var matchKls = (targetKlsNorm === "ALL" || sKelas === targetKlsNorm);
+       var matchKls = (targetKlsNorm === "ALL" || matchKelasRobust(sKelas, targetKlsNorm));
        
-       if (matchKls && matchSchool && sNama !== "") {
+       if (matchKls && matchSch && sNama !== "") {
           allSiswa.push({
              nama: sNama,
              nisn: sNis,
@@ -1949,7 +1956,6 @@ function getRekapSiswaBulanan(kelas, bulan, sekolah) {
       return 999;
     }
 
-    // Urutkan siswa berdasarkan tingkatan kelas, nama kelas, lalu nama secara alfabetis
     allSiswa.sort(function(a, b) {
        var wA = getClassWeight(a.kelas);
        var wB = getClassWeight(b.kelas);
@@ -1979,15 +1985,16 @@ function getRekapSiswaBulanan(kelas, bulan, sekolah) {
           var tglRaw = absData[j][0];
           if (!tglRaw) continue;
           
-          var d = new Date(tglRaw);
-          var dbMonth = d.getMonth();
+          var isoTgl = normalizeDateToISO(tglRaw);
+          var d = new Date(isoTgl);
+          var dbMonth = !isNaN(d.getTime()) ? d.getMonth() : -1;
           var dbKls = (absData[j][3] || "").toString().toUpperCase().trim();
           
-          if ((targetKlsNorm === "ALL" || dbKls === targetKlsNorm) && dbMonth === targetMonthNum) {
+          if ((targetKlsNorm === "ALL" || matchKelasRobust(dbKls, targetKlsNorm)) && (isNaN(targetMonthNum) || dbMonth === targetMonthNum)) {
              var absKey = absData[j][5];
              var absJson = {};
              try {
-                absJson = JSON.parse(absKey);
+                absJson = (typeof absKey === "object" && absKey !== null) ? absKey : JSON.parse(absKey);
              } catch(e) {
                 absJson = {};
              }
@@ -2010,19 +2017,19 @@ function getRekapSiswaBulanan(kelas, bulan, sekolah) {
     // 3. Susun data return
     var rekapList = allSiswa.map(function(s) {
        var sStat = stats[s.nama];
-       var th = sStat.total;
+       var th = sStat ? sStat.total : 0;
        var pct = 0;
-       if (th > 0) {
+       if (sStat && th > 0) {
           pct = Math.round((sStat.H / th) * 100);
        }
        return {
           nama: s.nama,
           nisn: s.nisn,
           kelas: s.kelas,
-          H: sStat.H,
-          S: sStat.S,
-          I: sStat.I,
-          A: sStat.A,
+          H: sStat ? sStat.H : 0,
+          S: sStat ? sStat.S : 0,
+          I: sStat ? sStat.I : 0,
+          A: sStat ? sStat.A : 0,
           totalHari: th,
           persen: pct
        };
