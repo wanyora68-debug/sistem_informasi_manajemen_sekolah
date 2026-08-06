@@ -7996,8 +7996,60 @@
           return this;
         };
 
-        window.gasCache = window.gasCache || {};
-        const CACHE_TTL_MS = 3 * 60 * 1000; // Cache valid for 3 minutes
+        // Load persistent cache from localStorage
+        try {
+          const savedCache = localStorage.getItem("sims_gas_cache");
+          if (savedCache) {
+            window.gasCache = JSON.parse(savedCache);
+          } else {
+            window.gasCache = {};
+          }
+        } catch (e) {
+          window.gasCache = {};
+        }
+
+        function saveGasCacheToLocalStorage() {
+          try {
+            const keys = Object.keys(window.gasCache);
+            if (keys.length > 60) {
+              keys.sort((a, b) => (window.gasCache[a].timestamp || 0) - (window.gasCache[b].timestamp || 0));
+              for (let i = 0; i < keys.length - 60; i++) {
+                delete window.gasCache[keys[i]];
+              }
+            }
+            localStorage.setItem("sims_gas_cache", JSON.stringify(window.gasCache));
+          } catch (e) {
+            console.warn("Gagal simpan sims_gas_cache ke localStorage:", e);
+          }
+        }
+
+        // Global Request Queue for smooth throttled execution to Google Apps Script Web App
+        let gasFetchQueue = [];
+        let isProcessingGasQueue = false;
+
+        function processGasFetchQueue() {
+          if (gasFetchQueue.length === 0) {
+            isProcessingGasQueue = false;
+            return;
+          }
+          isProcessingGasQueue = true;
+          const nextTask = gasFetchQueue.shift();
+          try {
+            nextTask();
+          } catch (e) {
+            console.error("Queue task error:", e);
+          }
+          setTimeout(() => {
+            processGasFetchQueue();
+          }, 80); // 80ms stagger interval to prevent GAS concurrency bottlenecks
+        }
+
+        function enqueueGasFetch(task) {
+          gasFetchQueue.push(task);
+          if (!isProcessingGasQueue) {
+            processGasFetchQueue();
+          }
+        }
 
         window.google = {
           script: {
@@ -8021,31 +8073,40 @@
                       }
                       
                       return function (...args) {
-                        const isGet = propKey.startsWith("get");
+                        const isGet = propKey.startsWith("get") || propKey.startsWith("check") || propKey.startsWith("load");
                         const cacheKey = propKey + "_" + JSON.stringify(args);
+                        const CACHE_FRESH_MS = 5 * 60 * 1000; // 5 minutes fresh
+                        let cacheServed = false;
                         
                         if (isGet) {
                           const cachedEntry = window.gasCache[cacheKey];
-                          if (cachedEntry && (Date.now() - cachedEntry.timestamp < CACHE_TTL_MS)) {
-                            // Return deep copy asynchronously to avoid side effects
+                          if (cachedEntry && cachedEntry.data !== undefined) {
+                            cacheServed = true;
                             const clonedResult = JSON.parse(JSON.stringify(cachedEntry.data));
                             if (successHandler) {
                               setTimeout(() => {
-                                successHandler(clonedResult);
-                              }, 10);
+                                try { successHandler(clonedResult); } catch(e) { console.error("Cache successHandler error:", e); }
+                              }, 0);
                             }
-                            return;
+                            
+                            // If cached data is fresh (< 5 mins), skip network request entirely!
+                            const age = Date.now() - (cachedEntry.timestamp || 0);
+                            if (age < CACHE_FRESH_MS) {
+                              return;
+                            }
+                            // If stale (> 5 mins), revalidate in background silently!
                           }
                         } else {
-                          // Write/modification operation: invalidate all cached reads to guarantee data accuracy
+                          // Mutation operation: invalidate all cached read queries
                           window.gasCache = {};
+                          try { localStorage.removeItem("sims_gas_cache"); } catch(e) {}
                         }
                         
                         const executeFetch = (attempt = 1) => {
                           const controller = new AbortController();
                           const timeoutId = setTimeout(() => {
                             controller.abort();
-                          }, 12000); // 12 seconds timeout
+                          }, 15000); // 15 seconds timeout
 
                           fetch(webAppUrl, {
                             method: "POST",
@@ -8072,8 +8133,6 @@
                               console.error("GAS live error for " + propKey + ":", data.message);
                               if (failureHandler) {
                                 failureHandler(new Error(data.message));
-                              } else {
-                                console.warn("Google Sheets Error:", data.message);
                               }
                             } else {
                               const result = data ? data.result : null;
@@ -8082,8 +8141,10 @@
                                   data: JSON.parse(JSON.stringify(result)),
                                   timestamp: Date.now()
                                 };
+                                saveGasCacheToLocalStorage();
                               }
-                              if (successHandler) {
+                              // Only invoke successHandler if cache was NOT served or if fresh background revalidation completed
+                              if (successHandler && (!cacheServed || isGet)) {
                                 successHandler(result);
                               }
                             }
@@ -8092,27 +8153,19 @@
                             clearTimeout(timeoutId);
                             console.warn("GAS fetch error (Attempt " + attempt + "/3) for " + propKey + ":", error);
                             if (attempt < 3) {
-                              // Retry with a staggered timeout to reduce concurrent hits to Google Apps Script
                               setTimeout(() => {
                                 executeFetch(attempt + 1);
-                              }, attempt * 750);
+                              }, attempt * 500);
                             } else {
-                              console.error("GAS fetch completely failed for " + propKey + " after 3 attempts:", error);
-                              if (failureHandler) {
+                              console.error("GAS fetch failed for " + propKey + ":", error);
+                              if (failureHandler && !cacheServed) {
                                 failureHandler(error);
-                              } else {
-                                // Silently log to console instead of showing annoying disruptive central modals.
-                                // This respects the user's specific request to remove distracting popups.
-                                console.warn("GAS background connection failed silently to avoid interrupting user.");
                               }
                             }
                           });
                         };
                         
-                        // Add a tiny random delay (jitter) between 0 and 200ms to spread out concurrent parallel requests
-                        setTimeout(() => {
-                          executeFetch();
-                        }, Math.random() * 200);
+                        enqueueGasFetch(() => executeFetch(1));
                       };
                     }
                   });
