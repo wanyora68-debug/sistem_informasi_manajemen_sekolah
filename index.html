@@ -4143,24 +4143,62 @@
               </button>
             </div>
           </div>
-          <div class="overflow-x-auto scroll-hide">
-            <table class="w-full text-left">
-              <thead
-                class="bg-gray-100 text-[10px] font-black uppercase text-gray-600"
-              >
-                <tr>
-                  <th class="p-4 rounded-l-2xl">Tanggal</th>
-                  <th class="p-4">Nama Guru</th>
-                  <th class="p-4">Tipe</th>
-                  <th class="p-4">Waktu</th>
-                  <th class="p-4 rounded-r-2xl">Status</th>
-                </tr>
-              </thead>
-              <tbody
-                id="tableRekapAbsenGuru"
-                class="divide-y text-[10px] font-black"
-              ></tbody>
-            </table>
+
+          <!-- Sub-tabs for Rekap Absensi Guru -->
+          <div class="flex gap-2 mb-6 border-b pb-3 border-gray-100">
+            <button
+              id="btnSubTabGuruDetail"
+              onclick="switchSubTabGuru('detail')"
+              class="px-4 py-2 rounded-lg font-black text-[10px] uppercase bg-blue-900 text-white shadow-md transition"
+            >
+              📊 Ringkasan Persentase Kehadiran Guru
+            </button>
+            <button
+              id="btnSubTabGuruLogs"
+              onclick="switchSubTabGuru('logs')"
+              class="px-4 py-2 rounded-lg font-black text-[10px] uppercase bg-gray-100 text-gray-600 hover:bg-gray-200 transition"
+            >
+              📋 Log Detail Absensi Harian
+            </button>
+          </div>
+
+          <!-- Tab Content 1: Ringkasan Persentase Guru -->
+          <div id="subTabContentGuruDetail" class="block">
+            <div class="overflow-x-auto scroll-hide">
+              <table class="w-full text-left">
+                <thead class="bg-blue-50 text-[10px] font-black uppercase text-blue-900 border-b border-blue-100">
+                  <tr>
+                    <th class="p-3.5 rounded-l-xl text-center">No</th>
+                    <th class="p-3.5">Nama Guru</th>
+                    <th class="p-3.5 text-center">Hari Mengajar / Mgg</th>
+                    <th class="p-3.5 text-center">Target Kehadiran / Bln<br/><span class="text-[8px] font-normal lowercase text-gray-500">(hari mengajar × 4 mgg)</span></th>
+                    <th class="p-3.5 text-center">Realisasi Kehadiran</th>
+                    <th class="p-3.5 text-center">% Kehadiran</th>
+                    <th class="p-3.5 rounded-r-xl text-center">Keterangan</th>
+                  </tr>
+                </thead>
+                <tbody id="tableSummaryRekapAbsenGuru" class="divide-y text-[10px] font-black"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Tab Content 2: Log Details -->
+          <div id="subTabContentGuruLogs" class="hidden">
+            <div class="overflow-x-auto scroll-hide">
+              <table class="w-full text-left">
+                <thead class="bg-gray-100 text-[10px] font-black uppercase text-gray-600">
+                  <tr>
+                    <th class="p-4 rounded-l-2xl">Tanggal</th>
+                    <th class="p-4">Nama Guru</th>
+                    <th class="p-4">% Kehadiran Guru</th>
+                    <th class="p-4">Tipe</th>
+                    <th class="p-4">Waktu</th>
+                    <th class="p-4 rounded-r-2xl">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="tableRekapAbsenGuru" class="divide-y text-[10px] font-black"></tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -15214,9 +15252,9 @@
           }
         });
 
-        const schoolConfig = getSchoolTeachingDaysConfig(sekolahName);
+        const teachingDaysPerWeek = scheduledDays.size;
 
-        if (!isSwasta) {
+        if (!isSwasta && teachingDaysPerWeek === 0) {
           let expectedDays = 0;
           for (let d = 1; d <= lastDay; d++) {
             const dayOfWeek = new Date(Y, parseInt(bln), d).getDay();
@@ -15229,19 +15267,46 @@
             expected: expectedDays,
             scheduledDays: null,
             isSwasta: false,
+            teachingDaysPerWeek: 5,
           };
         }
 
-        // For SMK Swasta (isSwasta: true)
-        // Strictly based on their teaching schedule. No fallback to weekdays.
-        const weeksCount = 4; // Jumlah minggu dalam sebulan (standard akademik: 4)
-        const expectedDays = scheduledDays.size * weeksCount;
+        // For SMK Swasta (or whenever a teaching schedule is input):
+        // Target kehadiran per bulan = (jumlah hari mengajar dalam 1 minggu pada jadwal) * 4 minggu per bulan
+        const weeksCount = 4; // Standard akademik SMK Swasta: 4 minggu per bulan
+        const expectedDays = teachingDaysPerWeek * weeksCount;
 
         return {
           expected: expectedDays,
           scheduledDays: scheduledDays,
           isSwasta: true,
+          teachingDaysPerWeek: teachingDaysPerWeek,
         };
+      }
+
+      function switchSubTabGuru(tab) {
+        const btnDetail = document.getElementById("btnSubTabGuruDetail");
+        const btnLogs = document.getElementById("btnSubTabGuruLogs");
+        const contentDetail = document.getElementById("subTabContentGuruDetail");
+        const contentLogs = document.getElementById("subTabContentGuruLogs");
+
+        if (!btnDetail || !btnLogs || !contentDetail || !contentLogs) return;
+
+        if (tab === "detail") {
+          btnDetail.className =
+            "px-4 py-2 rounded-lg font-black text-[10px] uppercase bg-blue-900 text-white shadow-md transition";
+          btnLogs.className =
+            "px-4 py-2 rounded-lg font-black text-[10px] uppercase bg-gray-100 text-gray-600 hover:bg-gray-200 transition";
+          contentDetail.classList.remove("hidden");
+          contentLogs.classList.add("hidden");
+        } else {
+          btnLogs.className =
+            "px-4 py-2 rounded-lg font-black text-[10px] uppercase bg-blue-900 text-white shadow-md transition";
+          btnDetail.className =
+            "px-4 py-2 rounded-lg font-black text-[10px] uppercase bg-gray-100 text-gray-600 hover:bg-gray-200 transition";
+          contentLogs.classList.remove("hidden");
+          contentDetail.classList.add("hidden");
+        }
       }
 
       function loadRekapAbsenGuru() {
@@ -15256,7 +15321,7 @@
         const table = document.getElementById("tableRekapAbsenGuru");
         if (!table) return;
         table.innerHTML =
-          "<tr><td colspan='5' class='p-10 text-center font-black animate-pulse uppercase'>Memuat ...</td></tr>";
+          "<tr><td colspan='6' class='p-10 text-center font-black animate-pulse uppercase'>Memuat ...</td></tr>";
 
         let querySchool = activeUser.sekolah;
         const sFilter = document.getElementById("schoolFilterRekapGuru");
@@ -15343,7 +15408,7 @@
 
               if (filteredList.length === 0) {
                 table.innerHTML =
-                  "<tr><td colspan='5' class='p-10 text-center text-gray-400 font-black italic uppercase'>Tidak ada data absensi guru yang sesuai dengan kriteria filter.</td></tr>";
+                  "<tr><td colspan='6' class='p-10 text-center text-gray-400 font-black italic uppercase'>Tidak ada data absensi guru yang sesuai dengan kriteria filter.</td></tr>";
                 if (statsContainer) statsContainer.classList.add("hidden");
                 return;
               }
@@ -15423,6 +15488,84 @@
                   isSwasta: daysInfo.isSwasta,
                 };
               };
+
+              // Populate Summary Table per Teacher
+              const summaryTable = document.getElementById("tableSummaryRekapAbsenGuru");
+              const teacherNamesSet = new Set();
+              filteredList.forEach((a) => {
+                if (a.guru) teacherNamesSet.add((a.guru || "").toUpperCase().trim());
+              });
+
+              if (filterGuru === "ALL" && allScheduleList) {
+                allScheduleList.forEach((sc) => {
+                  if (
+                    sc.guru &&
+                    (querySchool === "PUSAT KCD XI" || matchSchool(sc.sekolah, querySchool))
+                  ) {
+                    teacherNamesSet.add((sc.guru || "").toUpperCase().trim());
+                  }
+                });
+              }
+
+              if (summaryTable) {
+                summaryTable.innerHTML = "";
+                const sortedTeachers = Array.from(teacherNamesSet).sort();
+
+                if (sortedTeachers.length === 0) {
+                  summaryTable.innerHTML =
+                    "<tr><td colspan='7' class='p-8 text-center text-gray-400 font-black italic uppercase'>Tidak ada data guru untuk kriteria ini.</td></tr>";
+                } else {
+                  sortedTeachers.forEach((tName, idx) => {
+                    const pctInfo = getTeacherPercentage(tName);
+                    const daysInfo = getTeacherExpectedAndActualDays(
+                      tName,
+                      bln,
+                      querySchool,
+                      weekdaysCount,
+                    );
+                    const teachingDaysPerWeek = daysInfo.scheduledDays
+                      ? daysInfo.scheduledDays.size
+                      : (daysInfo.teachingDaysPerWeek || 0);
+
+                    let badgeClass = "bg-rose-100 text-rose-800 border-rose-300";
+                    let badgeLabel = "Perlu Pembinaan (<60%)";
+
+                    if (daysInfo.expected === 0) {
+                      badgeClass = "bg-gray-100 text-gray-600 border-gray-300";
+                      badgeLabel = "Jadwal Belum Diisi";
+                    } else if (pctInfo.percent >= 90) {
+                      badgeClass = "bg-emerald-100 text-emerald-800 border-emerald-300";
+                      badgeLabel = "Sangat Baik (90-100%)";
+                    } else if (pctInfo.percent >= 75) {
+                      badgeClass = "bg-blue-100 text-blue-800 border-blue-300";
+                      badgeLabel = "Baik (75-89%)";
+                    } else if (pctInfo.percent >= 60) {
+                      badgeClass = "bg-amber-100 text-amber-800 border-amber-300";
+                      badgeLabel = "Cukup (60-74%)";
+                    }
+
+                    summaryTable.innerHTML += `
+                      <tr class="border-b transition hover:bg-gray-50 uppercase text-[9px] font-black">
+                        <td class="p-3.5 text-center text-gray-400">${idx + 1}</td>
+                        <td class="p-3.5 font-extrabold text-blue-950">${tName}</td>
+                        <td class="p-3.5 text-center">${teachingDaysPerWeek} Hari / Mgg</td>
+                        <td class="p-3.5 text-center text-gray-600">${daysInfo.expected} Hari <span class="text-[8px] text-gray-400 font-normal lowercase">(${teachingDaysPerWeek} × 4 mgg)</span></td>
+                        <td class="p-3.5 text-center font-bold text-emerald-700">${pctInfo.actual} Hari Hadir</td>
+                        <td class="p-3.5 text-center">
+                          <span class="px-3 py-1 rounded-full text-[10px] font-black bg-blue-50 text-blue-900 border border-blue-200">
+                            ${pctInfo.percent}%
+                          </span>
+                        </td>
+                        <td class="p-3.5 text-center">
+                          <span class="px-2.5 py-1 rounded-full text-[8px] font-black border ${badgeClass}">
+                            ${badgeLabel}
+                          </span>
+                        </td>
+                      </tr>
+                    `;
+                  });
+                }
+              }
 
               // Rerender Stats Cards
               if (statsContainer) {
@@ -15504,9 +15647,15 @@
                   a.status === "TEPAT WAKTU"
                     ? "text-green-600"
                     : "text-red-600";
+                const pctInfo = getTeacherPercentage(a.guru);
                 table.innerHTML += `<tr class="border-b transition hover:bg-gray-50 uppercase text-[9px] font-black">
                    <td class="p-4">${tglStr}</td>
-                   <td class="p-4">${a.guru}</td>
+                   <td class="p-4 font-bold text-blue-950">${a.guru}</td>
+                   <td class="p-4">
+                     <span class="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-900 border border-blue-200 font-black text-[9px]">
+                       ${pctInfo.percent}% (${pctInfo.actual}/${pctInfo.expected} Hari)
+                     </span>
+                   </td>
                    <td class="p-4">${a.tipe}</td>
                    <td class="p-4">${a.waktu}</td>
                    <td class="p-4 ${statusColor}">${a.status}</td>
@@ -15688,35 +15837,90 @@
 
         doc.setFont("helvetica", "bold");
         doc.text(
-          `PERSENTASE KEHADIRAN SEKOLAH: ${overallPercentage}% (HARI KERJA EFEKTIF: ${weekdaysCount} HARI)`,
+          `RATA-RATA KEHADIRAN SEKOLAH: ${overallPercentage}% (ACUAN: HARI MENGAJAR DEPAN JADWAL x 4 MINGGU)`,
           14,
           44,
         );
         doc.setFont("helvetica", "normal");
 
+        // Build Summary Table per Teacher for PDF
+        const pdfTeacherNamesSet = new Set();
+        window.lastLoadedRekapAbsenGuruList.forEach((a) => {
+          if (a.guru) pdfTeacherNamesSet.add((a.guru || "").toUpperCase().trim());
+        });
+        const sortedPdfTeachers = Array.from(pdfTeacherNamesSet).sort();
+
+        const summaryHead = [["NO", "NAMA GURU", "HARI MENGAJAR/MGG", "TARGET (HM x 4 MGG)", "REALISASI", "% KEHADIRAN", "KETERANGAN"]];
+        const summaryBody = sortedPdfTeachers.map((tName, idx) => {
+          const pctInfo = getTeacherPercentage(tName);
+          const daysInfo = getTeacherExpectedAndActualDays(
+            tName,
+            bln,
+            targetSchool,
+            weekdaysCount,
+          );
+          const teachingDaysPerWeek = daysInfo.scheduledDays
+            ? daysInfo.scheduledDays.size
+            : (daysInfo.teachingDaysPerWeek || 0);
+
+          let ket = "Perlu Pembinaan";
+          if (daysInfo.expected === 0) ket = "Jadwal Belum Diisi";
+          else if (pctInfo.percent >= 90) ket = "Sangat Baik";
+          else if (pctInfo.percent >= 75) ket = "Baik";
+          else if (pctInfo.percent >= 60) ket = "Cukup";
+
+          return [
+            idx + 1,
+            tName,
+            `${teachingDaysPerWeek} Hari / Mgg`,
+            `${daysInfo.expected} Hari`,
+            `${pctInfo.actual} Hari`,
+            `${pctInfo.percent}%`,
+            ket,
+          ];
+        });
+
+        // 1. Render Teacher Summary Table
+        doc.autoTable({
+          startY: 48,
+          head: summaryHead,
+          body: summaryBody,
+          theme: "grid",
+          headStyles: { fillColor: [30, 58, 138] },
+          styles: { fontSize: 8, font: "helvetica", halign: "center" },
+          columnStyles: { 1: { halign: "left", fontStyle: "bold" } },
+        });
+
+        let nextY = (doc.lastAutoTable.finalY || 50) + 10;
+        doc.setFont("helvetica", "bold");
+        doc.text("LOG DETAIL ABSENSI HARIAN GURU", 14, nextY);
+
         let body = window.lastLoadedRekapAbsenGuruList.map((a, idx) => {
           const tglStr = a.timestamp
             ? new Date(a.timestamp).toLocaleDateString("id-ID")
             : "-";
+          const pctInfo = getTeacherPercentage(a.guru);
           return [
             idx + 1,
             tglStr,
-            a.guru.toUpperCase(),
-            a.tipe.toUpperCase(),
-            a.waktu,
-            a.status.toUpperCase(),
+            (a.guru || "").toUpperCase(),
+            `${pctInfo.percent}% (${pctInfo.actual}/${pctInfo.expected} Hari)`,
+            (a.tipe || "").toUpperCase(),
+            a.waktu || "-",
+            (a.status || "").toUpperCase(),
           ];
         });
 
+        // 2. Render Daily Log Table
         doc.autoTable({
-          startY: 48,
+          startY: nextY + 4,
           head: [
-            ["NO", "TANGGAL", "NAMA GURU", "TIPE", "WAKTU ABSEN", "STATUS"],
+            ["NO", "TANGGAL", "NAMA GURU", "% KEHADIRAN", "TIPE", "WAKTU ABSEN", "STATUS"],
           ],
           body: body,
           theme: "grid",
           headStyles: { fillColor: [30, 41, 59] },
-          styles: { fontSize: 8, font: "helvetica", halign: "center" },
+          styles: { fontSize: 7, font: "helvetica", halign: "center" },
           columnStyles: { 2: { halign: "left", fontStyle: "bold" } },
         });
 
