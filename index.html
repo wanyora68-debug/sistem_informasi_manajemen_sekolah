@@ -4,6 +4,13 @@
     <base target="_top" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SIMS KCD XI</title>
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#1e3a8a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="SIMS KCD XI" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link
       href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
       rel="stylesheet"
@@ -13274,12 +13281,18 @@
       function generateRekapJurnal() {
         const bln = document.getElementById("blnJurnal").value;
         const userFilter = document.getElementById("userJurnalFilter").value;
+        const schoolEl = document.getElementById("schoolJurnalFilter");
+        const selectedSchool = schoolEl ? schoolEl.value : "ALL";
         const area = document.getElementById("areaRekapJurnal");
         document
           .getElementById("previewRekapJurnal")
           .classList.remove("hidden");
         area.innerHTML =
           "<p class='p-10 text-center animate-pulse uppercase font-black'>Sedang menyusun data jurnal...</p>";
+
+        const schoolParam = (isAdminRole(activeUser.role) || isPengawasRole(activeUser.role))
+          ? (selectedSchool || "ALL")
+          : activeUser.sekolah;
 
         google.script.run
           .withSuccessHandler((list) => {
@@ -13297,11 +13310,9 @@
               "November",
               "Desember",
             ];
-            let filtered = list.filter(
+            let filtered = (list || []).filter(
               (j) => new Date(j.tgl).getMonth() == bln,
             );
-            const selectedSchool =
-              document.getElementById("schoolJurnalFilter").value;
             if (activeUser.role === "Pengawas") {
               const allowedSchools = (window.mySekolahBinaan || []).map((s) =>
                 (s.nama || "").toUpperCase().trim(),
@@ -13314,9 +13325,7 @@
                 filtered = filtered.filter(
                   (j) =>
                     j.sekolah &&
-                    allowedSchools.includes(
-                      (j.sekolah || "").toString().toUpperCase().trim(),
-                    ),
+                    allowedSchools.some((scName) => matchSchool(j.sekolah, scName)),
                 );
               }
             } else if (
@@ -13471,7 +13480,7 @@
               "kepsekJurnalNipDisplay",
             );
           })
-          .getDaftarJurnal("", activeUser.role, activeUser.sekolah);
+          .getDaftarJurnal("", activeUser.role, schoolParam);
       }
 
       function giveFeedbackJurnal(row) {
@@ -13489,12 +13498,18 @@
       function generateRekapAktivitas() {
         const bln = document.getElementById("blnAktivitas").value;
         const userFilter = document.getElementById("userAktivitasFilter").value;
+        const schoolEl = document.getElementById("schoolAktivitasFilter");
+        const selectedSchool = schoolEl ? schoolEl.value : "ALL";
         const area = document.getElementById("areaRekapAktivitas");
         document
           .getElementById("previewRekapAktivitas")
           .classList.remove("hidden");
         area.innerHTML =
           "<p class='p-10 text-center animate-pulse uppercase font-black'>Sedang menyusun data aktivitas...</p>";
+
+        const schoolParam = (isAdminRole(activeUser.role) || isPengawasRole(activeUser.role))
+          ? (selectedSchool || "ALL")
+          : activeUser.sekolah;
 
         google.script.run
           .withSuccessHandler((list) => {
@@ -13512,12 +13527,9 @@
               "November",
               "Desember",
             ];
-            let filtered = list.filter(
+            let filtered = (list || []).filter(
               (a) => new Date(a.tgl).getMonth() == bln,
             );
-            const selectedSchool = document.getElementById(
-              "schoolAktivitasFilter",
-            ).value;
             if (activeUser.role === "Pengawas") {
               const allowedSchools = (window.mySekolahBinaan || []).map((s) =>
                 (s.nama || "").toUpperCase().trim(),
@@ -13530,9 +13542,7 @@
                 filtered = filtered.filter(
                   (a) =>
                     a.sekolah &&
-                    allowedSchools.includes(
-                      (a.sekolah || "").toString().toUpperCase().trim(),
-                    ),
+                    allowedSchools.some((scName) => matchSchool(a.sekolah, scName)),
                 );
               }
             } else if (
@@ -13683,7 +13693,7 @@
               "kepsekAktivitasNipDisplay",
             );
           })
-          .getDaftarAktivitas("", activeUser.role, activeUser.sekolah);
+          .getDaftarAktivitas("", activeUser.role, schoolParam);
       }
 
       function giveFeedbackAktivitas(row) {
@@ -24300,5 +24310,16 @@
         <!-- Generated content goes here -->
       </div>
     </div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then((reg) => {
+            console.log('SIMS ServiceWorker registered successfully:', reg.scope);
+          }).catch((err) => {
+            console.log('SIMS ServiceWorker registration failed:', err);
+          });
+        });
+      }
+    </script>
   </body>
 </html>
