@@ -15528,7 +15528,7 @@
                       : (daysInfo.teachingDaysPerWeek || 0);
 
                     let badgeClass = "bg-rose-100 text-rose-800 border-rose-300";
-                    let badgeLabel = "Perlu Pembinaan (<60%)";
+                    let badgeLabel = "Kurang (<60%)";
 
                     if (daysInfo.expected === 0) {
                       badgeClass = "bg-gray-100 text-gray-600 border-gray-300";
@@ -15863,7 +15863,7 @@
             ? daysInfo.scheduledDays.size
             : (daysInfo.teachingDaysPerWeek || 0);
 
-          let ket = "Perlu Pembinaan";
+          let ket = "Kurang";
           if (daysInfo.expected === 0) ket = "Jadwal Belum Diisi";
           else if (pctInfo.percent >= 90) ket = "Sangat Baik";
           else if (pctInfo.percent >= 75) ket = "Baik";
