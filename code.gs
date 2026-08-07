@@ -602,12 +602,14 @@ function getDaftarAktivitas(userNama, role, sekolah) {
         
         if (roleLow === "guru") {
            if (dbGuruNorm !== targetNameNorm) continue;
-        } else if (roleLow === "kepala sekolah" || roleLow === "operator" || roleLow === "admin") {
-           if (roleLow !== "admin" && targetSchoolNorm !== "PUSAT KCD XI" && targetSchoolNorm !== "") {
+        } else if (roleLow === "kepala sekolah" || roleLow === "operator" || roleLow === "admin" || roleLow === "pengawas") {
+           if (roleLow !== "admin" && roleLow !== "pengawas" && targetSchoolNorm !== "PUSAT KCD XI" && targetSchoolNorm !== "") {
               if (!matchSchool(guruSekolah[dbGuruNorm], sekolah) && dbGuruNorm !== targetNameNorm) continue;
+           } else if (roleLow === "pengawas" && targetSchoolNorm !== "ALL" && targetSchoolNorm !== "PUSAT KCD XI" && targetSchoolNorm !== "") {
+              if (!matchSchool(guruSekolah[dbGuruNorm], sekolah)) continue;
            }
         }
-
+        
         list.push({
           sekolah: guruSekolah[dbGuruNorm] || "",
           row: i + 1,
@@ -1402,9 +1404,11 @@ function getDaftarJurnal(userNama, role, sekolah) {
         
         if (roleLow === "guru") {
            if (dbGuruNorm !== targetNameNorm) continue;
-        } else if (roleLow === "kepala sekolah" || roleLow === "operator" || roleLow === "admin") {
-           if (roleLow !== "admin" && targetSchoolNorm !== "PUSAT KCD XI" && targetSchoolNorm !== "") {
+        } else if (roleLow === "kepala sekolah" || roleLow === "operator" || roleLow === "admin" || roleLow === "pengawas") {
+           if (roleLow !== "admin" && roleLow !== "pengawas" && targetSchoolNorm !== "PUSAT KCD XI" && targetSchoolNorm !== "") {
               if (!matchSchool(guruSekolah[dbGuruNorm], sekolah) && dbGuruNorm !== targetNameNorm) continue;
+           } else if (roleLow === "pengawas" && targetSchoolNorm !== "ALL" && targetSchoolNorm !== "PUSAT KCD XI" && targetSchoolNorm !== "") {
+              if (!matchSchool(guruSekolah[dbGuruNorm], sekolah)) continue;
            }
         }
 
@@ -1916,6 +1920,19 @@ function getRekapSiswaBulanan(kelas, bulan, sekolah) {
     if (!siswaSheet) return [];
     var siswaData = siswaSheet.getDataRange().getValues();
     if (siswaData.length < 2) return [];
+
+    var classSheet = ss.getSheetByName("Data_Kelas");
+    var classSchoolMap = {};
+    if (classSheet) {
+      var cData = classSheet.getDataRange().getValues();
+      for (var c = 1; c < cData.length; c++) {
+        var cKls = (cData[c][1] || "").toString().toUpperCase().trim();
+        var cSch = (cData[c][5] || "").toString().toUpperCase().trim();
+        if (cKls && cSch) {
+          classSchoolMap[cKls] = cSch;
+        }
+      }
+    }
     
     var allSiswa = [];
     var targetKlsNorm = (kelas || "").toString().toUpperCase().trim();
@@ -1928,8 +1945,11 @@ function getRekapSiswaBulanan(kelas, bulan, sekolah) {
        var sSch = (siswaData[i][8] || "").toString().toUpperCase().trim();
        
        var matchSch = true;
-       if (targetSchoolNorm !== "PUSAT KCD XI" && targetSchoolNorm !== "" && sSch !== "") {
-          if (!matchSchool(sSch, targetSchoolNorm)) matchSch = false;
+       if (targetSchoolNorm !== "PUSAT KCD XI" && targetSchoolNorm !== "") {
+          var effectiveSchool = sSch || classSchoolMap[sKelas] || "";
+          if (effectiveSchool !== "") {
+             if (!matchSchool(effectiveSchool, targetSchoolNorm)) matchSch = false;
+          }
        }
        
        var matchKls = (targetKlsNorm === "ALL" || matchKelasRobust(sKelas, targetKlsNorm));
