@@ -16368,22 +16368,36 @@
       }
 
       function cetakLaporanPresensiDariLog(tglRaw, kls) {
+        const targetSchool = getAbsenTargetSchool();
         google.script.run
           .withSuccessHandler((res) => {
             if (!res || res.length === 0) {
               return alert("Data absensi tidak ditemukan!");
             }
-            const record = res[0];
-            const absData = record.absensi;
+            let record = res[0];
+            if (targetSchool && res && res.length > 1) {
+              const matchedRec = res.find((r) => {
+                const gName = (r.guru || "").toUpperCase().trim();
+                const gObj = (window.allUsersList || []).find((u) => (u.nama || "").toUpperCase().trim() === gName);
+                if (gObj && gObj.sekolah && matchSchool(gObj.sekolah, targetSchool)) return true;
+                return false;
+              });
+              if (matchedRec) record = matchedRec;
+            }
+            const absData = record.absensi || {};
             const mapel = record.mapel || "-";
             const hari = record.hari || "-";
             const guruNama = record.guru || activeUser.nama;
 
             google.script.run
               .withSuccessHandler((siswaList) => {
-                const filteredSiswa = siswaList.filter(
-                  (s) => s.kelas && matchKelasRobust(s.kelas, kls),
-                );
+                const filteredSiswa = (siswaList || []).filter((s) => {
+                  if (!s.kelas || !matchKelasRobust(s.kelas, kls)) return false;
+                  if (targetSchool && s.sekolah) {
+                    return matchSchool(s.sekolah, targetSchool);
+                  }
+                  return true;
+                });
                 if (filteredSiswa.length === 0) {
                   return alert("Siswa kelas ini tidak ditemukan!");
                 }
@@ -17522,6 +17536,24 @@
 
       // ABSENSI SISWA CHECKLIST
       let currentSiswaList = [];
+
+      function getAbsenTargetSchool() {
+        const selSekolah = document.getElementById("filterAbsenSekolah");
+        if (selSekolah && selSekolah.value && selSekolah.value !== "ALL" && selSekolah.value !== "") {
+          return selSekolah.value.toUpperCase().trim();
+        }
+        const selGuru = document.getElementById("filterAbsenGuruPA");
+        if (selGuru && selGuru.value && selGuru.value !== "ALL" && selGuru.value !== "") {
+          const gName = selGuru.value.toUpperCase().trim();
+          const gObj = (window.allUsersList || []).find((u) => (u.nama || "").toUpperCase().trim() === gName);
+          if (gObj && gObj.sekolah) return gObj.sekolah.toUpperCase().trim();
+        }
+        if (activeUser && activeUser.sekolah && activeUser.sekolah.toString().toUpperCase().trim() !== "PUSAT KCD XI") {
+          return activeUser.sekolah.toString().toUpperCase().trim();
+        }
+        return "";
+      }
+
       function loadAbsenSiswa() {
         const kls = document.getElementById("selKelasAbsen").value;
         const table = document.getElementById("siswaAbsenTable");
@@ -17549,12 +17581,17 @@
 
         table.innerHTML = "<tr><td class='p-4 text-center'>Memuat...</td></tr>";
         container.classList.remove("hidden");
+        const targetSchool = getAbsenTargetSchool();
         google.script.run
           .withSuccessHandler((list) => {
-            // Filter siswa berdasarkan kelas yang dipilih
-            const filteredList = list.filter(
-              (s) => s.kelas && matchKelasRobust(s.kelas, kls),
-            );
+            // Filter siswa berdasarkan sekolah terlebih dahulu baru kelas
+            const filteredList = (list || []).filter((s) => {
+              if (!s.kelas || !matchKelasRobust(s.kelas, kls)) return false;
+              if (targetSchool && s.sekolah) {
+                return matchSchool(s.sekolah, targetSchool);
+              }
+              return true;
+            });
             currentSiswaList = filteredList;
             table.innerHTML = "";
 
@@ -17667,6 +17704,8 @@
           "<tr><td class='p-4 text-center animate-pulse uppercase'>Mencari Laporan...</td></tr>";
         container.classList.remove("hidden");
 
+        const targetSchool = getAbsenTargetSchool();
+
         google.script.run
           .withSuccessHandler((res) => {
             if (!res || res.length === 0) {
@@ -17677,19 +17716,33 @@
               return;
             }
 
-            const record = res[0]; // Take first match
+            let record = res[0]; // Take first match or match school/teacher
+            if (targetSchool && res && res.length > 1) {
+              const matchedRec = res.find((r) => {
+                const gName = (r.guru || "").toUpperCase().trim();
+                const gObj = (window.allUsersList || []).find((u) => (u.nama || "").toUpperCase().trim() === gName);
+                if (gObj && gObj.sekolah && matchSchool(gObj.sekolah, targetSchool)) return true;
+                return false;
+              });
+              if (matchedRec) record = matchedRec;
+            }
+
             document.getElementById("mapelAbsen").value = record.mapel || "";
             document.getElementById("selHariAbsen").value = record.hari || "";
 
-            const absData = record.absensi;
+            const absData = record.absensi || {};
             table.innerHTML = "";
 
             // We need to fetch current student list to match
             google.script.run
               .withSuccessHandler((siswaList) => {
-                const filteredSiswa = siswaList.filter(
-                  (s) => s.kelas && matchKelasRobust(s.kelas, kls),
-                );
+                const filteredSiswa = (siswaList || []).filter((s) => {
+                  if (!s.kelas || !matchKelasRobust(s.kelas, kls)) return false;
+                  if (targetSchool && s.sekolah) {
+                    return matchSchool(s.sekolah, targetSchool);
+                  }
+                  return true;
+                });
                 currentSiswaList = filteredSiswa;
 
                 if (filteredSiswa.length === 0) {
