@@ -2690,7 +2690,7 @@
             <p
               class="text-[9px] font-bold text-gray-400 tracking-widest uppercase mt-1"
             >
-              Verifikasi Biometrik & Lokasi GPS
+              Lokasi GPS & Kamera Live
             </p>
           </div>
 
@@ -2786,6 +2786,26 @@
             </div>
 
             <div class="space-y-4 mb-4">
+              <!-- PILIH GURU (KHUSUS OPERATOR / ADMIN) -->
+              <div id="wrapperOperatorSelectGuru" class="hidden relative group">
+                <label
+                  class="text-[8px] font-black text-blue-200 uppercase tracking-widest ml-1 mb-2 block"
+                  >Pilih Guru / PTK (Khusus Operator):</label
+                >
+                <select
+                  id="selectGuruOperatorAbsen"
+                  onchange="checkReadyToSubmit()"
+                  class="w-full p-4 bg-white text-blue-900 rounded-[1.5rem] font-black border-4 border-blue-400/30 focus:border-white outline-none uppercase text-xs shadow-xl appearance-none cursor-pointer"
+                >
+                  <option value="">-- DIRI SENDIRI (OPERATOR) --</option>
+                </select>
+                <div
+                  class="absolute right-6 bottom-4 pointer-events-none text-blue-900"
+                >
+                  ▼
+                </div>
+              </div>
+
               <div class="relative group">
                 <label
                   class="text-[8px] font-black text-blue-200 uppercase tracking-widest ml-1 mb-2 block"
@@ -12578,11 +12598,42 @@
         switchTab("absensi-guru");
       }
 
+      function initAbsensiGuruTabForOperator() {
+        const wrap = document.getElementById("wrapperOperatorSelectGuru");
+        const sel = document.getElementById("selectGuruOperatorAbsen");
+        if (!wrap || !sel) return;
+
+        const isOp = isOperatorRole(activeUser.role) || isAdminRole(activeUser.role) || activeUser.role === "Operator" || activeUser.role === "Admin";
+        if (isOp) {
+          wrap.classList.remove("hidden");
+          const defaultLabel = "-- DIRI SENDIRI (" + ((activeUser && activeUser.nama) ? activeUser.nama.toUpperCase() : "OPERATOR") + ") --";
+          sel.innerHTML = `<option value="">${defaultLabel}</option>`;
+          
+          let list = window.allUsersList || [];
+          if (activeUser && activeUser.sekolah && activeUser.role !== "Admin") {
+            list = list.filter(u => u.sekolah && matchSchool(u.sekolah, activeUser.sekolah));
+          }
+          list.forEach(u => {
+            if (u.nama) {
+              const opt = document.createElement("option");
+              opt.value = u.email || u.nama;
+              opt.textContent = (u.nama || "").toUpperCase() + (u.jabatan ? " (" + u.jabatan + ")" : "");
+              sel.add(opt);
+            }
+          });
+        } else {
+          wrap.classList.add("hidden");
+        }
+      }
+
       function switchTab(id) {
         if (id === "absensi-guru") {
           if (!window.originalAbsensiGuruHtml) {
             window.originalAbsensiGuruHtml = document.getElementById("sec-absensi-guru").innerHTML;
           }
+          setTimeout(() => {
+            initAbsensiGuruTabForOperator();
+          }, 100);
         }
         if (id === "home") {
           try {
@@ -17454,23 +17505,28 @@
           }
         }
 
-        const isSelfieOk = (!activeUser || activeUser.role !== "Guru") || selfieData;
+        const isOp = isOperatorRole(activeUser.role) || isAdminRole(activeUser.role) || activeUser.role === "Operator" || activeUser.role === "Admin";
+        const isSelfieOk = (!activeUser || activeUser.role !== "Guru") || selfieData || isOp;
 
-        if (userCoords && isAtSchool && timeIsReady && isSelfieOk) {
+        if (userCoords && (isAtSchool || isOp) && timeIsReady && isSelfieOk) {
           btn.disabled = false;
           btn.classList.remove("opacity-50", "cursor-not-allowed");
           msg.innerText = "Sempurna! Lokasi, Waktu & Foto Terverifikasi.";
           msg.className =
             "text-center text-[10px] font-black text-green-300 italic uppercase mt-4 animate-pulse";
         } else {
-          btn.disabled = true;
-          btn.classList.add("opacity-50", "cursor-not-allowed");
+          btn.disabled = !(userCoords && (isAtSchool || isOp) && timeIsReady && isSelfieOk);
+          if (!btn.disabled) {
+            btn.classList.remove("opacity-50", "cursor-not-allowed");
+          } else {
+            btn.classList.add("opacity-50", "cursor-not-allowed");
+          }
 
           if (!userCoords) {
             msg.innerText = "📍 Menunggu lokasi GPS aktif...";
             msg.className =
               "text-center text-[10px] font-black text-yellow-400 italic uppercase mt-4";
-          } else if (!isAtSchool) {
+          } else if (!isAtSchool && !isOp) {
             msg.innerText =
               "🚫 Jarak terlalu jauh dari sekolah (" + Math.round(dist) + "m)!";
             msg.className =
@@ -17490,7 +17546,7 @@
       function doKirimAbsensiAkhir() {
         if (typeof prewarmGASBackend === "function") prewarmGASBackend();
         const btn = document.getElementById("btnKirimAbsen");
-        const tipe = document.getElementById("tipeAbsen").value;
+        const tipe = document.getElementById("tipeAbsen") ? document.getElementById("tipeAbsen").value : "Absen Masuk (Datang)";
         const isMasuk = tipe.includes("Masuk");
 
         const sched = typeof getDynamicSchoolSchedule === "function" 
@@ -17509,61 +17565,80 @@
           isNearSchool = dist <= allowedRadius;
         }
 
-        // BYPASS BIOMETRIK JIKA GURU ABSEN DI SEKITAR SEKOLAH
-        if (activeUser.role === "Guru" && isNearSchool) {
-          const payload = {
-            nama: activeUser.nama.toString().toUpperCase(),
-            email: activeUser.email.toString().toLowerCase(),
-            sekolah: activeUser.sekolah.toString().toUpperCase(),
-            tipe: isMasuk ? "DATANG" : "PULANG",
-            metode: "near_school_bypass_biometric",
-            lokasi: userCoords
-              ? userCoords.lat + "," + userCoords.lng
-              : "-7.2278, 107.9087",
-            jarak:
-              (document.getElementById("txtJarak")
-                ? document.getElementById("txtJarak").innerText
-                : "0") + "m",
-            qrData: "BYPASSED_NEAR_SCHOOL",
-            fotoBase64: selfieData,
-            jamMasuk: sched.jamMasuk,
-            jamPulang: sched.jamPulang
-          };
+        const isOpOrAdmin = isOperatorRole(activeUser.role) || isAdminRole(activeUser.role) || activeUser.role === "Operator" || activeUser.role === "Admin";
 
-          // Tampilkan loading overlay bypass biometrik
-          const loadingOverlay = document.createElement("div");
-          loadingOverlay.className =
-            "fixed inset-0 bg-blue-900 z-[1000] flex flex-col items-center justify-center p-8 text-white animate-fadeIn";
-          loadingOverlay.innerHTML = `
-             <div class="bg-white/10 p-10 rounded-[3rem] border-2 border-white/20 shadow-2xl text-center max-w-xs w-full backdrop-blur-xl">
-                <div class="w-16 h-16 border-t-4 border-b-4 border-white rounded-full animate-spin mx-auto mb-6"></div>
-                <h3 class="text-xl font-black uppercase italic mb-2 tracking-tighter">Mengirim Absensi...</h3>
-                <p class="text-[9px] font-bold text-blue-200 uppercase tracking-widest leading-tight">Bypass Biometrik di Sekitar Sekolah</p>
-             </div>
-          `;
-          document.body.appendChild(loadingOverlay);
+        let targetNama = activeUser.nama ? activeUser.nama.toString().toUpperCase() : "";
+        let targetEmail = activeUser.email ? activeUser.email.toString().toLowerCase() : "";
+        let targetSekolah = activeUser.sekolah ? activeUser.sekolah.toString().toUpperCase() : "";
 
-          google.script.run
-            .withSuccessHandler((res) => {
-              if (document.body.contains(loadingOverlay))
-                document.body.removeChild(loadingOverlay);
+        // Jika Operator/Admin memilih guru dari dropdown
+        const selGuruOp = document.getElementById("selectGuruOperatorAbsen") || document.getElementById("filterAbsenGuruPA");
+        if (selGuruOp && selGuruOp.value && selGuruOp.value !== "ALL" && selGuruOp.value !== "" && isOpOrAdmin) {
+          const val = selGuruOp.value;
+          const found = (window.allUsersList || []).find(u => (u.email && u.email.toLowerCase() === val.toLowerCase()) || (u.nama && u.nama.toUpperCase() === val.toUpperCase()));
+          if (found) {
+            targetNama = (found.nama || "").toString().toUpperCase();
+            targetEmail = (found.email || "").toString().toLowerCase();
+            targetSekolah = (found.sekolah || activeUser.sekolah || "").toString().toUpperCase();
+          } else {
+            targetNama = val.toUpperCase();
+          }
+        }
 
-              const mainArea = document.getElementById("sec-absensi-guru");
-              const now = new Date();
-              const timeStr =
-                now.getHours().toString().padStart(2, "0") +
-                ":" +
-                now.getMinutes().toString().padStart(2, "0") +
-                ":" +
-                now.getSeconds().toString().padStart(2, "0");
+        const payload = {
+          nama: targetNama,
+          email: targetEmail,
+          sekolah: targetSekolah,
+          tipe: isMasuk ? "DATANG" : "PULANG",
+          metode: isOpOrAdmin ? "operator_direct_absence" : "direct_absence_no_biometric",
+          lokasi: userCoords
+            ? userCoords.lat + "," + userCoords.lng
+            : "-7.2278, 107.9087",
+          jarak:
+            (document.getElementById("txtJarak")
+              ? document.getElementById("txtJarak").innerText
+              : "0") + "m",
+          qrData: isOpOrAdmin ? "OPERATOR_ABSENCE_NO_BIOMETRIC" : "DIRECT_ABSENCE_NO_BIOMETRIC",
+          fotoBase64: selfieData || "",
+          jamMasuk: sched.jamMasuk,
+          jamPulang: sched.jamPulang
+        };
 
-              let detailMsg = isMasuk
-                ? "Anda masuk jam " + timeStr
-                : "Anda pulang jam " + timeStr;
-              let finalMsg = isMasuk
-                ? "LOKASI SEKOLAH TERVERIFIKASI. BYPASS BIOMETRIK SELESAI. SELAMAT BEKERJA!"
-                : "TERIMA KASIH, SELAMAT BERISTIRAHAT!";
+        // Tampilkan loading overlay pengiriman data absensi
+        const loadingOverlay = document.createElement("div");
+        loadingOverlay.className =
+          "fixed inset-0 bg-blue-900 z-[1000] flex flex-col items-center justify-center p-8 text-white animate-fadeIn";
+        loadingOverlay.innerHTML = `
+           <div class="bg-white/10 p-10 rounded-[3rem] border-2 border-white/20 shadow-2xl text-center max-w-xs w-full backdrop-blur-xl">
+              <div class="w-16 h-16 border-t-4 border-b-4 border-white rounded-full animate-spin mx-auto mb-6"></div>
+              <h3 class="text-xl font-black uppercase italic mb-2 tracking-tighter">Mengirim Absensi...</h3>
+              <p class="text-[9px] font-bold text-blue-200 uppercase tracking-widest leading-tight">${isOpOrAdmin ? "Proses Absensi Operator" : "Proses Penyimpanan Data Absensi"}</p>
+           </div>
+        `;
+        document.body.appendChild(loadingOverlay);
 
+        google.script.run
+          .withSuccessHandler((res) => {
+            if (document.body.contains(loadingOverlay))
+              document.body.removeChild(loadingOverlay);
+
+            const mainArea = document.getElementById("sec-absensi-guru");
+            const now = new Date();
+            const timeStr =
+              now.getHours().toString().padStart(2, "0") +
+              ":" +
+              now.getMinutes().toString().padStart(2, "0") +
+              ":" +
+              now.getSeconds().toString().padStart(2, "0");
+
+            let detailMsg = isMasuk
+              ? (targetNama !== activeUser.nama.toUpperCase() ? "Absensi masuk " + targetNama + " jam " + timeStr : "Anda masuk jam " + timeStr)
+              : (targetNama !== activeUser.nama.toUpperCase() ? "Absensi pulang " + targetNama + " jam " + timeStr : "Anda pulang jam " + timeStr);
+            let finalMsg = isMasuk
+              ? "ABSENSI BERHASIL DISIMPAN. SELAMAT BEKERJA!"
+              : "ABSENSI BERHASIL DISIMPAN. TERIMA KASIH!";
+
+            if (mainArea) {
               mainArea.innerHTML = `
                <div class="flex flex-col items-center justify-center p-20 text-center animate-zoomIn">
                   <div class="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-5xl mb-6 shadow-xl border-4 border-white">✅</div>
@@ -17573,170 +17648,14 @@
                   <button onclick="resetAbsensiGuruForm()" class="bg-blue-900 text-white px-8 py-4 rounded-2xl font-black uppercase text-[10px] shadow-lg hover:scale-105 transition">Kembali ke Panel Absensi</button>
                </div>
              `;
-            })
-            .simpanAbsenGuru(payload);
-          return;
-        }
-
-        // CEK APAKAH BIOMETRIK SUDAH TERDAFTAR
-        if (!activeUser.bioRegistered) {
-          alert(
-            "⚠️ PERHATIAN: Biometrik Anda belum terdaftar!\n\nSilakan daftarkan sidik jari Anda terlebih dahulu di menu Profil agar dapat melakukan absensi.",
-          );
-          switchTab("profil");
-          return;
-        }
-
-        // PROSES VALIDASI BIOMETRIK INTERAKTIF
-        const bioOverlay = document.createElement("div");
-        bioOverlay.className =
-          "fixed inset-0 bg-blue-900 z-[1000] flex flex-col items-center justify-center p-8 text-white animate-fadeIn";
-        bioOverlay.innerHTML = `
-          <div class="bg-white/10 p-10 rounded-[3rem] border-2 border-white/20 shadow-2xl text-center max-w-xs w-full backdrop-blur-xl">
-             <div id="bioIcon" class="w-24 h-24 mx-auto mb-6 bg-blue-800 rounded-full flex items-center justify-center text-5xl cursor-pointer hover:scale-110 active:scale-95 transition-all shadow-inner border-2 border-blue-400/30">
-                ☝️
-             </div>
-             <h3 id="bioTitle" class="text-xl font-black uppercase italic mb-2 tracking-tighter">Verifikasi Sidik Jari</h3>
-             <p id="bioDesc" class="text-[10px] font-bold text-blue-200 uppercase tracking-widest leading-tight">
-                Tempelkan Sidik Jari Anda Pada Sensor Biometrik Perangkat (Tombol Power / Sensor Fingerprint)
-             </p>
-             
-             <div id="bioScanner" class="hidden mt-8 w-full h-1 bg-white/20 rounded-full overflow-hidden">
-                <div class="h-full bg-green-400 w-0 progress-bar"></div>
-             </div>
-          </div>
-          <style>
-             @keyframes scanProgress { 
-                0% { width: 0%; background-color: #60A5FA; } 
-                50% { width: 50%; background-color: #34D399; }
-                100% { width: 100%; background-color: #10B981; } 
-             }
-             .progress-bar { animation: scanProgress 2s ease-in-out forwards; }
-             .animate-pulse-fast { animation: pulse 0.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-          </style>
-       `;
-        document.body.appendChild(bioOverlay);
-
-        const icon = bioOverlay.querySelector("#bioIcon");
-        const title = bioOverlay.querySelector("#bioTitle");
-        const desc = bioOverlay.querySelector("#bioDesc");
-        const scanner = bioOverlay.querySelector("#bioScanner");
-
-        icon.onclick = async function () {
-          // Check Browser Support
-          if (!window.PublicKeyCredential) {
-            alert(
-              "Perangkat Anda tidak mendukung verifikasi biometrik standar. Menggunakan mode simulasi.",
-            );
-          }
-
-          // Mulai "Scanning"
-          icon.innerHTML = "🔍";
-          icon.classList.add("animate-pulse-fast");
-          title.innerText = "Memproses...";
-          desc.innerText = "Verifikasi Sidik Jari / Wajah Anda...";
-          scanner.classList.remove("hidden");
-          icon.onclick = null; // Prevent double click
-
-          try {
-            // Real WebAuthn Challenge
-            const challenge = new Uint8Array(32);
-            window.crypto.getRandomValues(challenge);
-
-            const options = {
-              publicKey: {
-                challenge: challenge,
-                rpId: window.location.hostname,
-                userVerification: "required",
-                timeout: 60000,
-              },
-            };
-
-            // Trigger OS Biometric Prompt
-            const assertion = await navigator.credentials.get(options);
-
-            if (assertion) {
-              // Berhasil Verifikasi
-              icon.innerHTML = "✅";
-              icon.classList.remove("animate-pulse-fast");
-              icon.classList.add("bg-green-600", "border-green-400");
-              title.innerText = "Biometrik Cocok!";
-              desc.innerText =
-                "Verifikasi Sidik Jari Berhasil. Mengirim Data...";
-
-              const payload = {
-                nama: activeUser.nama.toString().toUpperCase(),
-                email: activeUser.email.toString().toLowerCase(),
-                sekolah: activeUser.sekolah.toString().toUpperCase(),
-                tipe: isMasuk ? "DATANG" : "PULANG",
-                metode: "biometric_device_verified",
-                lokasi: userCoords
-                  ? userCoords.lat + "," + userCoords.lng
-                  : "-7.2278, 107.9087",
-                jarak: (document.getElementById("txtJarak") ? document.getElementById("txtJarak").innerText : "0") + "m",
-                qrData: "VERIFIED_VIA_WEBAUTHN",
-                fotoBase64: selfieData,
-                jamMasuk: sched.jamMasuk,
-                jamPulang: sched.jamPulang
-              };
-
-              google.script.run
-                .withSuccessHandler((res) => {
-                  if (document.body.contains(bioOverlay))
-                    document.body.removeChild(bioOverlay);
-
-                  const mainArea =
-                    document.getElementById("sec-absensi-guru");
-                  const now = new Date();
-                  const timeStr =
-                    now.getHours().toString().padStart(2, "0") +
-                    ":" +
-                    now.getMinutes().toString().padStart(2, "0") +
-                    ":" +
-                    now.getSeconds().toString().padStart(2, "0");
-
-                  let detailMsg = isMasuk
-                    ? "Anda masuk jam " + timeStr
-                    : "Anda pulang jam " + timeStr;
-                  let finalMsg = isMasuk
-                    ? "VERIFIKASI BIOMETRIK COCOK. SELAMAT BEKERJA!"
-                    : "TERIMA KASIH, SELAMAT BERISTIRAHAT!";
-
-                  mainArea.innerHTML = `
-                      <div class="flex flex-col items-center justify-center p-20 text-center animate-zoomIn">
-                         <div class="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-5xl mb-6 shadow-xl border-4 border-white">✅</div>
-                         <h2 class="text-2xl font-black text-blue-900 uppercase italic mb-1 tracking-tighter">ABSENSI BERHASIL</h2>
-                         <p class="text-blue-600 font-black text-lg uppercase italic mb-2">${detailMsg}</p>
-                         <p class="text-green-600 font-black text-sm uppercase italic mb-8">${finalMsg}</p>
-                         <button onclick="resetAbsensiGuruForm()" class="bg-blue-900 text-white px-8 py-4 rounded-2xl font-black uppercase text-[10px] shadow-lg hover:scale-105 transition">Kembali ke Panel Absensi</button>
-                      </div>
-                    `;
-                })
-                .simpanAbsenGuru(payload);
             }
-          } catch (err) {
-            console.error("Verification Error:", err);
-            // Reset UI for retry
-            icon.innerHTML = "❌";
-            icon.classList.remove("animate-pulse-fast");
-            icon.classList.add("bg-red-600", "border-red-400");
-            title.innerText = "Gagal Verifikasi";
-            desc.innerText =
-              "Error: " +
-              (err.name === "NotAllowedError"
-                ? "Akses Dibatalkan"
-                : err.message);
-
-            // Allow retry after 2 seconds
-            setTimeout(() => {
-              icon.innerHTML = "☝️";
-              icon.classList.remove("bg-red-600", "border-red-400");
-              title.innerText = "Ulangi Verifikasi";
-              desc.innerText = "Ketuk ikon untuk mencoba lagi...";
-              icon.onclick = arguments.callee; // Re-bind
-            }, 2000);
-          }
-        };
+          })
+          .withFailureHandler((err) => {
+            if (document.body.contains(loadingOverlay))
+              document.body.removeChild(loadingOverlay);
+            alert("⚠️ Gagal menyimpan absensi: " + (err.message || err));
+          })
+          .simpanAbsenGuru(payload);
       }
 
       // ABSENSI SISWA CHECKLIST
