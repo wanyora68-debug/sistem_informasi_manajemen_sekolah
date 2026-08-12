@@ -8111,7 +8111,14 @@
                       }
                       
                       return function (...args) {
-                        const isGet = propKey.startsWith("get") || propKey.startsWith("check") || propKey.startsWith("load");
+                        const mutationPrefixes = [
+                          "simpan", "update", "hapus", "delete", "edit", "tambah",
+                          "kirim", "reset", "batal", "import", "sync", "upload",
+                          "set", "save", "remove", "insert", "buat", "daftaruserbaru"
+                        ];
+                        const propLower = propKey.toLowerCase();
+                        const isMutation = mutationPrefixes.some((prefix) => propLower.startsWith(prefix));
+                        const isGet = !isMutation && propKey !== "prosesLogin";
                         const cacheKey = propKey + "_" + JSON.stringify(args);
                         const CACHE_FRESH_MS = 5 * 60 * 1000; // 5 minutes fresh
                         let cacheServed = false;
@@ -8134,7 +8141,7 @@
                             }
                             // If stale (> 5 mins), revalidate in background silently!
                           }
-                        } else {
+                        } else if (isMutation) {
                           // Mutation operation: invalidate all cached read queries
                           window.gasCache = {};
                           try { localStorage.removeItem("sims_gas_cache"); } catch(e) {}
@@ -10638,13 +10645,21 @@
         const loadJurnals = new Promise((resolve) => {
           google.script.run
             .withSuccessHandler((list) => resolve(list || []))
-            .getDaftarJurnal("", "Admin", "");
+            .getDaftarJurnal(
+              activeRole === "Guru" ? uObj.nama : "",
+              activeRole,
+              activeSekolah
+            );
         });
 
         const loadAktivitas = new Promise((resolve) => {
           google.script.run
             .withSuccessHandler((list) => resolve(list || []))
-            .getDaftarAktivitas("", "Admin", "");
+            .getDaftarAktivitas(
+              activeRole === "Guru" ? uObj.nama : "",
+              activeRole,
+              activeSekolah
+            );
         });
 
         const loadSiswa = new Promise((resolve) => {
