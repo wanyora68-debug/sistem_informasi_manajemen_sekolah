@@ -8328,6 +8328,50 @@
         return c1 === c2 || c1.includes(c2) || c2.includes(c1);
       }
 
+      function parseMonthAndYearFromDate(dateStr) {
+        if (!dateStr) return { month: -1, year: -1 };
+        const str = dateStr.toString().trim();
+        
+        const matchISO = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+        if (matchISO) {
+          const y = parseInt(matchISO[1], 10);
+          const m = parseInt(matchISO[2], 10) - 1;
+          return { month: m, year: y };
+        }
+        
+        const matchUS = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+        if (matchUS) {
+          const p1 = parseInt(matchUS[1], 10);
+          const p2 = parseInt(matchUS[2], 10);
+          const y = parseInt(matchUS[3], 10);
+          const m = (p1 <= 12 ? p1 : p2) - 1;
+          return { month: m, year: y };
+        }
+        
+        const d = new Date(str);
+        if (!isNaN(d.getTime())) {
+          return { month: d.getUTCMonth(), year: d.getUTCFullYear() };
+        }
+        return { month: -1, year: -1 };
+      }
+
+      function resolveItemSchool(item) {
+        if (!item) return "";
+        if (item.sekolah && item.sekolah.trim() !== "") {
+          return item.sekolah.trim();
+        }
+        const teacherName = (item.guru || item.kepsek || item.nama || "").toUpperCase().trim();
+        if (teacherName) {
+          const userList = (typeof allUsersList !== "undefined" && allUsersList && allUsersList.length > 0) ? allUsersList : (window.allUsersList || []);
+          const found = userList.find((u) => {
+            const uName = (u.nama || "").toUpperCase().trim();
+            return uName === teacherName || (typeof matchTeacherName === "function" && matchTeacherName(uName, teacherName));
+          });
+          if (found && found.sekolah) return found.sekolah.trim();
+        }
+        return item.sekolah || "";
+      }
+
       // Robust class name comparison
       function matchKelasRobust(k1, k2) {
         if (!k1 || !k2) return false;
@@ -12962,6 +13006,12 @@
               if (schoolFilterVal && schoolFilterVal !== "ALL") {
                 return matchSchool(u.sekolah, schoolFilterVal);
               }
+              if (activeUser.role === "Pengawas") {
+                const allowedSchools = (window.mySekolahBinaan || []).map((s) => (s.nama || "").toUpperCase().trim());
+                if (allowedSchools.length > 0) {
+                  return allowedSchools.some((allowed) => matchSchool(u.sekolah, allowed));
+                }
+              }
               return (
                 activeUser.role === "Admin" ||
                 activeUser.role === "Pengawas" ||
@@ -13184,11 +13234,21 @@
         if (!sel) return;
         sel.innerHTML = '<option value="ALL">-- SEMUA GURU --</option>';
 
-        const filtered = allUsersList.filter(
-          (u) =>
-            (u.role || "").toString().toUpperCase().trim() === "GURU" &&
-            (schoolName === "ALL" || matchSchool(u.sekolah, schoolName)),
-        );
+        const userList = (typeof allUsersList !== "undefined" && allUsersList && allUsersList.length > 0) ? allUsersList : (window.allUsersList || []);
+        const filtered = userList.filter((u) => {
+          if ((u.role || "").toString().toUpperCase().trim() !== "GURU") return false;
+          if (schoolName && schoolName !== "ALL") {
+            return matchSchool(u.sekolah, schoolName);
+          }
+          if (activeUser.role === "Pengawas") {
+            const allowedSchools = (window.mySekolahBinaan || []).map((s) => (s.nama || "").toUpperCase().trim());
+            if (allowedSchools.length > 0) {
+              return allowedSchools.some((allowed) => matchSchool(u.sekolah, allowed));
+            }
+          }
+          return true;
+        });
+
         filtered.forEach((u) => {
           let opt = document.createElement("option");
           opt.value = u.nama;
@@ -13388,9 +13448,10 @@
               "November",
               "Desember",
             ];
-            let filtered = list.filter(
-              (j) => new Date(j.tgl).getMonth() == bln,
-            );
+            let filtered = (list || []).filter((j) => {
+              const myDate = parseMonthAndYearFromDate(j.tgl || j.timestamp);
+              return myDate.month === parseInt(bln, 10);
+            });
             const selectedSchool =
               document.getElementById("schoolJurnalFilter").value;
             if (activeUser.role === "Pengawas") {
@@ -13398,16 +13459,14 @@
                 (s.nama || "").toUpperCase().trim(),
               );
               if (selectedSchool && selectedSchool !== "ALL") {
-                filtered = filtered.filter(
-                  (j) => j.sekolah && matchSchool(j.sekolah, selectedSchool),
+                filtered = filtered.filter((j) =>
+                  matchSchool(resolveItemSchool(j), selectedSchool),
                 );
-              } else {
-                filtered = filtered.filter(
-                  (j) =>
-                    j.sekolah &&
-                    allowedSchools.includes(
-                      (j.sekolah || "").toString().toUpperCase().trim(),
-                    ),
+              } else if (allowedSchools.length > 0) {
+                filtered = filtered.filter((j) =>
+                  allowedSchools.some((allowed) =>
+                    matchSchool(resolveItemSchool(j), allowed),
+                  ),
                 );
               }
             } else if (
@@ -13415,12 +13474,18 @@
               selectedSchool &&
               selectedSchool !== "ALL"
             ) {
-              filtered = filtered.filter((j) => matchSchool(j.sekolah, selectedSchool));
+              filtered = filtered.filter((j) =>
+                matchSchool(resolveItemSchool(j), selectedSchool),
+              );
             } else if (!isAdminRole(activeUser.role) && !isPengawasRole(activeUser.role)) {
-              filtered = filtered.filter((j) => j.sekolah && matchSchool(j.sekolah, activeUser.sekolah));
+              filtered = filtered.filter((j) =>
+                matchSchool(resolveItemSchool(j), activeUser.sekolah),
+              );
             }
             if (userFilter && userFilter !== "ALL") {
-              filtered = filtered.filter((j) => j.guru === userFilter);
+              filtered = filtered.filter(
+                (j) => j.guru === userFilter || matchTeacherName(j.guru, userFilter),
+              );
             }
 
             let displaySchool = "";
@@ -13517,7 +13582,7 @@
                          <div class="flex flex-col gap-1 items-center">
                             <span class="text-[7px] italic text-blue-600 block text-center">${j.feedback || "BELUM ADA FEEDBACK"}</span>
                             ${
-                              ["Kepala Sekolah", "Admin"].includes(
+                              ["Kepala Sekolah", "Admin", "Pengawas"].includes(
                                 activeUser.role,
                               )
                                 ? `
@@ -13603,9 +13668,10 @@
               "November",
               "Desember",
             ];
-            let filtered = list.filter(
-              (a) => new Date(a.tgl).getMonth() == bln,
-            );
+            let filtered = (list || []).filter((a) => {
+              const myDate = parseMonthAndYearFromDate(a.tgl || a.timestamp);
+              return myDate.month === parseInt(bln, 10);
+            });
             const selectedSchool = document.getElementById(
               "schoolAktivitasFilter",
             ).value;
@@ -13614,16 +13680,14 @@
                 (s.nama || "").toUpperCase().trim(),
               );
               if (selectedSchool && selectedSchool !== "ALL") {
-                filtered = filtered.filter(
-                  (a) => a.sekolah && matchSchool(a.sekolah, selectedSchool),
+                filtered = filtered.filter((a) =>
+                  matchSchool(resolveItemSchool(a), selectedSchool),
                 );
-              } else {
-                filtered = filtered.filter(
-                  (a) =>
-                    a.sekolah &&
-                    allowedSchools.includes(
-                      (a.sekolah || "").toString().toUpperCase().trim(),
-                    ),
+              } else if (allowedSchools.length > 0) {
+                filtered = filtered.filter((a) =>
+                  allowedSchools.some((allowed) =>
+                    matchSchool(resolveItemSchool(a), allowed),
+                  ),
                 );
               }
             } else if (
@@ -13631,12 +13695,18 @@
               selectedSchool &&
               selectedSchool !== "ALL"
             ) {
-              filtered = filtered.filter((a) => matchSchool(a.sekolah, selectedSchool));
+              filtered = filtered.filter((a) =>
+                matchSchool(resolveItemSchool(a), selectedSchool),
+              );
             } else if (!isAdminRole(activeUser.role) && !isPengawasRole(activeUser.role)) {
-              filtered = filtered.filter((a) => a.sekolah && matchSchool(a.sekolah, activeUser.sekolah));
+              filtered = filtered.filter((a) =>
+                matchSchool(resolveItemSchool(a), activeUser.sekolah),
+              );
             }
             if (userFilter && userFilter !== "ALL") {
-              filtered = filtered.filter((a) => a.guru === userFilter);
+              filtered = filtered.filter(
+                (a) => a.guru === userFilter || matchTeacherName(a.guru, userFilter),
+              );
             }
 
             let displaySchool = "";
@@ -13729,7 +13799,7 @@
                          <div class="flex flex-col gap-1 items-center">
                             <span class="text-[7px] italic text-green-600 block text-center">${a.feedback || "BELUM ADA FEEDBACK"}</span>
                             ${
-                              ["Kepala Sekolah", "Admin"].includes(
+                              ["Kepala Sekolah", "Admin", "Pengawas"].includes(
                                 activeUser.role,
                               )
                                 ? `
@@ -14828,7 +14898,8 @@
                    ${a.st ? `<button onclick="window.open('${a.st}')" class="bg-blue-50 text-blue-700 px-3 py-2 rounded-xl text-[8px] font-black uppercase hover:bg-blue-100 transition">Lihat Surat Tugas</button>` : ""}
                    ${
                      (isKepsekRole(activeUser.role) ||
-                       activeUser.role === "Admin") &&
+                       activeUser.role === "Admin" ||
+                       isPengawasRole(activeUser.role)) &&
                      !a.feedback
                        ? `
                       <button onclick="beriFeedbackAktivitas('${a.row}')" class="bg-green-600 text-white px-3 py-2 rounded-xl text-[8px] font-black uppercase shadow-sm hover:bg-green-700 transition">Beri Feedback</button>
@@ -14841,7 +14912,7 @@
                a.feedback
                  ? `
                 <div class="mt-4 p-4 bg-green-50 rounded-2xl border border-green-100">
-                   <p class="text-[7px] font-black text-green-700 uppercase mb-1 tracking-widest">Feedback Kepala Sekolah:</p>
+                   <p class="text-[7px] font-black text-green-700 uppercase mb-1 tracking-widest">Feedback Kepala Sekolah / Pengawas:</p>
                    <p class="text-[10px] font-bold text-green-900 italic leading-snug">"${a.feedback}"</p>
                 </div>
              `
@@ -14995,7 +15066,8 @@
                    
                    ${
                      (isKepsekRole(activeUser.role) ||
-                       activeUser.role === "Admin") &&
+                       activeUser.role === "Admin" ||
+                       isPengawasRole(activeUser.role)) &&
                      !j.feedback
                        ? `
                       <button onclick="beriFeedbackJurnal('${j.row}')" class="w-full bg-blue-600 text-white font-black py-3 rounded-xl text-[8px] uppercase shadow-md hover:bg-blue-700 transition">Beri Feedback</button>
@@ -15007,7 +15079,7 @@
                      j.feedback
                        ? `
                       <div class="mt-4 p-4 bg-blue-50 rounded-2xl border border-blue-100">
-                         <p class="text-[7px] font-black text-blue-700 uppercase mb-1 tracking-widest">Feedback Kepala Sekolah:</p>
+                         <p class="text-[7px] font-black text-blue-700 uppercase mb-1 tracking-widest">Feedback Kepala Sekolah / Pengawas:</p>
                          <p class="text-[10px] font-bold text-blue-900 italic leading-snug">"${j.feedback}"</p>
                       </div>
                    `
@@ -22265,29 +22337,31 @@
           if (["Pengawas", "Admin"].includes(activeUser.role)) {
             if (lapSchoolSel && lapSchoolSel !== "ALL") {
               jurnal = jurnal.filter((item) =>
-                matchSchool(item.sekolah, lapSchoolSel),
+                matchSchool(resolveItemSchool(item), lapSchoolSel),
               );
               aktivitas = aktivitas.filter((item) =>
-                matchSchool(item.sekolah, lapSchoolSel),
+                matchSchool(resolveItemSchool(item), lapSchoolSel),
               );
             } else if (activeUser.role === "Pengawas") {
               const allowedSchools = (window.mySekolahBinaan || []).map((s) =>
                 (s.nama || "").toUpperCase().trim(),
               );
-              jurnal = jurnal.filter((item) =>
-                allowedSchools.some((allowed) => matchSchool(item.sekolah, allowed)),
-              );
-              aktivitas = aktivitas.filter((item) =>
-                allowedSchools.some((allowed) => matchSchool(item.sekolah, allowed)),
-              );
+              if (allowedSchools.length > 0) {
+                jurnal = jurnal.filter((item) =>
+                  allowedSchools.some((allowed) => matchSchool(resolveItemSchool(item), allowed)),
+                );
+                aktivitas = aktivitas.filter((item) =>
+                  allowedSchools.some((allowed) => matchSchool(resolveItemSchool(item), allowed)),
+                );
+              }
             }
           } else {
             if (activeUser.sekolah) {
               jurnal = jurnal.filter((item) =>
-                matchSchool(item.sekolah, activeUser.sekolah),
+                matchSchool(resolveItemSchool(item), activeUser.sekolah),
               );
               aktivitas = aktivitas.filter((item) =>
-                matchSchool(item.sekolah, activeUser.sekolah),
+                matchSchool(resolveItemSchool(item), activeUser.sekolah),
               );
             }
           }
@@ -22296,15 +22370,20 @@
             ? document.getElementById("lapGuru").value
             : "ALL";
           if (lapGuruSel && lapGuruSel !== "ALL") {
-            jurnal = jurnal.filter((item) => item.guru === lapGuruSel);
-            aktivitas = aktivitas.filter((item) => item.guru === lapGuruSel);
+            jurnal = jurnal.filter(
+              (item) => item.guru === lapGuruSel || matchTeacherName(item.guru, lapGuruSel),
+            );
+            aktivitas = aktivitas.filter(
+              (item) => item.guru === lapGuruSel || matchTeacherName(item.guru, lapGuruSel),
+            );
           }
 
           const filterFn = (item) => {
             const tglRaw = item.tgl || item.timestamp;
-            const tgl = new Date(tglRaw);
-            const m = (tgl.getMonth() + 1).toString().padStart(2, "0");
-            const y = tgl.getFullYear().toString();
+            const parsed = parseMonthAndYearFromDate(tglRaw);
+            if (parsed.month === -1) return false;
+            const m = (parsed.month + 1).toString().padStart(2, "0");
+            const y = parsed.year.toString();
             return m === bulan && y === tahun;
           };
 
@@ -22316,7 +22395,7 @@
       }
 
       function beriFeedbackLaporanJurnal(row) {
-        const fb = prompt("Masukkan Feedback Kepala Sekolah untuk Jurnal :");
+        const fb = prompt("Masukkan Feedback / Catatan untuk Jurnal Mengajar :");
         if (fb === null) return;
         google.script.run
           .withSuccessHandler((msg) => {
@@ -22327,7 +22406,7 @@
       }
 
       function beriFeedbackLaporanAktivitas(row) {
-        const fb = prompt("Masukkan Feedback Kepala Sekolah untuk Aktivitas :");
+        const fb = prompt("Masukkan Feedback / Catatan untuk Aktivitas Guru :");
         if (fb === null) return;
         google.script.run
           .withSuccessHandler((msg) => {
@@ -22373,10 +22452,11 @@
                          <p class="text-[10px] font-black uppercase text-blue-900 my-1">${item.mapel}</p>
                          <p class="text-[9px] text-gray-500 font-bold uppercase leading-tight">${item.materi}</p>
                          <div class="mt-2 text-[9px] p-2 rounded-lg bg-gray-50 border border-gray-100 italic ${item.feedback ? "text-gray-700 font-bold" : "text-gray-400"} flex justify-between items-center gap-2">
-                            <span>💬 ${item.feedback || "Belum ada feedback dari Kepala Sekolah"}</span>
+                            <span>💬 ${item.feedback || "Belum ada feedback dari Kepala Sekolah / Pengawas"}</span>
                             ${
                               isKepsekRole(activeUser.role) ||
-                              activeUser.role === "Admin"
+                              activeUser.role === "Admin" ||
+                              isPengawasRole(activeUser.role)
                                 ? `
                                <button onclick="beriFeedbackLaporanJurnal('${item.row}')" class="text-[8px] shrink-0 font-black uppercase text-blue-600 hover:underline">Beri / Edit Feedback</button>
                             `
@@ -22412,10 +22492,11 @@
                          <p class="text-[10px] font-black uppercase text-indigo-900 my-1">${item.kegiatan}</p>
                          <p class="text-[9px] text-gray-500 font-bold uppercase leading-tight">${item.deskripsi}</p>
                          <div class="mt-2 text-[9px] p-2 rounded-lg bg-gray-50 border border-gray-100 italic ${item.feedback ? "text-gray-700 font-bold" : "text-gray-400"} flex justify-between items-center gap-2">
-                            <span>💬 ${item.feedback || "Belum ada feedback dari Kepala Sekolah"}</span>
+                            <span>💬 ${item.feedback || "Belum ada feedback dari Kepala Sekolah / Pengawas"}</span>
                             ${
                               isKepsekRole(activeUser.role) ||
-                              activeUser.role === "Admin"
+                              activeUser.role === "Admin" ||
+                              isPengawasRole(activeUser.role)
                                 ? `
                                <button onclick="beriFeedbackLaporanAktivitas('${item.row}')" class="text-[8px] shrink-0 font-black uppercase text-indigo-600 hover:underline">Beri / Edit Feedback</button>
                             `
