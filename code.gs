@@ -226,9 +226,6 @@ function bootstrapDatabase(ss) {
 }
 
 function doGet(e) {
-  if (e && e.parameter && e.parameter.functionName) {
-    return handleGASRequest(e);
-  }
   if (e && e.parameter && e.parameter.ping) {
     return ContentService.createTextOutput(JSON.stringify({
       status: "success",
@@ -244,40 +241,12 @@ function doGet(e) {
 }
 
 function doPost(e) {
-  return handleGASRequest(e);
-}
-
-function handleGASRequest(e) {
   try {
-    var functionName = "";
-    var args = [];
+    var requestData = JSON.parse(e.postData.contents);
+    var functionName = requestData.functionName;
+    var args = requestData.arguments || [];
     
-    if (e && e.postData && e.postData.contents) {
-      try {
-        var parsed = JSON.parse(e.postData.contents);
-        functionName = parsed.functionName;
-        args = parsed.arguments || [];
-      } catch (jsonErr) {}
-    }
-    
-    if (!functionName && e && e.parameter && e.parameter.functionName) {
-      functionName = e.parameter.functionName;
-      if (e.parameter.arguments) {
-        try {
-          args = typeof e.parameter.arguments === "string" ? JSON.parse(e.parameter.arguments) : e.parameter.arguments;
-        } catch (pErr) {
-          args = [e.parameter.arguments];
-        }
-      }
-    }
-
-    if (!functionName) {
-      return ContentService.createTextOutput(JSON.stringify({
-        status: "error",
-        message: "functionName tidak ditemukan dalam request."
-      })).setMimeType(ContentService.MimeType.JSON);
-    }
-    
+    // Check if function exists in the global scope
     if (typeof this[functionName] === "function") {
       var result = this[functionName].apply(null, args);
       return ContentService.createTextOutput(JSON.stringify({
