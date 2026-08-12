@@ -8065,7 +8065,7 @@
         let gasFetchQueue = [];
         let isProcessingGasQueue = false;
         let activeGasRequests = 0;
-        const MAX_CONCURRENT_GAS_REQUESTS = 3;
+        const MAX_CONCURRENT_GAS_REQUESTS = 2;
 
         function processGasFetchQueue() {
           if (gasFetchQueue.length === 0 || activeGasRequests >= MAX_CONCURRENT_GAS_REQUESTS) {
@@ -8078,7 +8078,7 @@
 
           const onTaskDone = () => {
             activeGasRequests = Math.max(0, activeGasRequests - 1);
-            setTimeout(processGasFetchQueue, 20);
+            setTimeout(processGasFetchQueue, 15);
           };
 
           try {
@@ -8089,7 +8089,7 @@
           }
 
           if (gasFetchQueue.length > 0 && activeGasRequests < MAX_CONCURRENT_GAS_REQUESTS) {
-            setTimeout(processGasFetchQueue, 30);
+            setTimeout(processGasFetchQueue, 20);
           }
         }
 
@@ -8097,6 +8097,16 @@
           gasFetchQueue.push(task);
           processGasFetchQueue();
         }
+
+        window.prewarmGASBackend = function() {
+          try {
+            const webAppUrl = window.getGASWebAppUrl();
+            const mode = window.getGASDbMode();
+            if (mode === "live" && webAppUrl) {
+              fetch(webAppUrl + "?ping=1", { method: "GET", credentials: "omit" }).catch(() => {});
+            }
+          } catch(e) {}
+        };
 
         window.google = {
           script: {
@@ -8177,12 +8187,22 @@
                               arguments: args
                             })
                           })
-                          .then((response) => {
+                          .then(async (response) => {
                             clearTimeout(timeoutId);
                             if (!response.ok) {
                               throw new Error("HTTP error! Status: " + response.status);
                             }
-                            return response.json();
+                            const rawText = await response.text();
+                            if (rawText.trim().startsWith("<!DOCTYPE") || rawText.includes("Sorry, unable to open") || rawText.includes("accounts.google.com")) {
+                              const authErr = new Error("Akses Web App Google Script terkunci. Buka Google Apps Script > Deploy > Manage Deployments > Edit, dan ubah 'Who has access' (Siapa saja yang memiliki akses) menjadi 'Anyone' (Siapa saja).");
+                              authErr.isAccessError = true;
+                              throw authErr;
+                            }
+                            try {
+                              return JSON.parse(rawText);
+                            } catch(pErr) {
+                              throw new Error("Respon server Google Script tidak valid: " + rawText.substring(0, 100));
+                            }
                           })
                           .then((data) => {
                             if (doneCallback) { doneCallback(); doneCallback = null; }
@@ -8200,8 +8220,8 @@
                                 };
                                 saveGasCacheToLocalStorage();
                               }
-                              // Only invoke successHandler if cache was NOT served or if fresh background revalidation completed
-                              if (successHandler && (!cacheServed || isGet)) {
+                              // Only invoke successHandler if cache was NOT served
+                              if (successHandler && !cacheServed) {
                                 successHandler(result);
                               }
                             }
@@ -8209,7 +8229,7 @@
                           .catch((error) => {
                             clearTimeout(timeoutId);
                             console.warn("GAS fetch error (Attempt " + attempt + "/3) for " + propKey + ":", error);
-                            if (attempt < 3) {
+                            if (attempt < 3 && !error.isAccessError) {
                               setTimeout(() => {
                                 executeFetch(attempt + 1, doneCallback);
                               }, attempt * 300);
@@ -8223,8 +8243,10 @@
                           });
                         };
                         
-                        // Execute login directly without queueing; queue other background requests with concurrency
-                        if (propKey === "prosesLogin") {
+                        // Execute high priority actions (login and attendance submission) directly without queueing
+                        const isHighPriority = propKey === "prosesLogin" || propKey.startsWith("simpanAbsen") || propKey.startsWith("kirimAbsen");
+                        if (isHighPriority) {
+                          if (typeof window.prewarmGASBackend === "function") window.prewarmGASBackend();
                           executeFetch(1, null);
                         } else {
                           enqueueGasFetch((done) => executeFetch(1, done));
@@ -8588,6 +8610,7 @@
         const savedCoords = localStorage.getItem("sims_school_coords");
         if (savedCoords) SCHOOL_COORDS = JSON.parse(savedCoords);
 
+        if (typeof window.prewarmGASBackend === "function") window.prewarmGASBackend();
         checkSession();
         handleUrlParams();
       };
@@ -8835,6 +8858,10 @@
                 window.updatePengawasWarningBanner();
               }
               populateKepsekFilters();
+              const activeSec = document.querySelector("section:not(.hidden)");
+              if (activeSec && activeSec.id === "sec-rekap-absen-siswa" && typeof loadRekapAbsenSiswa === "function") {
+                loadRekapAbsenSiswa();
+              }
             })
             .getSekolahBinaan(activeUser.email);
 
@@ -9111,6 +9138,8 @@
       function openLogin(role) {
         console.log("openLogin called with role:", role);
         currentLoginRole = role;
+
+        if (typeof window.prewarmGASBackend === "function") window.prewarmGASBackend();
 
         // Reset activeUser to null to prevent stale login states
         activeUser = null;
@@ -15223,67 +15252,74 @@
               "<tr><td colspan='4' class='p-10 text-center text-red-500 font-black uppercase text-[10px]'>Gagal memuat rekap absensi siswa. Silakan coba lagi.</td></tr>";
           })
           .withSuccessHandler((list) => {
-            table.innerHTML = "";
+            try {
+              table.innerHTML = "";
 
-            let filteredList = list || [];
+              let filteredList = list || [];
 
-            // Filter by Supervisor Schools (Pengawas Binaan) client-side if "ALL" is selected
-            if (
-              activeUser &&
-              activeUser.role === "Pengawas" &&
-              (!sFilter || sFilter.value === "ALL")
-            ) {
-              const allowedSchools = (window.mySekolahBinaan || []).map((s) =>
-                (s.nama || "").toUpperCase().trim(),
-              );
-              if (allowedSchools.length > 0) {
-                const userList = (typeof allUsersList !== "undefined" && allUsersList && allUsersList.length > 0)
-                  ? allUsersList
-                  : (window.allUsersList || window.allUsersCache || []);
+              // Filter by Supervisor Schools (Pengawas Binaan) client-side if "ALL" is selected
+              if (
+                activeUser &&
+                activeUser.role === "Pengawas" &&
+                (!sFilter || sFilter.value === "ALL")
+              ) {
+                const allowedSchools = (window.mySekolahBinaan || []).map((s) =>
+                  (s.nama || "").toUpperCase().trim(),
+                );
+                if (allowedSchools.length > 0) {
+                  const rawUserList = (typeof allUsersList !== "undefined" && Array.isArray(allUsersList))
+                    ? allUsersList
+                    : (Array.isArray(window.allUsersList) ? window.allUsersList : (Array.isArray(window.allUsersCache) ? window.allUsersCache : []));
+                  filteredList = filteredList.filter((a) => {
+                    if (!a) return false;
+                    const gObj = rawUserList.find(
+                      (u) => u && (u.nama || "").toUpperCase().trim() === (a.guru || "").toUpperCase().trim(),
+                    );
+                    const teacherSchool = gObj ? (gObj.sekolah || "").toUpperCase().trim() : (a.sekolah || "").toUpperCase().trim();
+                    return allowedSchools.some((as) => matchSchool(teacherSchool, as));
+                  });
+                }
+              }
+
+              // Filter by Guru
+              if (filterGuru && filterGuru !== "ALL") {
+                const normFilterGuru = filterGuru.toUpperCase().trim();
                 filteredList = filteredList.filter((a) => {
-                  const gObj = userList.find(
-                    (u) => (u.nama || "").toUpperCase().trim() === (a.guru || "").toUpperCase().trim(),
-                  );
-                  const teacherSchool = gObj ? (gObj.sekolah || "").toUpperCase().trim() : (a.sekolah || "").toUpperCase().trim();
-                  return allowedSchools.some((as) => matchSchool(teacherSchool, as));
+                  return a && (a.guru || "").toUpperCase().trim() === normFilterGuru;
                 });
               }
-            }
 
-            // Filter by Guru
-            if (filterGuru && filterGuru !== "ALL") {
-              const normFilterGuru = filterGuru.toUpperCase().trim();
-              filteredList = filteredList.filter((a) => {
-                return (a.guru || "").toUpperCase().trim() === normFilterGuru;
-              });
-            }
+              // Filter by Kelas
+              if (filterKelas && filterKelas !== "ALL") {
+                const normFilterKelas = filterKelas.toUpperCase().trim();
+                filteredList = filteredList.filter((a) => {
+                  return a && (a.kelas || "").toUpperCase().trim() === normFilterKelas;
+                });
+              }
 
-            // Filter by Kelas
-            if (filterKelas && filterKelas !== "ALL") {
-              const normFilterKelas = filterKelas.toUpperCase().trim();
-              filteredList = filteredList.filter((a) => {
-                return (a.kelas || "").toUpperCase().trim() === normFilterKelas;
-              });
-            }
+              if (filteredList.length === 0) {
+                table.innerHTML =
+                  "<tr><td colspan='4' class='p-10 text-center text-gray-400 font-black italic uppercase text-[10px]'>Tidak ada data absensi siswa yang sesuai kriteria filter.</td></tr>";
+                return;
+              }
 
-            if (filteredList.length === 0) {
+              const rowsHtml = filteredList.map((a) => {
+                const tglStr = a.tanggal
+                  ? new Date(a.tanggal).toLocaleDateString("id-ID")
+                  : "-";
+                return `<tr class="border-b transition hover:bg-gray-50 uppercase text-[9px] font-black">
+                   <td class="p-4">${tglStr}</td>
+                   <td class="p-4">${a.guru || "-"}</td>
+                   <td class="p-4">${a.kelas || "-"}</td>
+                   <td class="p-4">${a.mapel || "-"}</td>
+                </tr>`;
+              }).join("");
+              table.innerHTML = rowsHtml;
+            } catch (err) {
+              console.error("Error rendering rekap absen siswa logs:", err);
               table.innerHTML =
-                "<tr><td colspan='4' class='p-10 text-center text-gray-400 font-black italic uppercase text-[10px]'>Tidak ada data absensi siswa yang sesuai kriteria filter.</td></tr>";
-              return;
+                "<tr><td colspan='4' class='p-10 text-center text-amber-600 font-black uppercase text-[10px]'>Gagal memproses data rekap absensi siswa.</td></tr>";
             }
-
-            const rowsHtml = filteredList.map((a) => {
-              const tglStr = a.tanggal
-                ? new Date(a.tanggal).toLocaleDateString("id-ID")
-                : "-";
-              return `<tr class="border-b transition hover:bg-gray-50 uppercase text-[9px] font-black">
-                 <td class="p-4">${tglStr}</td>
-                 <td class="p-4">${a.guru || "-"}</td>
-                 <td class="p-4">${a.kelas || "-"}</td>
-                 <td class="p-4">${a.mapel || "-"}</td>
-              </tr>`;
-            }).join("");
-            table.innerHTML = rowsHtml;
           })
           .getAllRekapAbsensiSiswa(bln, querySchool);
       }
@@ -17166,10 +17202,15 @@
 
         if (!v || !v.videoWidth) return;
 
-        c.width = v.videoWidth;
-        c.height = v.videoHeight;
-        c.getContext("2d").drawImage(v, 0, 0);
-        selfieData = c.toDataURL("image/jpeg", 0.8);
+        let targetWidth = 360;
+        let targetHeight = Math.round((v.videoHeight / v.videoWidth) * targetWidth);
+        if (isNaN(targetHeight) || targetHeight <= 0) targetHeight = 480;
+
+        c.width = targetWidth;
+        c.height = targetHeight;
+        const ctx = c.getContext("2d");
+        ctx.drawImage(v, 0, 0, targetWidth, targetHeight);
+        selfieData = c.toDataURL("image/jpeg", 0.5);
         p.src = selfieData;
         p.classList.remove("hidden");
         v.classList.add("hidden");
@@ -20736,44 +20777,48 @@
           if (lbl) lbl.innerText = "Pilih Sekolah Binaan";
         }
         
-        const handleFail = (err) => {
+        const pStudents = new Promise((resolve) => {
+          google.script.run
+            .withFailureHandler(() => resolve([]))
+            .withSuccessHandler((res) => resolve(res || []))
+            .getDaftarSiswa();
+        });
+
+        const pClasses = new Promise((resolve) => {
+          google.script.run
+            .withFailureHandler(() => resolve([]))
+            .withSuccessHandler((res) => resolve(res || []))
+            .getDaftarKelasFull();
+        });
+
+        const emailForBinaan = isUserAdmin ? "wanyora68@gmail.com" : (activeUser ? activeUser.email : "");
+        const pBinaan = new Promise((resolve) => {
+          google.script.run
+            .withFailureHandler(() => resolve([]))
+            .withSuccessHandler((res) => resolve(res || []))
+            .getSekolahBinaan(emailForBinaan || "all");
+        });
+
+        const pUsers = isUserAdmin ? new Promise((resolve) => {
+          google.script.run
+            .withFailureHandler(() => resolve([]))
+            .withSuccessHandler((res) => resolve(res || []))
+            .getDaftarUserManagement();
+        }) : Promise.resolve([]);
+
+        Promise.all([pStudents, pClasses, pBinaan, pUsers]).then(([studentsList, classesList, binaanList, usersList]) => {
+          window.rekapSiswaData = {
+            students: studentsList || [],
+            classes: classesList || [],
+            binaan: binaanList || [],
+            users: usersList || []
+          };
+          populateRekapFilters();
+        }).catch((err) => {
           console.error("Gagal initRekapSiswaPage:", err);
           if (loadingEl) loadingEl.classList.add("hidden");
           if (tbody) tbody.innerHTML = "<tr><td colspan='7' class='p-8 text-center text-red-500 font-bold'>Gagal memuat data rekap siswa. Silakan muat ulang halaman.</td></tr>";
-        };
-
-        google.script.run
-          .withFailureHandler(handleFail)
-          .withSuccessHandler((studentsList) => {
-            google.script.run
-              .withFailureHandler(handleFail)
-              .withSuccessHandler((classesList) => {
-                const emailForBinaan = isUserAdmin ? "wanyora68@gmail.com" : activeUser.email;
-                google.script.run
-                  .withFailureHandler(handleFail)
-                  .withSuccessHandler((binaanList) => {
-                    
-                    window.rekapSiswaData = {
-                      students: studentsList || [],
-                      classes: classesList || [],
-                      binaan: binaanList || [],
-                      users: []
-                    };
-                    
-                    if (isUserAdmin) {
-                      google.script.run
-                        .withFailureHandler(handleFail)
-                        .withSuccessHandler((usersList) => {
-                          window.rekapSiswaData.users = usersList || [];
-                          populateRekapFilters();
-                        }).getDaftarUserManagement();
-                    } else {
-                      populateRekapFilters();
-                    }
-                    
-                  }).getSekolahBinaan(emailForBinaan);
-              }).getDaftarKelasFull();
-          }).getDaftarSiswa();
+        });
       }
 
       function populateRekapFilters() {
@@ -20937,7 +20982,14 @@
             }
           }
         } else if (isPengawasRole(activeUser.role)) {
-          const mySchools = (window.rekapSiswaData.binaan || []).map(b => (b.nama || "").toUpperCase().trim());
+          let mySchools = (window.rekapSiswaData.binaan || []).map(b => (b.nama || "").toUpperCase().trim());
+          if (mySchools.length === 0) {
+            const schSet = new Set();
+            (window.rekapSiswaData.classes || []).forEach(c => { if (c.sekolah) schSet.add(c.sekolah.toUpperCase().trim()); });
+            (window.rekapSiswaData.students || []).forEach(s => { if (s.sekolah) schSet.add(s.sekolah.toUpperCase().trim()); });
+            if (activeUser.sekolah && activeUser.sekolah !== "-") schSet.add(activeUser.sekolah.toUpperCase().trim());
+            mySchools = Array.from(schSet);
+          }
           if (selectedSchool === "ALL") {
             allowedSchools = mySchools;
           } else {
@@ -22921,7 +22973,10 @@
         const sFilter = document.getElementById("schoolFilterRekapSiswa");
         if (sFilter && sFilter.value) {
           querySchool =
-            sFilter.value === "ALL" ? "PUSAT KCD XI" : sFilter.value;
+            sFilter.value === "ALL" ? "ALL" : sFilter.value;
+        }
+        if (!querySchool || querySchool === "-" || (activeUser && isPengawasRole(activeUser.role) && (!sFilter || !sFilter.value || sFilter.value === "ALL"))) {
+          querySchool = "ALL";
         }
 
         google.script.run
@@ -22930,72 +22985,80 @@
             tblBody.innerHTML = `<tr><td colspan="${isAllClass ? "10" : "9"}" class="p-10 text-center text-red-500 font-black uppercase text-[10px]">Gagal menghitung statistik kehadiran siswa.</td></tr>`;
           })
           .withSuccessHandler((data) => {
-            currentRekapSiswaDetailData = data || [];
+            try {
+              currentRekapSiswaDetailData = data || [];
 
-            function getClassWeight(className) {
-              if (!className) return 999;
-              let cl = className.toString().trim().toUpperCase();
-              if (cl.indexOf("XII") === 0) return 12;
-              if (cl.indexOf("XI") === 0) return 11;
-              if (cl.indexOf("X") === 0) return 10;
-              let numMatch = cl.match(/^(\d+)/);
-              if (numMatch) {
-                return parseInt(numMatch[1], 10);
-              }
-              return 999;
-            }
-
-            currentRekapSiswaDetailData.sort((a, b) => {
-              let wA = getClassWeight(a.kelas);
-              let wB = getClassWeight(b.kelas);
-              if (wA !== wB) return wA - wB;
-
-              let kA = (a.kelas || "").toString().toUpperCase().trim();
-              let kB = (b.kelas || "").toString().toUpperCase().trim();
-              if (kA !== kB) return kA.localeCompare(kB);
-
-              return (a.nama || "")
-                .toString()
-                .toUpperCase()
-                .trim()
-                .localeCompare((b.nama || "").toString().toUpperCase().trim());
-            });
-
-            tblBody.innerHTML = "";
-
-            if (currentRekapSiswaDetailData.length === 0) {
-              tblBody.innerHTML = `<tr><td colspan="${isAllClass ? "10" : "9"}" class="p-10 text-center text-gray-400 font-black italic uppercase text-[10px]">Tidak ada data siswa ditemukan untuk kriteria ini atau belum ada entri absensi.</td></tr>`;
-              return;
-            }
-
-            const rowsHtml = currentRekapSiswaDetailData.map((s, idx) => {
-              let pctColor = "bg-green-600 text-white rounded-lg px-2 py-1";
-              if (s.persen < 75) {
-                pctColor = "bg-red-600 text-white rounded-lg px-2 py-1";
-              } else if (s.persen < 90) {
-                pctColor = "bg-yellow-500 text-black rounded-lg px-2 py-1";
+              function getClassWeight(className) {
+                if (!className) return 999;
+                let cl = className.toString().trim().toUpperCase();
+                if (cl.indexOf("XII") === 0) return 12;
+                if (cl.indexOf("XI") === 0) return 11;
+                if (cl.indexOf("X") === 0) return 10;
+                let numMatch = cl.match(/^(\d+)/);
+                if (numMatch) {
+                  return parseInt(numMatch[1], 10);
+                }
+                return 999;
               }
 
-              let kelasTd = isAllClass
-                ? `<td class="p-3 text-center bg-gray-50 text-blue-900 font-extrabold text-[9px]">${s.kelas || "-"}</td>`
-                : "";
+              currentRekapSiswaDetailData.sort((a, b) => {
+                if (!a) return 1;
+                if (!b) return -1;
+                let wA = getClassWeight(a.kelas);
+                let wB = getClassWeight(b.kelas);
+                if (wA !== wB) return wA - wB;
 
-              return `
-                  <tr class="border-b transition hover:bg-gray-50 uppercase text-[9px] font-black divide-x divide-gray-200">
-                     <td class="p-3 text-center text-gray-500">${idx + 1}</td>
-                     <td class="p-3 text-center font-mono text-gray-600">${s.nisn || "-"}</td>
-                     <td class="p-3 font-extrabold text-blue-950">${s.nama}</td>
-                     ${kelasTd}
-                     <td class="p-3 text-center text-green-700 bg-green-50 font-black">${s.H}</td>
-                     <td class="p-3 text-center text-yellow-700 bg-yellow-50 font-black">${s.S}</td>
-                     <td class="p-3 text-center text-blue-700 bg-blue-50 font-black">${s.I}</td>
-                     <td class="p-3 text-center text-red-600 bg-red-50 font-black">${s.A}</td>
-                     <td class="p-3 text-center bg-gray-50 font-black text-gray-600">${s.totalHari}</td>
-                     <td class="p-3 text-center"><span class="${pctColor}">${s.persen}%</span></td>
-                  </tr>
-               `;
-            }).join("");
-            tblBody.innerHTML = rowsHtml;
+                let kA = (a.kelas || "").toString().toUpperCase().trim();
+                let kB = (b.kelas || "").toString().toUpperCase().trim();
+                if (kA !== kB) return kA.localeCompare(kB);
+
+                return (a.nama || "")
+                  .toString()
+                  .toUpperCase()
+                  .trim()
+                  .localeCompare((b.nama || "").toString().toUpperCase().trim());
+              });
+
+              tblBody.innerHTML = "";
+
+              if (currentRekapSiswaDetailData.length === 0) {
+                tblBody.innerHTML = `<tr><td colspan="${isAllClass ? "10" : "9"}" class="p-10 text-center text-gray-400 font-black italic uppercase text-[10px]">Tidak ada data siswa ditemukan untuk kriteria ini atau belum ada entri absensi.</td></tr>`;
+                return;
+              }
+
+              const rowsHtml = currentRekapSiswaDetailData.map((s, idx) => {
+                if (!s) return "";
+                let pctColor = "bg-green-600 text-white rounded-lg px-2 py-1";
+                if (s.persen < 75) {
+                  pctColor = "bg-red-600 text-white rounded-lg px-2 py-1";
+                } else if (s.persen < 90) {
+                  pctColor = "bg-yellow-500 text-black rounded-lg px-2 py-1";
+                }
+
+                let kelasTd = isAllClass
+                  ? `<td class="p-3 text-center bg-gray-50 text-blue-900 font-extrabold text-[9px]">${s.kelas || "-"}</td>`
+                  : "";
+
+                return `
+                    <tr class="border-b transition hover:bg-gray-50 uppercase text-[9px] font-black divide-x divide-gray-200">
+                       <td class="p-3 text-center text-gray-500">${idx + 1}</td>
+                       <td class="p-3 text-center font-mono text-gray-600">${s.nisn || "-"}</td>
+                       <td class="p-3 font-extrabold text-blue-950">${s.nama || "-"}</td>
+                       ${kelasTd}
+                       <td class="p-3 text-center text-green-700 bg-green-50 font-black">${s.H || 0}</td>
+                       <td class="p-3 text-center text-yellow-700 bg-yellow-50 font-black">${s.S || 0}</td>
+                       <td class="p-3 text-center text-blue-700 bg-blue-50 font-black">${s.I || 0}</td>
+                       <td class="p-3 text-center text-red-600 bg-red-50 font-black">${s.A || 0}</td>
+                       <td class="p-3 text-center bg-gray-50 font-black text-gray-600">${s.totalHari || 0}</td>
+                       <td class="p-3 text-center"><span class="${pctColor}">${s.persen || 0}%</span></td>
+                    </tr>
+                 `;
+              }).join("");
+              tblBody.innerHTML = rowsHtml;
+            } catch (err) {
+              console.error("Error in loadRekapSiswaDetail rendering:", err);
+              tblBody.innerHTML = `<tr><td colspan="${isAllClass ? "10" : "9"}" class="p-10 text-center text-amber-600 font-black uppercase text-[10px]">Gagal menampilkan detail rekap siswa.</td></tr>`;
+            }
           })
           .getRekapSiswaBulanan(kelas, bln, querySchool);
       }
