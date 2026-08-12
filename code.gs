@@ -30,8 +30,14 @@ function getSpreadsheet() {
                     "2. Jika Anda membuat Script Terikat (Bound Script), pastikan Anda membukanya melalui menu Extensions -> Apps Script di dalam Spreadsheet Anda agar terhubung secara otomatis.");
   }
 
-  // Auto-initialize sheets inside the spreadsheet
-  bootstrapDatabase(ss);
+  // Auto-initialize sheets only if Data_User doesn't exist yet
+  try {
+    if (!ss.getSheetByName("Data_User")) {
+      bootstrapDatabase(ss);
+    }
+  } catch (e) {
+    Logger.log("Bootstrap check error: " + e.toString());
+  }
 
   return ss;
 }
