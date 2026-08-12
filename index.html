@@ -8064,27 +8064,38 @@
         // Global Request Queue for smooth throttled execution to Google Apps Script Web App
         let gasFetchQueue = [];
         let isProcessingGasQueue = false;
+        let activeGasRequests = 0;
+        const MAX_CONCURRENT_GAS_REQUESTS = 2;
 
         function processGasFetchQueue() {
-          if (gasFetchQueue.length === 0) {
+          if (gasFetchQueue.length === 0 || activeGasRequests >= MAX_CONCURRENT_GAS_REQUESTS) {
             isProcessingGasQueue = false;
             return;
           }
           isProcessingGasQueue = true;
           const nextTask = gasFetchQueue.shift();
+          activeGasRequests++;
+
+          const onTaskDone = () => {
+            activeGasRequests = Math.max(0, activeGasRequests - 1);
+            setTimeout(processGasFetchQueue, 50);
+          };
+
           try {
-            nextTask();
+            nextTask(onTaskDone);
           } catch (e) {
             console.error("Queue task error:", e);
+            onTaskDone();
           }
-          setTimeout(() => {
-            processGasFetchQueue();
-          }, 80); // 80ms stagger interval to prevent GAS concurrency bottlenecks
+
+          if (gasFetchQueue.length > 0 && activeGasRequests < MAX_CONCURRENT_GAS_REQUESTS) {
+            setTimeout(processGasFetchQueue, 100);
+          }
         }
 
         function enqueueGasFetch(task) {
           gasFetchQueue.push(task);
-          if (!isProcessingGasQueue) {
+          if (!isProcessingGasQueue || activeGasRequests < MAX_CONCURRENT_GAS_REQUESTS) {
             processGasFetchQueue();
           }
         }
@@ -8147,11 +8158,13 @@
                           try { localStorage.removeItem("sims_gas_cache"); } catch(e) {}
                         }
                         
-                        const executeFetch = (attempt = 1) => {
+                        const executeFetch = (attempt = 1, doneCallback = null) => {
                           const controller = new AbortController();
+                          // Allow 60s timeout for login and 45s for standard requests to accommodate cold starts & mobile networks
+                          const reqTimeout = propKey === "prosesLogin" ? 60000 : 45000;
                           const timeoutId = setTimeout(() => {
                             controller.abort();
-                          }, 15000); // 15 seconds timeout
+                          }, reqTimeout);
 
                           fetch(webAppUrl, {
                             method: "POST",
@@ -8174,6 +8187,10 @@
                             return response.json();
                           })
                           .then((data) => {
+                            if (doneCallback) {
+                              doneCallback();
+                              doneCallback = null;
+                            }
                             if (data && data.status === "error") {
                               console.error("GAS live error for " + propKey + ":", data.message);
                               if (failureHandler) {
@@ -8196,12 +8213,16 @@
                           })
                           .catch((error) => {
                             clearTimeout(timeoutId);
-                            console.warn("GAS fetch error (Attempt " + attempt + "/3) for " + propKey + ":", error);
-                            if (attempt < 3) {
+                            console.warn("GAS fetch error (Attempt " + attempt + "/2) for " + propKey + ":", error);
+                            if (attempt < 2) {
                               setTimeout(() => {
-                                executeFetch(attempt + 1);
-                              }, attempt * 500);
+                                executeFetch(attempt + 1, doneCallback);
+                              }, 1000);
                             } else {
+                              if (doneCallback) {
+                                doneCallback();
+                                doneCallback = null;
+                              }
                               console.error("GAS fetch failed for " + propKey + ":", error);
                               if (failureHandler && !cacheServed) {
                                 failureHandler(error);
@@ -8211,9 +8232,9 @@
                         };
                         
                         if (propKey === "prosesLogin") {
-                          executeFetch(1);
+                          executeFetch(1, null);
                         } else {
-                          enqueueGasFetch(() => executeFetch(1));
+                          enqueueGasFetch((done) => executeFetch(1, done));
                         }
                       };
                     }
@@ -10598,6 +10619,10 @@
                 try { populateKepsekFilters(); } catch(e){}
                 resolve(list || []);
               })
+              .withFailureHandler((err) => {
+                console.warn("loadUsers failed:", err);
+                resolve([]);
+              })
               .getDaftarUserManagement();
           }
         });
@@ -10637,6 +10662,10 @@
                 }
                 resolve(list || []);
               })
+              .withFailureHandler((err) => {
+                console.warn("loadSchools failed:", err);
+                resolve([]);
+              })
               .getMasterSekolah();
           }
         });
@@ -10644,6 +10673,10 @@
         const loadJurnals = new Promise((resolve) => {
           google.script.run
             .withSuccessHandler((list) => resolve(list || []))
+            .withFailureHandler((err) => {
+              console.warn("loadJurnals failed:", err);
+              resolve([]);
+            })
             .getDaftarJurnal(
               activeRole === "Guru" ? uObj.nama : "",
               activeRole,
@@ -10654,6 +10687,10 @@
         const loadAktivitas = new Promise((resolve) => {
           google.script.run
             .withSuccessHandler((list) => resolve(list || []))
+            .withFailureHandler((err) => {
+              console.warn("loadAktivitas failed:", err);
+              resolve([]);
+            })
             .getDaftarAktivitas(
               activeRole === "Guru" ? uObj.nama : "",
               activeRole,
@@ -10664,18 +10701,30 @@
         const loadSiswa = new Promise((resolve) => {
           google.script.run
             .withSuccessHandler((list) => resolve(list || []))
+            .withFailureHandler((err) => {
+              console.warn("loadSiswa failed:", err);
+              resolve([]);
+            })
             .getDaftarSiswa();
         });
 
         const loadKelas = new Promise((resolve) => {
           google.script.run
             .withSuccessHandler((list) => resolve(list || []))
+            .withFailureHandler((err) => {
+              console.warn("loadKelas failed:", err);
+              resolve([]);
+            })
             .getDaftarKelasFull();
         });
 
         const loadJadwal = new Promise((resolve) => {
           google.script.run
             .withSuccessHandler((list) => resolve(list || []))
+            .withFailureHandler((err) => {
+              console.warn("loadJadwal failed:", err);
+              resolve([]);
+            })
             .getDaftarJadwal(activeRole === "Guru" ? uObj.nama : "", activeRole);
         });
 
