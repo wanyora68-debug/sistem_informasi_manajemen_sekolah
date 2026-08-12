@@ -585,7 +585,24 @@ function getDaftarAktivitas(userNama, role, sekolah) {
 
     var guruSekolah = {};
     for (var k = 1; k < userData.length; k++) {
-      guruSekolah[normalizeName(userData[k][1])] = (userData[k][5] || "").toString().toUpperCase().trim();
+      var uNorm = normalizeName(userData[k][1]);
+      if (uNorm) {
+        guruSekolah[uNorm] = (userData[k][5] || "").toString().toUpperCase().trim();
+      }
+    }
+
+    function getSchoolForGuru(guruRaw) {
+      if (!guruRaw) return "";
+      var norm = normalizeName(guruRaw);
+      if (guruSekolah[norm]) return guruSekolah[norm];
+      for (var k = 1; k < userData.length; k++) {
+        var uName = normalizeName(userData[k][1]);
+        if (uName && (uName === norm || norm.indexOf(uName) !== -1 || uName.indexOf(norm) !== -1)) {
+          var sch = (userData[k][5] || "").toString().toUpperCase().trim();
+          if (sch) return sch;
+        }
+      }
+      return "";
     }
 
     var list = [];
@@ -599,19 +616,18 @@ function getDaftarAktivitas(userNama, role, sekolah) {
 
         var dbGuruRaw = (rowData[1] || "").toString();
         var dbGuruNorm = normalizeName(dbGuruRaw);
+        var itemSchool = getSchoolForGuru(dbGuruRaw);
         
         if (roleLow === "guru") {
            if (dbGuruNorm !== targetNameNorm) continue;
         } else if (roleLow === "kepala sekolah" || roleLow === "operator" || roleLow === "admin" || roleLow === "pengawas") {
            if (roleLow !== "admin" && roleLow !== "pengawas" && targetSchoolNorm !== "PUSAT KCD XI" && targetSchoolNorm !== "") {
-              if (!matchSchool(guruSekolah[dbGuruNorm], sekolah) && dbGuruNorm !== targetNameNorm) continue;
-           } else if (roleLow === "pengawas" && targetSchoolNorm !== "ALL" && targetSchoolNorm !== "PUSAT KCD XI" && targetSchoolNorm !== "") {
-              if (!matchSchool(guruSekolah[dbGuruNorm], sekolah)) continue;
+              if (!matchSchool(itemSchool, sekolah) && dbGuruNorm !== targetNameNorm) continue;
            }
         }
         
         list.push({
-          sekolah: guruSekolah[dbGuruNorm] || "",
+          sekolah: itemSchool,
           row: i + 1,
           timestamp: rowData[0],
           guru: rowData[1], hari: rowData[2], tgl: rowData[3], 
@@ -1387,7 +1403,24 @@ function getDaftarJurnal(userNama, role, sekolah) {
 
     var guruSekolah = {};
     for (var k = 1; k < userData.length; k++) {
-      guruSekolah[normalizeName(userData[k][1])] = (userData[k][5] || "").toString().toUpperCase().trim();
+      var uNorm = normalizeName(userData[k][1]);
+      if (uNorm) {
+        guruSekolah[uNorm] = (userData[k][5] || "").toString().toUpperCase().trim();
+      }
+    }
+
+    function getSchoolForGuru(guruRaw) {
+      if (!guruRaw) return "";
+      var norm = normalizeName(guruRaw);
+      if (guruSekolah[norm]) return guruSekolah[norm];
+      for (var k = 1; k < userData.length; k++) {
+        var uName = normalizeName(userData[k][1]);
+        if (uName && (uName === norm || norm.indexOf(uName) !== -1 || uName.indexOf(norm) !== -1)) {
+          var sch = (userData[k][5] || "").toString().toUpperCase().trim();
+          if (sch) return sch;
+        }
+      }
+      return "";
     }
 
     var list = [];
@@ -1401,14 +1434,13 @@ function getDaftarJurnal(userNama, role, sekolah) {
 
         var dbGuruRaw = (rowData[1] || "").toString();
         var dbGuruNorm = normalizeName(dbGuruRaw);
+        var itemSchool = getSchoolForGuru(dbGuruRaw);
         
         if (roleLow === "guru") {
            if (dbGuruNorm !== targetNameNorm) continue;
         } else if (roleLow === "kepala sekolah" || roleLow === "operator" || roleLow === "admin" || roleLow === "pengawas") {
            if (roleLow !== "admin" && roleLow !== "pengawas" && targetSchoolNorm !== "PUSAT KCD XI" && targetSchoolNorm !== "") {
-              if (!matchSchool(guruSekolah[dbGuruNorm], sekolah) && dbGuruNorm !== targetNameNorm) continue;
-           } else if (roleLow === "pengawas" && targetSchoolNorm !== "ALL" && targetSchoolNorm !== "PUSAT KCD XI" && targetSchoolNorm !== "") {
-              if (!matchSchool(guruSekolah[dbGuruNorm], sekolah)) continue;
+              if (!matchSchool(itemSchool, sekolah) && dbGuruNorm !== targetNameNorm) continue;
            }
         }
 
@@ -1426,7 +1458,7 @@ function getDaftarJurnal(userNama, role, sekolah) {
             f1: rowData[9],
             f2: rowData[10],
             feedback: rowData[11] || "",
-            sekolah: guruSekolah[dbGuruNorm] || ""
+            sekolah: itemSchool
         });
     }
     list.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
