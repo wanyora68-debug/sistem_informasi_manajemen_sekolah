@@ -6414,6 +6414,7 @@
           <input
             type="email"
             id="lEmail"
+            onfocus="if(typeof prewarmGASBackend==='function')prewarmGASBackend();"
             onkeydown="if (event.key === 'Enter') doLogin();"
             placeholder="Email"
             class="w-full p-4 bg-gray-50 rounded-2xl font-bold border-2 border-transparent focus:border-blue-300 outline-none"
@@ -6422,6 +6423,7 @@
             <input
               type="password"
               id="lPass"
+              onfocus="if(typeof prewarmGASBackend==='function')prewarmGASBackend();"
               onkeydown="if (event.key === 'Enter') doLogin();"
               placeholder="Password"
               class="w-full p-4 pr-12 bg-gray-50 rounded-2xl font-bold border-2 border-transparent focus:border-blue-300 outline-none"
@@ -10679,105 +10681,136 @@
           return;
         }
 
-        // Real database promises
-        const loadUsers = new Promise((resolve) => {
-          if (window.allUsersList && window.allUsersList.length > 0)
-            resolve(window.allUsersList);
-          else
+        // Real database: Use high-speed combined endpoint first for single-request performance
+        const runFallbackIndividualStats = () => {
+          const loadUsers = new Promise((resolve) => {
+            if (window.allUsersList && window.allUsersList.length > 0)
+              resolve(window.allUsersList);
+            else
+              google.script.run
+                .withSuccessHandler((list) => {
+                  allUsersList = list || [];
+                  resolve(list || []);
+                })
+                .getDaftarUserManagement();
+          });
+
+          const loadSchools = new Promise((resolve) => {
+            if (
+              window.allRegisteredSchools &&
+              window.allRegisteredSchools.length > 0
+            )
+              resolve(window.allRegisteredSchools);
+            else
+              google.script.run
+                .withSuccessHandler((list) => {
+                  window.allRegisteredSchools = list || [];
+                  resolve(list || []);
+                })
+                .getMasterSekolah();
+          });
+
+          const loadJurnals = new Promise((resolve) => {
             google.script.run
-              .withSuccessHandler((list) => {
-                allUsersList = list || [];
-                resolve(list || []);
-              })
-              .getDaftarUserManagement();
-        });
+              .withSuccessHandler((list) => resolve(list || []))
+              .getDaftarJurnal(
+                activeRole === "Guru" ? uObj.nama : "",
+                activeRole,
+                activeSekolah
+              );
+          });
 
-        const loadSchools = new Promise((resolve) => {
-          if (
-            window.allRegisteredSchools &&
-            window.allRegisteredSchools.length > 0
-          )
-            resolve(window.allRegisteredSchools);
-          else
+          const loadAktivitas = new Promise((resolve) => {
             google.script.run
-              .withSuccessHandler((list) => {
-                window.allRegisteredSchools = list || [];
-                resolve(list || []);
-              })
-              .getMasterSekolah();
-        });
+              .withSuccessHandler((list) => resolve(list || []))
+              .getDaftarAktivitas(
+                activeRole === "Guru" ? uObj.nama : "",
+                activeRole,
+                activeSekolah
+              );
+          });
 
-        const loadJurnals = new Promise((resolve) => {
-          google.script.run
-            .withSuccessHandler((list) => resolve(list || []))
-            .getDaftarJurnal(
-              activeRole === "Guru" ? uObj.nama : "",
-              activeRole,
-              activeSekolah
-            );
-        });
+          const loadSiswa = new Promise((resolve) => {
+            google.script.run
+              .withSuccessHandler((list) => resolve(list || []))
+              .getDaftarSiswa();
+          });
 
-        const loadAktivitas = new Promise((resolve) => {
-          google.script.run
-            .withSuccessHandler((list) => resolve(list || []))
-            .getDaftarAktivitas(
-              activeRole === "Guru" ? uObj.nama : "",
-              activeRole,
-              activeSekolah
-            );
-        });
+          const loadKelas = new Promise((resolve) => {
+            google.script.run
+              .withSuccessHandler((list) => resolve(list || []))
+              .getDaftarKelasFull();
+          });
 
-        const loadSiswa = new Promise((resolve) => {
-          google.script.run
-            .withSuccessHandler((list) => resolve(list || []))
-            .getDaftarSiswa();
-        });
+          const loadJadwal = new Promise((resolve) => {
+            google.script.run
+              .withSuccessHandler((list) => resolve(list || []))
+              .getDaftarJadwal("", "Admin");
+          });
 
-        const loadKelas = new Promise((resolve) => {
-          google.script.run
-            .withSuccessHandler((list) => resolve(list || []))
-            .getDaftarKelasFull();
-        });
+          Promise.all([
+            loadUsers,
+            loadSchools,
+            loadJurnals,
+            loadAktivitas,
+            loadSiswa,
+            loadKelas,
+            loadJadwal,
+          ])
+            .then(
+              ([users, schools, jurnals, aktivitas, siswas, kelas, jadwals]) => {
+                renderDashboardStats(
+                  uObj,
+                  users,
+                  schools,
+                  jurnals,
+                  aktivitas,
+                  siswas,
+                  kelas,
+                  jadwals,
+                );
+              },
+            )
+            .catch((err) => {
+              console.error("Failed to load dynamic stats:", err);
+              if (statsContent) {
+                statsContent.innerHTML = `
+                  <div class="col-span-full text-center p-8 bg-red-50 rounded-2xl border-2 border-red-200 text-red-800 font-bold uppercase text-[10px]">
+                     ⚠️ Gagal sinkronisasi statistik: ${err.toString()}
+                  </div>
+               `;
+              }
+            });
+        };
 
-        const loadJadwal = new Promise((resolve) => {
-          google.script.run
-            .withSuccessHandler((list) => resolve(list || []))
-            .getDaftarJadwal("", "Admin");
-        });
-
-        Promise.all([
-          loadUsers,
-          loadSchools,
-          loadJurnals,
-          loadAktivitas,
-          loadSiswa,
-          loadKelas,
-          loadJadwal,
-        ])
-          .then(
-            ([users, schools, jurnals, aktivitas, siswas, kelas, jadwals]) => {
+        google.script.run
+          .withSuccessHandler((res) => {
+            if (res && res.users && res.schools && res.jurnals) {
+              window.allUsersList = res.users || [];
+              window.allRegisteredSchools = res.schools || [];
               renderDashboardStats(
                 uObj,
-                users,
-                schools,
-                jurnals,
-                aktivitas,
-                siswas,
-                kelas,
-                jadwals,
+                res.users || [],
+                res.schools || [],
+                res.jurnals || [],
+                res.aktivitas || [],
+                res.siswas || [],
+                res.kelas || [],
+                res.jadwals || []
               );
-            },
-          )
-          .catch((err) => {
-            console.error("Failed to load dynamic stats:", err);
-            if (statsContent) {
-              statsContent.innerHTML = `
-                <div class="col-span-full text-center p-8 bg-red-50 rounded-2xl border-2 border-red-200 text-red-800 font-bold uppercase text-[10px]">
-                   ⚠️ Gagal sinkronisasi statistik: ${err.toString()}
-                </div>
-             `;
+            } else {
+              runFallbackIndividualStats();
             }
-          });
+          })
+          .withFailureHandler((err) => {
+            console.warn("Combined stats failed, falling back to individual queries:", err);
+            runFallbackIndividualStats();
+          })
+          .getDashboardStatsCombined(
+            activeRole === "Guru" ? uObj.nama : "",
+            activeRole,
+            activeSekolah
+          );
       }
 
       // RENDER METRICS AND DETAILS LAYOUT DYNAMICALLY BASED ON ACTIVE USER ROLE
