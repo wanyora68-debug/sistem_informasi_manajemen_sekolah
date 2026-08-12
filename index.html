@@ -8179,22 +8179,12 @@
                               arguments: args
                             })
                           })
-                          .then(async (response) => {
+                          .then((response) => {
                             clearTimeout(timeoutId);
                             if (!response.ok) {
                               throw new Error("HTTP error! Status: " + response.status);
                             }
-                            const rawText = await response.text();
-                            let data = null;
-                            try {
-                              data = JSON.parse(rawText);
-                            } catch (e) {
-                              if (rawText.includes("Page not found") || rawText.includes("<!DOCTYPE") || rawText.includes("<html")) {
-                                throw new Error("Format respon tidak valid (HTML).");
-                              }
-                              throw new Error("Respon tidak valid dari server.");
-                            }
-                            return data;
+                            return response.json();
                           })
                           .then((data) => {
                             if (doneCallback) {
@@ -8227,7 +8217,7 @@
                             if (attempt < 2) {
                               setTimeout(() => {
                                 executeFetch(attempt + 1, doneCallback);
-                              }, 300);
+                              }, 1000);
                             } else {
                               if (doneCallback) {
                                 doneCallback();
