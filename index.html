@@ -8210,7 +8210,11 @@
                           });
                         };
                         
-                        enqueueGasFetch(() => executeFetch(1));
+                        if (propKey === "prosesLogin") {
+                          executeFetch(1);
+                        } else {
+                          enqueueGasFetch(() => executeFetch(1));
+                        }
                       };
                     }
                   });
@@ -8654,52 +8658,6 @@
         document.getElementById("editMapel").value = activeUser.mapel || "";
         if (activeUser.fotoUrl)
           document.getElementById("userAvatar").src = activeUser.fotoUrl;
-
-        // Load all users once for mapping purposes
-        google.script.run
-          .withSuccessHandler((list) => {
-            allUsersList = list || [];
-            populateKepsekFilters();
-          })
-          .getDaftarUserManagement();
-
-        // Fetch School Config consistently
-        google.script.run
-          .withSuccessHandler((list) => {
-            window.allRegisteredSchools = list || [];
-            const targetSekolah = (activeUser.sekolah || "").toString().toUpperCase().trim();
-            const config = (list || []).find(
-              (s) => (s.nama || "").toString().toUpperCase().trim() === targetSekolah,
-            );
-            if (config) {
-              let parsedSched = {};
-              if (config.customSchedules) {
-                if (typeof config.customSchedules === "string") {
-                  try {
-                    parsedSched = JSON.parse(config.customSchedules);
-                  } catch (e) {
-                    console.error("Gagal parse customSchedules:", e);
-                  }
-                } else if (typeof config.customSchedules === "object") {
-                  parsedSched = config.customSchedules;
-                }
-              }
-              SCHOOL_COORDS = {
-                lat: parseFloat(config.lat),
-                lng: parseFloat(config.lng),
-                jamMasuk: config.jamMasuk,
-                jamPulang: config.jamPulang,
-                radius: parseFloat(config.radius) || 100,
-                customSchedules: parsedSched,
-              };
-              localStorage.setItem(
-                "sims_school_coords",
-                JSON.stringify(SCHOOL_COORDS),
-              );
-              console.log("School config updated with custom schedules:", SCHOOL_COORDS);
-            }
-          })
-          .getMasterSekolah();
 
         // Update Bio Status in Profile
         const bioMsg = document.getElementById("bioStatusMsg");
@@ -9253,6 +9211,20 @@
               }
               window.activeUser = activeUser;
               localStorage.setItem("sims_user", JSON.stringify(activeUser));
+              
+              // Immediate UI transition for maximum speed feedback
+              document.getElementById("modalLogin").classList.add("hidden");
+              document.getElementById("pageLanding").classList.add("hidden");
+              document.getElementById("mainDashboard").classList.remove("hidden");
+              document.getElementById("dispNama").innerText = activeUser.nama || "";
+              if (activeUser.role === "Pengawas" || activeUser.role === "Admin" || activeUser.role === "Administrator") {
+                document.getElementById("dispRole").innerText = activeUser.role;
+              } else if (activeUser.sekolah && activeUser.sekolah !== "-") {
+                document.getElementById("dispRole").innerText = activeUser.role + " | " + activeUser.sekolah;
+              } else {
+                document.getElementById("dispRole").innerText = activeUser.role;
+              }
+
               renderDashboard();
             } else {
               const errMsg =
@@ -10616,30 +10588,57 @@
 
         // Real database promises
         const loadUsers = new Promise((resolve) => {
-          if (window.allUsersList && window.allUsersList.length > 0)
+          if (window.allUsersList && window.allUsersList.length > 0) {
+            try { populateKepsekFilters(); } catch(e){}
             resolve(window.allUsersList);
-          else
+          } else {
             google.script.run
               .withSuccessHandler((list) => {
                 allUsersList = list || [];
+                try { populateKepsekFilters(); } catch(e){}
                 resolve(list || []);
               })
               .getDaftarUserManagement();
+          }
         });
 
         const loadSchools = new Promise((resolve) => {
           if (
             window.allRegisteredSchools &&
             window.allRegisteredSchools.length > 0
-          )
+          ) {
             resolve(window.allRegisteredSchools);
-          else
+          } else {
             google.script.run
               .withSuccessHandler((list) => {
                 window.allRegisteredSchools = list || [];
+                const targetSekolah = (uObj.sekolah || "").toString().toUpperCase().trim();
+                const config = (list || []).find(
+                  (s) => (s.nama || "").toString().toUpperCase().trim() === targetSekolah,
+                );
+                if (config) {
+                  let parsedSched = {};
+                  if (config.customSchedules) {
+                    if (typeof config.customSchedules === "string") {
+                      try { parsedSched = JSON.parse(config.customSchedules); } catch (e) {}
+                    } else if (typeof config.customSchedules === "object") {
+                      parsedSched = config.customSchedules;
+                    }
+                  }
+                  SCHOOL_COORDS = {
+                    lat: parseFloat(config.lat),
+                    lng: parseFloat(config.lng),
+                    jamMasuk: config.jamMasuk,
+                    jamPulang: config.jamPulang,
+                    radius: parseFloat(config.radius) || 100,
+                    customSchedules: parsedSched,
+                  };
+                  try { localStorage.setItem("sims_school_coords", JSON.stringify(SCHOOL_COORDS)); } catch(e){}
+                }
                 resolve(list || []);
               })
               .getMasterSekolah();
+          }
         });
 
         const loadJurnals = new Promise((resolve) => {
@@ -10677,7 +10676,7 @@
         const loadJadwal = new Promise((resolve) => {
           google.script.run
             .withSuccessHandler((list) => resolve(list || []))
-            .getDaftarJadwal("", "Admin");
+            .getDaftarJadwal(activeRole === "Guru" ? uObj.nama : "", activeRole);
         });
 
         Promise.all([
