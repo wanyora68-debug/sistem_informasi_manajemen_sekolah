@@ -1199,56 +1199,58 @@ function simpanAbsenGuru(obj) {
     var now = new Date();
     var timeStr = Utilities.formatDate(now, "GMT+7", "HH:mm");
     
-    // Get School Settings
-    var schoolSheet = ss.getSheetByName("Master_Sekolah");
-    var sData = schoolSheet.getDataRange().getValues();
+    var jamMasuk = obj.jamMasuk || "";
+    var jamPulang = obj.jamPulang || "";
     
-    // Helper to extract time string HH:mm from various types (duplicate from getMasterSekolah for safety or move to global)
-    var parseTime = function(val) {
-       if (!val) return null;
-       if (val instanceof Date) {
-          try {
-             var ss = getSpreadsheet();
-             return Utilities.formatDate(val, ss.getSpreadsheetTimeZone(), "HH:mm");
-          } catch(e) {
-             var h = val.getHours().toString().padStart(2, '0');
-             var m = val.getMinutes().toString().padStart(2, '0');
-             return h + ":" + m;
+    if (!jamMasuk || !jamPulang) {
+      // Fallback only if not provided in payload
+      var schoolSheet = ss.getSheetByName("Master_Sekolah");
+      if (schoolSheet) {
+        var sData = schoolSheet.getDataRange().getValues();
+        var parseTime = function(val) {
+           if (!val) return null;
+           if (val instanceof Date) {
+              try {
+                 return Utilities.formatDate(val, ss ? ss.getSpreadsheetTimeZone() : "GMT+7", "HH:mm");
+              } catch(e) {
+                 var h = val.getHours().toString().padStart(2, '0');
+                 var m = val.getMinutes().toString().padStart(2, '0');
+                 return h + ":" + m;
+              }
+           }
+           var s = val.toString().trim();
+           if (s.match(/^\d:\d{2}$/)) s = "0" + s;
+           s = s.replace('.', ':').replace(',', ':');
+
+           if (!isNaN(val) && val !== "" && parseFloat(val) < 1) {
+              var hours = Math.floor(val * 24);
+              var minutes = Math.floor(Math.round((val * 24 - hours) * 60));
+              return hours.toString().padStart(2, '0') + ":" + minutes.toString().padStart(2, '0');
+           }
+           var match = s.match(/^(\d{1,2}):(\d{2})(:(\d{2}))?$/);
+           if (match) {
+              var h = match[1].padStart(2, '0');
+              var m = match[2];
+              return h + ":" + m;
+           }
+           return null;
+        };
+
+        for(var i=1; i<sData.length; i++) {
+          if(sData[i][1] && sData[i][1].toString().toLowerCase().trim() === (obj.sekolah || "").toString().toLowerCase().trim()) {
+            if (!jamMasuk) jamMasuk = parseTime(sData[i][4]) || "07:00";
+            if (!jamPulang) {
+              jamPulang = parseTime(sData[i][5]);
+              if(!jamPulang && sData[i][6]) jamPulang = parseTime(sData[i][6]);
+            }
+            break;
           }
-       }
-       var s = val.toString().trim();
-       if (s.match(/^\d:\d{2}$/)) s = "0" + s;
-       s = s.replace('.', ':').replace(',', ':');
-
-       // Jika formatnya desimal (jam dari excel/sheets kadang terbaca desimal)
-       if (!isNaN(val) && val !== "" && parseFloat(val) < 1) {
-          var hours = Math.floor(val * 24);
-          var minutes = Math.floor(Math.round((val * 24 - hours) * 60));
-          return hours.toString().padStart(2, '0') + ":" + minutes.toString().padStart(2, '0');
-       }
-       var match = s.match(/^(\d{1,2}):(\d{2})(:(\d{2}))?$/);
-       if (match) {
-          var h = match[1].padStart(2, '0');
-          var m = match[2];
-          return h + ":" + m;
-       }
-       return null;
-    };
-
-    var jamMasuk = "07:00";
-    var jamPulang = "15:00";
-    for(var i=1; i<sData.length; i++) {
-      if(sData[i][1].toString().toLowerCase().trim() === obj.sekolah.toString().toLowerCase().trim()) {
-        jamMasuk = parseTime(sData[i][4]) || "07:00";
-        jamPulang = parseTime(sData[i][5]);
-        // If jamPulang is not in col 5, try col 6
-        if(!jamPulang && sData[i][6]) {
-            jamPulang = parseTime(sData[i][6]);
         }
-        if(!jamPulang) jamPulang = "15:00";
-        break;
       }
     }
+
+    if (!jamMasuk) jamMasuk = "07:00";
+    if (!jamPulang) jamPulang = "15:00";
 
     if(obj.tipe === "DATANG") {
       if(timeStr > jamMasuk) statusWaktu = "Terlambat";
@@ -1816,7 +1818,9 @@ function uploadFileBase64(base64, prefix, folder) {
     var bytes = Utilities.base64Decode(content[1]);
     var blob = Utilities.newBlob(bytes, mime, prefix + "_" + new Date().getTime() + "." + ext);
     var file = folder.createFile(blob);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    try {
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    } catch(eSharing) {}
     if (mime.indexOf("image") !== -1) {
       return "https://lh3.googleusercontent.com/d/" + file.getId();
     } else {
