@@ -8064,29 +8064,38 @@
         // Global Request Queue for smooth throttled execution to Google Apps Script Web App
         let gasFetchQueue = [];
         let isProcessingGasQueue = false;
+        let activeGasRequests = 0;
+        const MAX_CONCURRENT_GAS_REQUESTS = 3;
 
         function processGasFetchQueue() {
-          if (gasFetchQueue.length === 0) {
+          if (gasFetchQueue.length === 0 || activeGasRequests >= MAX_CONCURRENT_GAS_REQUESTS) {
             isProcessingGasQueue = false;
             return;
           }
           isProcessingGasQueue = true;
           const nextTask = gasFetchQueue.shift();
+          activeGasRequests++;
+
+          const onTaskDone = () => {
+            activeGasRequests = Math.max(0, activeGasRequests - 1);
+            setTimeout(processGasFetchQueue, 20);
+          };
+
           try {
-            nextTask();
+            nextTask(onTaskDone);
           } catch (e) {
             console.error("Queue task error:", e);
+            onTaskDone();
           }
-          setTimeout(() => {
-            processGasFetchQueue();
-          }, 80); // 80ms stagger interval to prevent GAS concurrency bottlenecks
+
+          if (gasFetchQueue.length > 0 && activeGasRequests < MAX_CONCURRENT_GAS_REQUESTS) {
+            setTimeout(processGasFetchQueue, 30);
+          }
         }
 
         function enqueueGasFetch(task) {
           gasFetchQueue.push(task);
-          if (!isProcessingGasQueue) {
-            processGasFetchQueue();
-          }
+          processGasFetchQueue();
         }
 
         window.google = {
@@ -8147,11 +8156,13 @@
                           try { localStorage.removeItem("sims_gas_cache"); } catch(e) {}
                         }
                         
-                        const executeFetch = (attempt = 1) => {
+                        const executeFetch = (attempt = 1, doneCallback = null) => {
                           const controller = new AbortController();
+                          // Allow 45s for login and 30s for standard requests to accommodate cold starts & mobile networks
+                          const reqTimeout = propKey === "prosesLogin" ? 45000 : 30000;
                           const timeoutId = setTimeout(() => {
                             controller.abort();
-                          }, 15000); // 15 seconds timeout
+                          }, reqTimeout);
 
                           fetch(webAppUrl, {
                             method: "POST",
@@ -8174,6 +8185,7 @@
                             return response.json();
                           })
                           .then((data) => {
+                            if (doneCallback) { doneCallback(); doneCallback = null; }
                             if (data && data.status === "error") {
                               console.error("GAS live error for " + propKey + ":", data.message);
                               if (failureHandler) {
@@ -8199,9 +8211,10 @@
                             console.warn("GAS fetch error (Attempt " + attempt + "/3) for " + propKey + ":", error);
                             if (attempt < 3) {
                               setTimeout(() => {
-                                executeFetch(attempt + 1);
-                              }, attempt * 500);
+                                executeFetch(attempt + 1, doneCallback);
+                              }, attempt * 300);
                             } else {
+                              if (doneCallback) { doneCallback(); doneCallback = null; }
                               console.error("GAS fetch failed for " + propKey + ":", error);
                               if (failureHandler && !cacheServed) {
                                 failureHandler(error);
@@ -8210,7 +8223,12 @@
                           });
                         };
                         
-                        enqueueGasFetch(() => executeFetch(1));
+                        // Execute login directly without queueing; queue other background requests with concurrency
+                        if (propKey === "prosesLogin") {
+                          executeFetch(1, null);
+                        } else {
+                          enqueueGasFetch((done) => executeFetch(1, done));
+                        }
                       };
                     }
                   });
@@ -9253,6 +9271,24 @@
               }
               window.activeUser = activeUser;
               localStorage.setItem("sims_user", JSON.stringify(activeUser));
+              
+              // Immediate UI transition for instant user feedback
+              try {
+                document.getElementById("modalLogin").classList.add("hidden");
+                document.getElementById("pageLanding").classList.add("hidden");
+                document.getElementById("mainDashboard").classList.remove("hidden");
+                document.getElementById("dispNama").innerText = activeUser.nama || "";
+                if (activeUser.role === "Pengawas" || activeUser.role === "Admin" || activeUser.role === "Administrator") {
+                  document.getElementById("dispRole").innerText = activeUser.role;
+                } else if (activeUser.sekolah && activeUser.sekolah !== "-") {
+                  document.getElementById("dispRole").innerText = activeUser.role + " | " + activeUser.sekolah;
+                } else {
+                  document.getElementById("dispRole").innerText = activeUser.role;
+                }
+              } catch (uiErr) {
+                console.warn("UI transition note:", uiErr);
+              }
+
               renderDashboard();
             } else {
               const errMsg =
