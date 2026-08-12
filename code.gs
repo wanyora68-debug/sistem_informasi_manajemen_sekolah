@@ -31,9 +31,6 @@ function getSpreadsheet() {
                     "2. Jika Anda membuat Script Terikat (Bound Script), pastikan Anda membukanya melalui menu Extensions -> Apps Script di dalam Spreadsheet Anda agar terhubung secara otomatis.");
   }
 
-  // Auto-initialize sheets inside the spreadsheet
-  bootstrapDatabase(ss);
-
   return ss;
 }
 
@@ -42,7 +39,7 @@ function bootstrapDatabase(ss) {
   try {
     // 1. Data_User Sheet
     var sheetUser = ss.getSheetByName("Data_User");
-    if (sheetUser && sheetUser.getLastRow() > 0) {
+    if (sheetUser) {
       _isDbBootstrapped = true;
       return;
     }
@@ -1983,7 +1980,7 @@ function getRekapSiswaBulanan(kelas, bulan, sekolah) {
        var sSch = (siswaData[i][8] || "").toString().toUpperCase().trim();
        
        var matchSch = true;
-       if (targetSchoolNorm !== "PUSAT KCD XI" && targetSchoolNorm !== "") {
+       if (targetSchoolNorm !== "PUSAT KCD XI" && targetSchoolNorm !== "" && targetSchoolNorm !== "ALL" && targetSchoolNorm !== "-") {
           var effectiveSchool = sSch || classSchoolMap[sKelas] || "";
           if (effectiveSchool !== "") {
              if (!matchSchool(effectiveSchool, targetSchoolNorm)) matchSch = false;
@@ -2233,7 +2230,7 @@ function getSekolahBinaan(pengawasEmail) {
       var row = data[i];
       if (row.length > 2 && row[1]) {
         var rowEmail = row[1].toString().toLowerCase().trim();
-        if (emailLower === "" || emailLower === "all" || emailLower === "wanyora68@gmail.com" || rowEmail === emailLower) {
+        if (emailLower === "" || emailLower === "all" || emailLower === "wanyora68@gmail.com" || rowEmail === emailLower || (emailLower.length > 3 && (rowEmail.indexOf(emailLower) !== -1 || emailLower.indexOf(rowEmail) !== -1))) {
           list.push({
             row: i + 1,
             timestamp: row[0] ? row[0].toString() : "",
