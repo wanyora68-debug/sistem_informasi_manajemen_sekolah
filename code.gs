@@ -2249,6 +2249,39 @@ function getSekolahBinaan(pengawasEmail) {
   }
 }
 
+function getDashboardStatsCombined(userNama, role, sekolah) {
+  try {
+    var users = getDaftarUserManagement();
+    var schools = getMasterSekolah();
+    var jurnals = getDaftarJurnal(role === "Guru" ? userNama : "", role, sekolah);
+    var aktivitas = getDaftarAktivitas(role === "Guru" ? userNama : "", role, sekolah);
+    var siswas = getDaftarSiswa();
+    var kelas = getDaftarKelasFull();
+    var jadwals = getDaftarJadwal("", "Admin");
+
+    return {
+      users: users || [],
+      schools: schools || [],
+      jurnals: jurnals || [],
+      aktivitas: aktivitas || [],
+      siswas: siswas || [],
+      kelas: kelas || [],
+      jadwals: jadwals || []
+    };
+  } catch (e) {
+    Logger.log("Error in getDashboardStatsCombined: " + e.toString());
+    return {
+      users: [],
+      schools: [],
+      jurnals: [],
+      aktivitas: [],
+      siswas: [],
+      kelas: [],
+      jadwals: []
+    };
+  }
+}
+
 function simpanSekolahBinaan(obj) {
   try {
     var ss = getSpreadsheet();
