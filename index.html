@@ -8160,31 +8160,53 @@
                         
                         const executeFetch = (attempt = 1, doneCallback = null) => {
                           const controller = new AbortController();
-                          // Allow 60s timeout for login and 45s for standard requests to accommodate cold starts & mobile networks
-                          const reqTimeout = propKey === "prosesLogin" ? 60000 : 45000;
+                          // 25s timeout for login and 20s for standard requests
+                          const reqTimeout = propKey === "prosesLogin" ? 25000 : 20000;
                           const timeoutId = setTimeout(() => {
                             controller.abort();
                           }, reqTimeout);
 
-                          fetch(webAppUrl, {
-                            method: "POST",
-                            mode: "cors",
-                            credentials: "omit",
-                            headers: {
-                              "Content-Type": "text/plain;charset=utf-8"
-                            },
+                          // Use GET for queries & login to avoid CORS OPTIONS preflight delay
+                          const useGetMethod = isGet || propKey === "prosesLogin" || attempt > 1;
+                          let fetchUrl = webAppUrl;
+                          let fetchOptions = {
                             signal: controller.signal,
-                            body: JSON.stringify({
+                            credentials: "omit"
+                          };
+
+                          if (useGetMethod) {
+                            const sep = webAppUrl.includes("?") ? "&" : "?";
+                            fetchUrl = webAppUrl + sep + "functionName=" + encodeURIComponent(propKey) + "&arguments=" + encodeURIComponent(JSON.stringify(args));
+                            fetchOptions.method = "GET";
+                          } else {
+                            fetchOptions.method = "POST";
+                            fetchOptions.mode = "cors";
+                            fetchOptions.headers = {
+                              "Content-Type": "text/plain;charset=utf-8"
+                            };
+                            fetchOptions.body = JSON.stringify({
                               functionName: propKey,
                               arguments: args
-                            })
-                          })
-                          .then((response) => {
+                            });
+                          }
+
+                          fetch(fetchUrl, fetchOptions)
+                          .then(async (response) => {
                             clearTimeout(timeoutId);
                             if (!response.ok) {
                               throw new Error("HTTP error! Status: " + response.status);
                             }
-                            return response.json();
+                            const rawText = await response.text();
+                            let data = null;
+                            try {
+                              data = JSON.parse(rawText);
+                            } catch (e) {
+                              if (rawText.includes("Page not found") || rawText.includes("<!DOCTYPE") || rawText.includes("<html")) {
+                                throw new Error("Database Google Sheets mengembalikan 404 / halaman HTML");
+                              }
+                              throw new Error("Respon tidak valid dari server.");
+                            }
+                            return data;
                           })
                           .then((data) => {
                             if (doneCallback) {
@@ -8217,7 +8239,7 @@
                             if (attempt < 2) {
                               setTimeout(() => {
                                 executeFetch(attempt + 1, doneCallback);
-                              }, 1000);
+                              }, 300);
                             } else {
                               if (doneCallback) {
                                 doneCallback();
