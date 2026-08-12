@@ -4,6 +4,7 @@
 
 var SS_ID = "1HhnC4unsjpSV_9oadCSGB_xSadJYfs9Bx2obp2fpp9o"; 
 var FOLDER_FOTO_ID = "1Hz5DoxAD3Tg4lwordmYfXpPUCkwDl7kK";
+var _isDbBootstrapped = false;
 
 function getSpreadsheet() {
   var ss = null;
@@ -37,9 +38,14 @@ function getSpreadsheet() {
 }
 
 function bootstrapDatabase(ss) {
+  if (_isDbBootstrapped) return;
   try {
     // 1. Data_User Sheet
     var sheetUser = ss.getSheetByName("Data_User");
+    if (sheetUser && sheetUser.getLastRow() > 0) {
+      _isDbBootstrapped = true;
+      return;
+    }
     if (!sheetUser) {
       sheetUser = ss.insertSheet("Data_User");
       var headersUser = ["Timestamp", "Nama", "Email", "Password", "Role", "Sekolah", "Foto URL", "Status Akun", "Mapel", "NIP/NUPTK", "Pangkat", "Golongan"];
