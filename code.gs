@@ -4,6 +4,7 @@
 
 var SS_ID = "1HhnC4unsjpSV_9oadCSGB_xSadJYfs9Bx2obp2fpp9o"; 
 var FOLDER_FOTO_ID = "1Hz5DoxAD3Tg4lwordmYfXpPUCkwDl7kK";
+var _isDbBootstrapped = false;
 
 function getSpreadsheet() {
   var ss = null;
@@ -30,13 +31,16 @@ function getSpreadsheet() {
                     "2. Jika Anda membuat Script Terikat (Bound Script), pastikan Anda membukanya melalui menu Extensions -> Apps Script di dalam Spreadsheet Anda agar terhubung secara otomatis.");
   }
 
-  // Auto-initialize sheets only if Data_User doesn't exist yet
-  try {
-    if (!ss.getSheetByName("Data_User")) {
-      bootstrapDatabase(ss);
+  // Auto-initialize sheets only if Data_User doesn't exist yet (cached in warm instance)
+  if (!_isDbBootstrapped) {
+    try {
+      if (!ss.getSheetByName("Data_User")) {
+        bootstrapDatabase(ss);
+      }
+      _isDbBootstrapped = true;
+    } catch (e) {
+      Logger.log("Bootstrap check error: " + e.toString());
     }
-  } catch (e) {
-    Logger.log("Bootstrap check error: " + e.toString());
   }
 
   return ss;
