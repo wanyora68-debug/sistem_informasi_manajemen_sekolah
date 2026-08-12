@@ -31,9 +31,6 @@ function getSpreadsheet() {
                     "2. Jika Anda membuat Script Terikat (Bound Script), pastikan Anda membukanya melalui menu Extensions -> Apps Script di dalam Spreadsheet Anda agar terhubung secara otomatis.");
   }
 
-  // Auto-initialize sheets inside the spreadsheet
-  bootstrapDatabase(ss);
-
   return ss;
 }
 
@@ -42,7 +39,7 @@ function bootstrapDatabase(ss) {
   try {
     // 1. Data_User Sheet
     var sheetUser = ss.getSheetByName("Data_User");
-    if (sheetUser && sheetUser.getLastRow() > 0) {
+    if (sheetUser) {
       _isDbBootstrapped = true;
       return;
     }
