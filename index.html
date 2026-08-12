@@ -8064,38 +8064,27 @@
         // Global Request Queue for smooth throttled execution to Google Apps Script Web App
         let gasFetchQueue = [];
         let isProcessingGasQueue = false;
-        let activeGasRequests = 0;
-        const MAX_CONCURRENT_GAS_REQUESTS = 2;
 
         function processGasFetchQueue() {
-          if (gasFetchQueue.length === 0 || activeGasRequests >= MAX_CONCURRENT_GAS_REQUESTS) {
+          if (gasFetchQueue.length === 0) {
             isProcessingGasQueue = false;
             return;
           }
           isProcessingGasQueue = true;
           const nextTask = gasFetchQueue.shift();
-          activeGasRequests++;
-
-          const onTaskDone = () => {
-            activeGasRequests = Math.max(0, activeGasRequests - 1);
-            setTimeout(processGasFetchQueue, 50);
-          };
-
           try {
-            nextTask(onTaskDone);
+            nextTask();
           } catch (e) {
             console.error("Queue task error:", e);
-            onTaskDone();
           }
-
-          if (gasFetchQueue.length > 0 && activeGasRequests < MAX_CONCURRENT_GAS_REQUESTS) {
-            setTimeout(processGasFetchQueue, 100);
-          }
+          setTimeout(() => {
+            processGasFetchQueue();
+          }, 80); // 80ms stagger interval to prevent GAS concurrency bottlenecks
         }
 
         function enqueueGasFetch(task) {
           gasFetchQueue.push(task);
-          if (!isProcessingGasQueue || activeGasRequests < MAX_CONCURRENT_GAS_REQUESTS) {
+          if (!isProcessingGasQueue) {
             processGasFetchQueue();
           }
         }
@@ -8158,13 +8147,11 @@
                           try { localStorage.removeItem("sims_gas_cache"); } catch(e) {}
                         }
                         
-                        const executeFetch = (attempt = 1, doneCallback = null) => {
+                        const executeFetch = (attempt = 1) => {
                           const controller = new AbortController();
-                          // Allow 60s timeout for login and 45s for standard requests to accommodate cold starts & mobile networks
-                          const reqTimeout = propKey === "prosesLogin" ? 60000 : 45000;
                           const timeoutId = setTimeout(() => {
                             controller.abort();
-                          }, reqTimeout);
+                          }, 15000); // 15 seconds timeout
 
                           fetch(webAppUrl, {
                             method: "POST",
@@ -8187,10 +8174,6 @@
                             return response.json();
                           })
                           .then((data) => {
-                            if (doneCallback) {
-                              doneCallback();
-                              doneCallback = null;
-                            }
                             if (data && data.status === "error") {
                               console.error("GAS live error for " + propKey + ":", data.message);
                               if (failureHandler) {
@@ -8213,16 +8196,12 @@
                           })
                           .catch((error) => {
                             clearTimeout(timeoutId);
-                            console.warn("GAS fetch error (Attempt " + attempt + "/2) for " + propKey + ":", error);
-                            if (attempt < 2) {
+                            console.warn("GAS fetch error (Attempt " + attempt + "/3) for " + propKey + ":", error);
+                            if (attempt < 3) {
                               setTimeout(() => {
-                                executeFetch(attempt + 1, doneCallback);
-                              }, 1000);
+                                executeFetch(attempt + 1);
+                              }, attempt * 500);
                             } else {
-                              if (doneCallback) {
-                                doneCallback();
-                                doneCallback = null;
-                              }
                               console.error("GAS fetch failed for " + propKey + ":", error);
                               if (failureHandler && !cacheServed) {
                                 failureHandler(error);
@@ -8231,11 +8210,7 @@
                           });
                         };
                         
-                        if (propKey === "prosesLogin") {
-                          executeFetch(1, null);
-                        } else {
-                          enqueueGasFetch((done) => executeFetch(1, done));
-                        }
+                        enqueueGasFetch(() => executeFetch(1));
                       };
                     }
                   });
@@ -8679,6 +8654,52 @@
         document.getElementById("editMapel").value = activeUser.mapel || "";
         if (activeUser.fotoUrl)
           document.getElementById("userAvatar").src = activeUser.fotoUrl;
+
+        // Load all users once for mapping purposes
+        google.script.run
+          .withSuccessHandler((list) => {
+            allUsersList = list || [];
+            populateKepsekFilters();
+          })
+          .getDaftarUserManagement();
+
+        // Fetch School Config consistently
+        google.script.run
+          .withSuccessHandler((list) => {
+            window.allRegisteredSchools = list || [];
+            const targetSekolah = (activeUser.sekolah || "").toString().toUpperCase().trim();
+            const config = (list || []).find(
+              (s) => (s.nama || "").toString().toUpperCase().trim() === targetSekolah,
+            );
+            if (config) {
+              let parsedSched = {};
+              if (config.customSchedules) {
+                if (typeof config.customSchedules === "string") {
+                  try {
+                    parsedSched = JSON.parse(config.customSchedules);
+                  } catch (e) {
+                    console.error("Gagal parse customSchedules:", e);
+                  }
+                } else if (typeof config.customSchedules === "object") {
+                  parsedSched = config.customSchedules;
+                }
+              }
+              SCHOOL_COORDS = {
+                lat: parseFloat(config.lat),
+                lng: parseFloat(config.lng),
+                jamMasuk: config.jamMasuk,
+                jamPulang: config.jamPulang,
+                radius: parseFloat(config.radius) || 100,
+                customSchedules: parsedSched,
+              };
+              localStorage.setItem(
+                "sims_school_coords",
+                JSON.stringify(SCHOOL_COORDS),
+              );
+              console.log("School config updated with custom schedules:", SCHOOL_COORDS);
+            }
+          })
+          .getMasterSekolah();
 
         // Update Bio Status in Profile
         const bioMsg = document.getElementById("bioStatusMsg");
@@ -9232,20 +9253,6 @@
               }
               window.activeUser = activeUser;
               localStorage.setItem("sims_user", JSON.stringify(activeUser));
-              
-              // Immediate UI transition for maximum speed feedback
-              document.getElementById("modalLogin").classList.add("hidden");
-              document.getElementById("pageLanding").classList.add("hidden");
-              document.getElementById("mainDashboard").classList.remove("hidden");
-              document.getElementById("dispNama").innerText = activeUser.nama || "";
-              if (activeUser.role === "Pengawas" || activeUser.role === "Admin" || activeUser.role === "Administrator") {
-                document.getElementById("dispRole").innerText = activeUser.role;
-              } else if (activeUser.sekolah && activeUser.sekolah !== "-") {
-                document.getElementById("dispRole").innerText = activeUser.role + " | " + activeUser.sekolah;
-              } else {
-                document.getElementById("dispRole").innerText = activeUser.role;
-              }
-
               renderDashboard();
             } else {
               const errMsg =
@@ -10609,74 +10616,35 @@
 
         // Real database promises
         const loadUsers = new Promise((resolve) => {
-          if (window.allUsersList && window.allUsersList.length > 0) {
-            try { populateKepsekFilters(); } catch(e){}
+          if (window.allUsersList && window.allUsersList.length > 0)
             resolve(window.allUsersList);
-          } else {
+          else
             google.script.run
               .withSuccessHandler((list) => {
                 allUsersList = list || [];
-                try { populateKepsekFilters(); } catch(e){}
                 resolve(list || []);
               })
-              .withFailureHandler((err) => {
-                console.warn("loadUsers failed:", err);
-                resolve([]);
-              })
               .getDaftarUserManagement();
-          }
         });
 
         const loadSchools = new Promise((resolve) => {
           if (
             window.allRegisteredSchools &&
             window.allRegisteredSchools.length > 0
-          ) {
+          )
             resolve(window.allRegisteredSchools);
-          } else {
+          else
             google.script.run
               .withSuccessHandler((list) => {
                 window.allRegisteredSchools = list || [];
-                const targetSekolah = (uObj.sekolah || "").toString().toUpperCase().trim();
-                const config = (list || []).find(
-                  (s) => (s.nama || "").toString().toUpperCase().trim() === targetSekolah,
-                );
-                if (config) {
-                  let parsedSched = {};
-                  if (config.customSchedules) {
-                    if (typeof config.customSchedules === "string") {
-                      try { parsedSched = JSON.parse(config.customSchedules); } catch (e) {}
-                    } else if (typeof config.customSchedules === "object") {
-                      parsedSched = config.customSchedules;
-                    }
-                  }
-                  SCHOOL_COORDS = {
-                    lat: parseFloat(config.lat),
-                    lng: parseFloat(config.lng),
-                    jamMasuk: config.jamMasuk,
-                    jamPulang: config.jamPulang,
-                    radius: parseFloat(config.radius) || 100,
-                    customSchedules: parsedSched,
-                  };
-                  try { localStorage.setItem("sims_school_coords", JSON.stringify(SCHOOL_COORDS)); } catch(e){}
-                }
                 resolve(list || []);
               })
-              .withFailureHandler((err) => {
-                console.warn("loadSchools failed:", err);
-                resolve([]);
-              })
               .getMasterSekolah();
-          }
         });
 
         const loadJurnals = new Promise((resolve) => {
           google.script.run
             .withSuccessHandler((list) => resolve(list || []))
-            .withFailureHandler((err) => {
-              console.warn("loadJurnals failed:", err);
-              resolve([]);
-            })
             .getDaftarJurnal(
               activeRole === "Guru" ? uObj.nama : "",
               activeRole,
@@ -10687,10 +10655,6 @@
         const loadAktivitas = new Promise((resolve) => {
           google.script.run
             .withSuccessHandler((list) => resolve(list || []))
-            .withFailureHandler((err) => {
-              console.warn("loadAktivitas failed:", err);
-              resolve([]);
-            })
             .getDaftarAktivitas(
               activeRole === "Guru" ? uObj.nama : "",
               activeRole,
@@ -10701,31 +10665,19 @@
         const loadSiswa = new Promise((resolve) => {
           google.script.run
             .withSuccessHandler((list) => resolve(list || []))
-            .withFailureHandler((err) => {
-              console.warn("loadSiswa failed:", err);
-              resolve([]);
-            })
             .getDaftarSiswa();
         });
 
         const loadKelas = new Promise((resolve) => {
           google.script.run
             .withSuccessHandler((list) => resolve(list || []))
-            .withFailureHandler((err) => {
-              console.warn("loadKelas failed:", err);
-              resolve([]);
-            })
             .getDaftarKelasFull();
         });
 
         const loadJadwal = new Promise((resolve) => {
           google.script.run
             .withSuccessHandler((list) => resolve(list || []))
-            .withFailureHandler((err) => {
-              console.warn("loadJadwal failed:", err);
-              resolve([]);
-            })
-            .getDaftarJadwal(activeRole === "Guru" ? uObj.nama : "", activeRole);
+            .getDaftarJadwal("", "Admin");
         });
 
         Promise.all([
