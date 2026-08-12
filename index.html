@@ -17019,6 +17019,7 @@
       }
 
       function startCamera() {
+        if (typeof prewarmGASBackend === "function") prewarmGASBackend();
         const v = document.getElementById("videoAbsen");
         const btnStart = document.getElementById("btnStartCam");
         const btnAbsen = document.getElementById("btnAmbilFoto");
@@ -17235,15 +17236,15 @@
 
         if (!v || !v.videoWidth) return;
 
-        let targetWidth = 360;
+        let targetWidth = 300;
         let targetHeight = Math.round((v.videoHeight / v.videoWidth) * targetWidth);
-        if (isNaN(targetHeight) || targetHeight <= 0) targetHeight = 480;
+        if (isNaN(targetHeight) || targetHeight <= 0) targetHeight = 400;
 
         c.width = targetWidth;
         c.height = targetHeight;
         const ctx = c.getContext("2d");
         ctx.drawImage(v, 0, 0, targetWidth, targetHeight);
-        selfieData = c.toDataURL("image/jpeg", 0.5);
+        selfieData = c.toDataURL("image/jpeg", 0.35);
         p.src = selfieData;
         p.classList.remove("hidden");
         v.classList.add("hidden");
@@ -17257,6 +17258,8 @@
         if (btnAbsen) btnAbsen.classList.add("hidden");
         const btnReset = document.getElementById("btnResetSelfie");
         if (btnReset) btnReset.classList.remove("hidden");
+
+        if (typeof prewarmGASBackend === "function") prewarmGASBackend();
 
         checkReadyToSubmit();
       }
@@ -17485,9 +17488,14 @@
       }
 
       function doKirimAbsensiAkhir() {
+        if (typeof prewarmGASBackend === "function") prewarmGASBackend();
         const btn = document.getElementById("btnKirimAbsen");
         const tipe = document.getElementById("tipeAbsen").value;
         const isMasuk = tipe.includes("Masuk");
+
+        const sched = typeof getDynamicSchoolSchedule === "function" 
+          ? getDynamicSchoolSchedule(new Date()) 
+          : { jamMasuk: "07:00", jamPulang: "15:00" };
 
         let isNearSchool = false;
         if (userCoords && SCHOOL_COORDS) {
@@ -17518,6 +17526,8 @@
                 : "0") + "m",
             qrData: "BYPASSED_NEAR_SCHOOL",
             fotoBase64: selfieData,
+            jamMasuk: sched.jamMasuk,
+            jamPulang: sched.jamPulang
           };
 
           // Tampilkan loading overlay bypass biometrik
@@ -17618,7 +17628,6 @@
             alert(
               "Perangkat Anda tidak mendukung verifikasi biometrik standar. Menggunakan mode simulasi.",
             );
-            // Fallback to simulation if desired, or block
           }
 
           // Mulai "Scanning"
@@ -17655,56 +17664,55 @@
               desc.innerText =
                 "Verifikasi Sidik Jari Berhasil. Mengirim Data...";
 
-              // Kirim Data Setelah 1 Detik
-              setTimeout(() => {
-                const payload = {
-                  nama: activeUser.nama.toString().toUpperCase(),
-                  email: activeUser.email.toString().toLowerCase(),
-                  sekolah: activeUser.sekolah.toString().toUpperCase(),
-                  tipe: isMasuk ? "DATANG" : "PULANG",
-                  metode: "biometric_device_verified",
-                  lokasi: userCoords
-                    ? userCoords.lat + "," + userCoords.lng
-                    : "-7.2278, 107.9087",
-                  jarak: document.getElementById("txtJarak").innerText + "m",
-                  qrData: "VERIFIED_VIA_WEBAUTHN",
-                  fotoBase64: selfieData,
-                };
+              const payload = {
+                nama: activeUser.nama.toString().toUpperCase(),
+                email: activeUser.email.toString().toLowerCase(),
+                sekolah: activeUser.sekolah.toString().toUpperCase(),
+                tipe: isMasuk ? "DATANG" : "PULANG",
+                metode: "biometric_device_verified",
+                lokasi: userCoords
+                  ? userCoords.lat + "," + userCoords.lng
+                  : "-7.2278, 107.9087",
+                jarak: (document.getElementById("txtJarak") ? document.getElementById("txtJarak").innerText : "0") + "m",
+                qrData: "VERIFIED_VIA_WEBAUTHN",
+                fotoBase64: selfieData,
+                jamMasuk: sched.jamMasuk,
+                jamPulang: sched.jamPulang
+              };
 
-                google.script.run
-                  .withSuccessHandler((res) => {
-                    if (document.body.contains(bioOverlay))
-                      document.body.removeChild(bioOverlay);
+              google.script.run
+                .withSuccessHandler((res) => {
+                  if (document.body.contains(bioOverlay))
+                    document.body.removeChild(bioOverlay);
 
-                    const mainArea =
-                      document.getElementById("sec-absensi-guru");
-                    const now = new Date();
-                    const timeStr =
-                      now.getHours().toString().padStart(2, "0") +
-                      ":" +
-                      now.getMinutes().toString().padStart(2, "0") +
-                      ":" +
-                      now.getSeconds().toString().padStart(2, "0");
+                  const mainArea =
+                    document.getElementById("sec-absensi-guru");
+                  const now = new Date();
+                  const timeStr =
+                    now.getHours().toString().padStart(2, "0") +
+                    ":" +
+                    now.getMinutes().toString().padStart(2, "0") +
+                    ":" +
+                    now.getSeconds().toString().padStart(2, "0");
 
-                    let detailMsg = isMasuk
-                      ? "Anda masuk jam " + timeStr
-                      : "Anda pulang jam " + timeStr;
-                    let finalMsg = isMasuk
-                      ? "VERIFIKASI BIOMETRIK COCOK. SELAMAT BEKERJA!"
-                      : "TERIMA KASIH, SELAMAT BERISTIRAHAT!";
+                  let detailMsg = isMasuk
+                    ? "Anda masuk jam " + timeStr
+                    : "Anda pulang jam " + timeStr;
+                  let finalMsg = isMasuk
+                    ? "VERIFIKASI BIOMETRIK COCOK. SELAMAT BEKERJA!"
+                    : "TERIMA KASIH, SELAMAT BERISTIRAHAT!";
 
-                    mainArea.innerHTML = `
-                        <div class="flex flex-col items-center justify-center p-20 text-center animate-zoomIn">
-                           <div class="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-5xl mb-6 shadow-xl border-4 border-white">✅</div>
-                           <h2 class="text-2xl font-black text-blue-900 uppercase italic mb-1 tracking-tighter">ABSENSI BERHASIL</h2>
-                           <p class="text-blue-600 font-black text-lg uppercase italic mb-2">${detailMsg}</p>
-                           <p class="text-green-600 font-black text-sm uppercase italic mb-8">${finalMsg}</p>
-                           <button onclick="resetAbsensiGuruForm()" class="bg-blue-900 text-white px-8 py-4 rounded-2xl font-black uppercase text-[10px] shadow-lg hover:scale-105 transition">Kembali ke Panel Absensi</button>
-                        </div>
-                      `;
-                  })
-                  .simpanAbsenGuru(payload);
-              }, 1000);
+                  mainArea.innerHTML = `
+                      <div class="flex flex-col items-center justify-center p-20 text-center animate-zoomIn">
+                         <div class="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-5xl mb-6 shadow-xl border-4 border-white">✅</div>
+                         <h2 class="text-2xl font-black text-blue-900 uppercase italic mb-1 tracking-tighter">ABSENSI BERHASIL</h2>
+                         <p class="text-blue-600 font-black text-lg uppercase italic mb-2">${detailMsg}</p>
+                         <p class="text-green-600 font-black text-sm uppercase italic mb-8">${finalMsg}</p>
+                         <button onclick="resetAbsensiGuruForm()" class="bg-blue-900 text-white px-8 py-4 rounded-2xl font-black uppercase text-[10px] shadow-lg hover:scale-105 transition">Kembali ke Panel Absensi</button>
+                      </div>
+                    `;
+                })
+                .simpanAbsenGuru(payload);
             }
           } catch (err) {
             console.error("Verification Error:", err);
