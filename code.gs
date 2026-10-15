@@ -845,12 +845,24 @@ function getMasterSekolah() {
             var finalLng = (colLng >= 0 && colLng < data[i].length && data[i][colLng] !== "") ? parseFloat(data[i][colLng]) : 107.9087;
             if (isNaN(finalLng)) finalLng = 107.9087;
 
-            // Apply overrides if found
+            // Apply overrides if found using exact match or robust matchSchool
+            var matchedOver = null;
             if (overrides[schoolKey]) {
-                finalLat = overrides[schoolKey].lat;
-                finalLng = overrides[schoolKey].lng;
-                jamM = overrides[schoolKey].jamMasuk;
-                jamP = overrides[schoolKey].jamPulang;
+                matchedOver = overrides[schoolKey];
+            } else {
+                for (var oKey in overrides) {
+                    if (matchSchool(oKey, schoolKey)) {
+                        matchedOver = overrides[oKey];
+                        break;
+                    }
+                }
+            }
+
+            if (matchedOver) {
+                finalLat = typeof matchedOver.lat !== "undefined" ? parseFloat(matchedOver.lat) : finalLat;
+                finalLng = typeof matchedOver.lng !== "undefined" ? parseFloat(matchedOver.lng) : finalLng;
+                jamM = matchedOver.jamMasuk || jamM;
+                jamP = matchedOver.jamPulang || jamP;
             }
 
             list.push({ 
@@ -861,11 +873,33 @@ function getMasterSekolah() {
              lng: finalLng,
              jamMasuk: jamM,
              jamPulang: jamP,
-             radius: overrides[schoolKey] ? (overrides[schoolKey].radius || 100) : 100,
-             customSchedules: overrides[schoolKey] ? (overrides[schoolKey].customSchedules || "{}") : "{}"
+             radius: matchedOver ? (parseFloat(matchedOver.radius) || 100) : 100,
+             customSchedules: matchedOver ? (matchedOver.customSchedules || "{}") : "{}"
             });
         }
     }
+
+    // Include schools from Lokasi_Sekolah that were not in Master_Sekolah
+    for (var ovKey in overrides) {
+        var alreadyInList = list.some(function(item) {
+            return matchSchool(item.nama, ovKey);
+        });
+        if (!alreadyInList) {
+            var itemOver = overrides[ovKey];
+            list.push({
+                npsn: "",
+                alamat: "",
+                nama: ovKey,
+                lat: typeof itemOver.lat !== "undefined" ? parseFloat(itemOver.lat) : -7.2278,
+                lng: typeof itemOver.lng !== "undefined" ? parseFloat(itemOver.lng) : 107.9087,
+                jamMasuk: itemOver.jamMasuk || "07:00",
+                jamPulang: itemOver.jamPulang || "15:00",
+                radius: parseFloat(itemOver.radius) || 100,
+                customSchedules: itemOver.customSchedules || "{}"
+            });
+        }
+    }
+
     return list;
   } catch (e) {
     Logger.log("Error in getMasterSekolah: " + e.toString());
@@ -912,12 +946,14 @@ function simpanLokasiSekolah(sekolahName, lat, lng, jamMasuk, jamPulang, radius,
     }
     var foundIdx = -1;
     for (var i = 1; i < data.length; i++) {
-      if (data[i][0] === sekolahName) {
+      var rowName = data[i][0] ? data[i][0].toString() : "";
+      if (rowName.toUpperCase().trim() === sekolahName.toString().toUpperCase().trim() || matchSchool(rowName, sekolahName)) {
         foundIdx = i;
         break;
       }
     }
     if (foundIdx !== -1) {
+      sheet.getRange(foundIdx + 1, 1).setValue(sekolahName);
       sheet.getRange(foundIdx + 1, 2).setValue(lat);
       sheet.getRange(foundIdx + 1, 3).setValue(lng);
       sheet.getRange(foundIdx + 1, 4).setValue(jamMasuk || "07:00");
